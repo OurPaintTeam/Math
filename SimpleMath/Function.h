@@ -13,13 +13,20 @@ protected:
     size_t numberOfVariables;
     std::vector<double> variables;
 public:
+    Function(const std::vector<double> & var): variables(var), numberOfVariables(var.size()){}
     virtual double operator()() = 0;
 
-    virtual std::vector<double> getVariable() = 0;
+    virtual std::vector<double> getVariable() {
+        return variables;
+    };
 
-    virtual void setVariable(std::vector<double> variables) = 0;
+    virtual void setVariable(std::vector<double> variables) {
+        this->variables = variables;
+    };
 
-    virtual size_t getNumberOfVariables() const = 0;
+    virtual size_t getNumberOfVariables() const{
+        return numberOfVariables;
+    };
 
     virtual double getDerivative(size_t ID) const = 0;
 
@@ -27,32 +34,18 @@ public:
 };
 
 class SquareFunction : public Function {
-    size_t numberOfVariables;
     public:
-    SquareFunction(const std::vector<double> &variables) : numberOfVariables(2) {
-        this->variables = variables;
-    }
-    [[nodiscard]] size_t getNumberOfVariables() const override {
-        return numberOfVariables;
-    }
+    SquareFunction(const std::vector<double> &variables): Function(variables){}
 
     double operator()() override {
-        return variables[0] * variables[0] + variables[1] * variables[1];
-    }
-
-    std::vector<double> getVariable() override {
-        return variables;
-    }
-
-    void setVariable(std::vector<double> variables) override {
-        this->variables = variables;
+        double sum = 0;
+        for(size_t i = 0; i < numberOfVariables; i++) {
+            sum += variables[i] * variables[i];
+        }
+        return sum;
     }
     double getDerivative(size_t ID) const override {
-        if(ID == 0) {
-            return 2 * variables[0];
-        }else{
-            return 2 * variables[1];
-        }
+        return 2*variables[ID];
     }
     double getMixedDerivative(size_t ID1, size_t ID2) const override {
         if(ID1 == ID2) {
