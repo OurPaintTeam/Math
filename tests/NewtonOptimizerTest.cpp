@@ -19,7 +19,7 @@ TEST(OptimizerTest, Rosenbrock){
     Function* rosenbrock = new Addition(term1, term2);
 
     std::vector<Variable*> variables = {x, y};
-    Task task(rosenbrock, variables);
+    TaskF task(rosenbrock, variables);
     NewtonOptimizer optimizer(1000); // maxIterations=1000
     optimizer.setTask(&task);
     optimizer.optimize();
@@ -42,7 +42,7 @@ TEST(OptimizerTest, Himmelblau){
     Function* term2 = new Power(new Subtraction(new Addition(x, y_squared), new Constant(7.0)), new Constant(2.0));
     Function* himmelblau = new Addition(term1, term2);
     std::vector<Variable*> variables = {x, y};
-    Task task(himmelblau, variables);
+    TaskF task(himmelblau, variables);
     NewtonOptimizer optimizer(1000); // maxIterations=1000
     optimizer.setTask(&task);
     optimizer.optimize();

@@ -5,14 +5,14 @@
 #ifndef MINIMIZEROPTIMIZER_LSMTASK_H
 #define MINIMIZEROPTIMIZER_LSMTASK_H
 
-#include "Task.h"
+#include "TaskF.h"
 
-class LSMTask {
+class LSMTask: public Task{
     Function *c_function;
     std::vector<Function *> m_functions;
     std::vector<Variable *> m_X;
 public:
-    LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(functions), m_X(std::move(x)) {
+    LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(std::move(functions)), m_X(std::move(x)) {
         int i = 0;
         for (auto &function : m_functions){
             Constant *c = new Constant(2);
@@ -25,17 +25,17 @@ public:
             i++;
         }
     }
-    inline double getErrors() const{
+    inline double getError() const override{
         return c_function->evaluate();
     }
-    virtual std::vector<double> getValues(){
+    inline std::vector<double> getValues() const override{
         std::vector<double> values;
         for (auto & x : m_X) {
             values.push_back(x->evaluate());
         }
         return values;
     }
-    inline double getErrors(std::vector<double> x) const{
+    double setError(std::vector<double> x) override{
         if (x.size() != m_X.size()) {
             throw std::invalid_argument("not right vector of variables");
         }
@@ -44,14 +44,14 @@ public:
         }
         return c_function->evaluate();
     }
-    Matrix<> gradient() const{
+    Matrix<> gradient() const override{
         Matrix<> grad(m_X.size(), 1);
         for (int i = 0; i < m_X.size(); i++) {
             grad(i, 0) = c_function->derivative(m_X[i])->evaluate();
         }
         return grad;
     }
-    Matrix<> hessian() const{
+    Matrix<> hessian() const override{
         Matrix<> hessian(m_X.size(), m_X.size());
         for (int i = 0; i < m_X.size(); i++) {
             for (int j = 0; j < m_X.size(); j++) {

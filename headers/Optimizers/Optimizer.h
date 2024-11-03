@@ -5,7 +5,7 @@
 #ifndef MINIMIZEROPTIMIZER_OPTIMIZER_H
 #define MINIMIZEROPTIMIZER_OPTIMIZER_H
 
-#include "Task.h"
+#include "TaskF.h"
 #include <vector>
 
 class Optimizer {

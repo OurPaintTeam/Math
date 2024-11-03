@@ -43,7 +43,7 @@ add_executable(OptimizationTaskTest tests/TaskTest.cpp)
 target_link_libraries(OptimizationTaskTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
-add_test(NAME TaskTests COMMAND TaskTest)
+add_test(NAME OptimizationTaskTest COMMAND OptimizationTaskTest)
 
 #Настройка для тестов GradientOptimizer
 add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cpp)

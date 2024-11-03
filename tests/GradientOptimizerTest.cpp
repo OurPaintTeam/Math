@@ -4,7 +4,7 @@
 #include "gtest/gtest.h"
 
 #include "../Optimizers/GradientOptimizer.h"
-#include "Task.h"
+#include "TaskF.h"
 
 TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     //f(x) = (x - 3)^2
@@ -15,7 +15,7 @@ TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     Subtraction e(&x, &c);
     Function *f = new Power(&e, &d);
     std::vector<Variable*> variables = { &x };
-    Task task(f, variables);
+    TaskF task(f, variables);
     GradientOptimizer optimizer(0.1, 1000); // learningRate=0.1, maxIterations=1000
     optimizer.setTask(&task);
 
@@ -46,7 +46,7 @@ TEST(OptimizerTest, MultiVariableQuadraticFunction) {
     Power i(&g, &c);
     Addition f(&h, &i);
     std::vector<Variable*> variables = { &x, &y };
-    Task task(&f, variables);
+    TaskF task(&f, variables);
 
     GradientOptimizer optimizer(0.1, 1000); // learningRate=0.1, maxIterations=1000
     optimizer.setTask(&task);
@@ -73,7 +73,7 @@ TEST(OptimizerTest, DoesNotConvergeWithHighLearningRate) {
     Subtraction d(&x, &b);
     Power f(&d, &c); // e = (x - 1)^2
     std::vector<Variable*> variables = { &x };
-    Task task(&f, variables);
+    TaskF task(&f, variables);
 
     GradientOptimizer optimizer(10.0, 100); // learningRate=10.0, maxIterations=100
     optimizer.setTask(&task);
@@ -113,7 +113,7 @@ TEST(OptimizerTest, AlreadyOptimal) {
     Subtraction g(&x, &b);
     Power f(&g, &c);
     std::vector<Variable*> variables = { &x };
-    Task task(&f, variables);
+    TaskF task(&f, variables);
 
     GradientOptimizer optimizer(0.1, 1000);
     optimizer.setTask(&task);

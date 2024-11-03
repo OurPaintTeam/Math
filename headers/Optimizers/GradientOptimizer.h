@@ -6,7 +6,7 @@
 #define MINIMIZEROPTIMIZER_GRADIENTOPTIMIZER_H
 
 #include "Optimizer.h"
-#include "Task.h"
+#include "TaskF.h"
 #include <vector>
 
 class GradientOptimizer : public Optimizer {

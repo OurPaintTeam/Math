@@ -2,10 +2,10 @@
 // Created by Eugene Bychkov on 25.10.2024.
 //
 #include <gtest/gtest.h>
-#include "Task.h"
+#include "TaskF.h"
 #include "Function.h"
 
-TEST(TaskTest, SingleVariableQuadratic) {
+TEST(TaskFTest, SingleVariableQuadratic) {
     double x_value = 3.0;
     Variable x(&x_value);
     std::vector<Variable*> variables = {&x};
@@ -13,7 +13,7 @@ TEST(TaskTest, SingleVariableQuadratic) {
     Constant* exponent = new Constant(2.0);
     Power* function = new Power(&x, exponent);
 
-    Task task(function, variables);
+    TaskF task(function, variables);
 
     double error = task.getError();
     EXPECT_DOUBLE_EQ(error, x_value * x_value);
@@ -28,7 +28,7 @@ TEST(TaskTest, SingleVariableQuadratic) {
     EXPECT_EQ(hessian.col_size(), 1);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 2.0);
 }
-TEST(TaskTest, TwoVariableQuadratic) {
+TEST(TaskFFTest, TwoVariableQuadratic) {
     double x_value = 3.0;
     double y_value = 4.0;
     Variable x(&x_value);
@@ -39,7 +39,7 @@ TEST(TaskTest, TwoVariableQuadratic) {
     Power* y_squared = new Power(&y, new Constant(2.0));
     Addition* function = new Addition(x_squared, y_squared);
 
-    Task task(function, variables);
+    TaskF task(function, variables);
 
     double error = task.getError();
     EXPECT_DOUBLE_EQ(error, x_value * x_value + y_value * y_value);
@@ -59,7 +59,7 @@ TEST(TaskTest, TwoVariableQuadratic) {
     EXPECT_DOUBLE_EQ(hessian(1, 1), 2.0); // d^2f/dy^2
 }
 
-TEST(TaskTest, TwoVariableMultiplication) {
+TEST(TaskFTest, TwoVariableMultiplication) {
     double x_value = 2.0;
     double y_value = 5.0;
     Variable x(&x_value);
@@ -68,7 +68,7 @@ TEST(TaskTest, TwoVariableMultiplication) {
 
     Multiplication* function = new Multiplication(&x, &y);
 
-    Task task(function, variables);
+    TaskF task(function, variables);
 
     double error = task.getError();
     EXPECT_DOUBLE_EQ(error, x_value * y_value);
