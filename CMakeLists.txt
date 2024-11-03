@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(FunctionProject)
+project(MinimizerOptimizer)
 
 # Укажите стандарт C++
 set(CMAKE_CXX_STANDARD 20)
@@ -7,10 +7,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 # Добавьте папки с заголовочными файлами
 include_directories(headers)
-include_directories(Optimizers)
+include_directories(headers/Optimizers)
 
 # Сборка основной библиотеки
-add_library(MinimizerOptimizer src/Function.cpp src/GradientOptimizer.cpp)
+add_library(MinimizerOptimizer src/Function.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
 
 # Сборка тестов
 enable_testing()
@@ -53,3 +53,12 @@ target_link_libraries(GradientOptimizerTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME GradientOptimizerTests COMMAND GradientOptimizerTest)
+
+# Тест для NewtonOptimizer
+add_executable(NewtonOptimizerTest tests/NewtonOptimizerTest.cpp)
+
+# Линкуем тесты с библиотекой и GoogleTest
+target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
+
+# Запускаем тесты
+add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)

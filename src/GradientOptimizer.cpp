@@ -1,4 +1,4 @@
-#include "../Optimizers/GradientOptimizer.h"
+#include "GradientOptimizer.h"
 
 GradientOptimizer::GradientOptimizer(double lr, int maxIter)
         : task(nullptr), converged(false), learningRate(lr), maxIterations(maxIter) {}
