@@ -62,3 +62,12 @@ target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)
+
+# Тест для LSMTask
+add_executable(LSMTaskTest tests/LSMTaskTest.cpp)
+
+# Линкуем тесты с библиотекой и GoogleTest
+target_link_libraries(LSMTaskTest MinimizerOptimizer gtest gtest_main)
+
+# Запускаем тесты
+add_test(NAME LSMTaskTests COMMAND LSMTaskTest)
