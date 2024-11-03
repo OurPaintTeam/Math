@@ -3,7 +3,7 @@
 //
 #include "NewtonOptimizer.h"
 
-NewtonOptimizer::NewtonOptimizer(int maxItr): maxIterations(maxItr), task(nullptr){}
+NewtonOptimizer::NewtonOptimizer(int maxItr): maxIterations(maxItr), task(nullptr), converged(false){}
 void NewtonOptimizer::setTask(Task *task){
     this->task = task;
     result = task->getValues();
