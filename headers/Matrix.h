@@ -670,7 +670,7 @@ inline std::vector<T> Matrix<T>::getCol(const iterator_type& colI) const
     {
         throw std::out_of_range("Index out of range");
     }
-    std::vector<T> res(cols);
+    std::vector<T> res(rows);
     for (iterator_type i = 0; i < rows; i++)
     {
         res[i] = matrix[i][colI];
@@ -685,7 +685,7 @@ inline std::vector<T> Matrix<T>::getRow(const iterator_type& rowI) const
     {
         throw std::out_of_range("Index out of range");
     }
-    std::vector<T> res(rows);
+    std::vector<T> res(cols);
     for (iterator_type i = 0; i < rows; i++)
     {
         res[i] = matrix[rowI][i];
