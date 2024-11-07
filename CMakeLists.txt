@@ -27,6 +27,7 @@ FetchContent_Declare(
 # Загрузка GoogleTest
 FetchContent_MakeAvailable(gtest)
 
+
 # Добавляем исполняемый файл тестов
 add_executable(FunctionTest tests/FunctionTest.cpp)
 
@@ -35,6 +36,8 @@ target_link_libraries(FunctionTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME FunctionTests COMMAND FunctionTest)
+
+
 
 #Настройка для тестов OptimizationTask
 add_executable(OptimizationTaskTest tests/TaskTest.cpp)
@@ -45,6 +48,8 @@ target_link_libraries(OptimizationTaskTest MinimizerOptimizer gtest gtest_main)
 # Запускаем тесты
 add_test(NAME OptimizationTaskTest COMMAND OptimizationTaskTest)
 
+
+
 #Настройка для тестов GradientOptimizer
 add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cpp)
 
@@ -53,6 +58,8 @@ target_link_libraries(GradientOptimizerTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME GradientOptimizerTests COMMAND GradientOptimizerTest)
+
+
 
 # Тест для NewtonOptimizer
 add_executable(NewtonOptimizerTest tests/NewtonOptimizerTest.cpp)
@@ -63,6 +70,8 @@ target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
 # Запускаем тесты
 add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)
 
+
+
 # Тест для LSMTask
 add_executable(LSMTaskTest tests/LSMTaskTest.cpp)
 
@@ -71,3 +80,25 @@ target_link_libraries(LSMTaskTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME LSMTaskTests COMMAND LSMTaskTest)
+
+
+
+# Тест для Matrix
+add_executable(MatrixTest tests/TestsMatrix.cpp)
+
+# Линкуем тесты с библиотекой и GoogleTest+
+target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
+
+# Запускаем тесты
+add_test(NAME MatrixTest COMMAND MatrixTest)
+
+
+
+# Тест для QR
+add_executable(QRTest tests/TestsQR.cpp)
+
+# Линкуем тесты с библиотекой и GoogleTest+
+target_link_libraries(QRTest MinimizerOptimizer gtest gtest_main)
+
+# Запускаем тесты
+add_test(NAME QRTest COMMAND QRTest)

@@ -64,8 +64,8 @@ TEST(MatrixTests, vecVecConstructor) {
 TEST(MatrixTests, copyConstuctor) {
     Matrix<> A(3, 5);
     Matrix<> B(A);
-    EXPECT_EQ(A, B);
-    EXPECT_EQ(A.rows_size(), B.rows_size());
+    EXPECT_TRUE(A == B);
+    EXPECT_TRUE(A.rows_size() == B.rows_size());
     EXPECT_EQ(A.cols_size(), B.cols_size());
 }
 
@@ -706,11 +706,14 @@ TEST(MatrixTests, setColMatrix) {
 
     Matrix<> v1 = { 7, 7, 7 };
     Matrix<> v2 = { 9, 9 };
-    Matrix<> v3 = {
-        {0},
-        {0},
-        {0}
-    };
+    //Matrix<> v3 = {
+    //    {0},
+    //    {0},
+    //    {0}
+    //};
+
+    Matrix<> v3 = { 0, 0, 0 };
+
 
     A.setCol(v1, 0);
     A.setCol(v2, 1);
@@ -735,11 +738,7 @@ TEST(MatrixTests, setRowMatrix) {
 
     Matrix<> v1 = { 7, 7, 7 };
     Matrix<> v2 = { 9, 9 };
-    Matrix<> v3 = {
-        {0},
-        {0},
-        {0}
-    };
+    Matrix<> v3 = { 0, 0, 0 };
 
     A.setRow(v1, 0);
     A.setRow(v2, 1);

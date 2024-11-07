@@ -16,7 +16,7 @@ void NewtonOptimizer::optimize(){
         result = task->getValues();
         Matrix<> grad = task->gradient();
         double norm = 0;
-        for (int i = 0; i < grad.col_size(); i++) {
+        for (int i = 0; i < grad.cols_size(); i++) {
             norm += grad(i, 0) * grad(i, 0);
         }
         norm = std::sqrt(norm);

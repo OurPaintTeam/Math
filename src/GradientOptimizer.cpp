@@ -16,7 +16,7 @@ void GradientOptimizer::optimize() {
     for (int iter = 0; iter < maxIterations; ++iter) {
         Matrix<> grad = task->gradient();
 
-        for (size_t i = 0; i < grad.row_size(); ++i) {
+        for (size_t i = 0; i < grad.rows_size(); ++i) {
             result[i] -= learningRate * grad(i, 0);
         }
         double update = task->setError(result);
