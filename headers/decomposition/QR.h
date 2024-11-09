@@ -10,40 +10,40 @@
 
 class QR {
 private:
-    Matrix<> _A;
-    Matrix<> _Q;
-    Matrix<> _R;
+	Matrix<> _A;
+	Matrix<> _Q;
+	Matrix<> _R;
 
 public:
-    QR(const Matrix<>& _A);
+	QR(const Matrix<>& _A);
 
-    QR(const QR& other);
-    QR(QR&& other);
+	QR(const QR& other);
+	QR(QR&& other);
 
-    QR& operator=(const QR& other);
-    QR& operator=(QR&& other) noexcept;
+	QR& operator=(const QR& other);
+	QR& operator=(QR&& other) noexcept;
 
-    friend bool operator==(const QR& A, const QR& B);
-    friend bool operator!=(const QR& A, const QR& B);
+	friend bool operator==(const QR& A, const QR& B);
+	friend bool operator!=(const QR& A, const QR& B);
 
-    void qr();
+	void qr();
 
-    // Gram - Schmidt
-    void qrGS();
+	// Gram - Schmidt
+	void qrGS();
 
-    // modified Gram - Schmidt
-    void qrMGS();
+	// modified Gram - Schmidt
+	void qrMGS();
 
-    // Householder
-    void qrHouseholder();
+	// Householder
+	void qrHouseholder();
 
-    // givens rotation
-    void qrGivens();
+	// givens rotation
+	void qrGivens();
 
 
-    Matrix<> A() const { return _A; }
-    Matrix<> Q() const { return _Q; }
-    Matrix<> R() const { return _R; }
+	Matrix<> A() const { return _A; }
+	Matrix<> Q() const { return _Q; }
+	Matrix<> R() const { return _R; }
 };
 
 inline QR::QR(const Matrix<>& _A) : _A(_A), _Q(), _R() {
@@ -57,17 +57,18 @@ inline void QR::qrGS()
 {
     size_t m = _A.rows_size();
     size_t n = _A.cols_size();
+    size_t min_mn = std::min(m, n);
 
-    _Q = Matrix<>(m, n);
-    _R = Matrix<>(n, n);
+    _Q = Matrix<>(m, min_mn);
+    _R = Matrix<>(min_mn, n);
 
     for (size_t i = 0; i < n; ++i) {
         std::vector<double> v_i = _A.getCol(i);
         std::vector<double> u_i = v_i;
 
-        for (size_t j = 0; j < i; ++j) {
+        for (size_t j = 0; j < min_mn && j < i; ++j) {
             std::vector<double> e_j = _Q.getCol(j);
-            double proj_scalar = 0;
+            double proj_scalar = 0.0;
 
             for (size_t k = 0; k < m; ++k) {
                 proj_scalar += v_i[k] * e_j[k];
@@ -80,21 +81,22 @@ inline void QR::qrGS()
             }
         }
 
-        // norm
-        double normVec = 0;
-        for (size_t k = 0; k < m; ++k) {
-            normVec += u_i[k] * u_i[k];
+        if (i < min_mn) {
+            double normVec = 0.0;
+            for (size_t k = 0; k < m; ++k) {
+                normVec += u_i[k] * u_i[k];
+            }
+            normVec = sqrt(normVec);
+
+            _R(i, i) = normVec;
+
+            std::vector<double> e_i(m);
+            for (size_t k = 0; k < m; ++k) {
+                e_i[k] = u_i[k] / normVec;
+            }
+
+            _Q.setCol(e_i, i);
         }
-        normVec = sqrt(normVec);
-
-        _R(i, i) = normVec;
-
-        std::vector<double> e_i(m);
-        for (size_t k = 0; k < m; ++k) {
-            e_i[k] = u_i[k] / normVec;
-        }
-
-        _Q.setCol(e_i, i);
     }
 }
 
