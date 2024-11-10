@@ -135,9 +135,6 @@ public:
     T minor(const size_type& i, const size_type& j) const;
     static T minor(const size_type& i, const size_type& j, const Matrix<T>& mat);
 
-    // Matrix Decomposition
-    Matrix pseudoInverse() const; // TODO
-
     T trace() const;
     static T trace(const Matrix& mat);
 
@@ -167,8 +164,6 @@ private:
     size_type rows;
     size_type cols;
     T** matrix;
-
-    void setIdentity() const;
 };
 
 template <Arithmetic T>

@@ -3,6 +3,7 @@
 
 #include <cmath>
 #include <vector>
+#include <utility>
 #include "Matrix.h"
 
 // A = QR
@@ -15,10 +16,10 @@ private:
 	Matrix<> _R;
 
 public:
-	QR(const Matrix<>& _A);
+	QR(const Matrix<> &_A);
 
 	QR(const QR& other);
-	QR(QR&& other);
+	QR(QR&& other) noexcept;
 
 	QR& operator=(const QR& other);
 	QR& operator=(QR&& other) noexcept;
@@ -28,57 +29,80 @@ public:
 
 	void qr();
 
-	// Gram - Schmidt
-	void qrGS();
+	// Classical Gram-Schmidt,
+	void qrСGS();
 
-	// modified Gram - Schmidt
+	// Modified Gram - Schmidt
 	void qrMGS();
+
+    // Iterative Gram-Schmidt
+    void qrIGS();
+
+    // Block Gram-Schmidt
+    void qrBGS();
+
+    // Reordered Gram-Schmidt
+    void qrRGS();
+
+    // Classical Gram-Schmidt with Pivoting
+    void qrCGSP();
 
 	// Householder
 	void qrHouseholder();
 
-	// givens rotation
+	// Givens rotation
 	void qrGivens();
 
+	Matrix<> A() const;
+	Matrix<> Q() const;
+	Matrix<> R() const;
 
-	Matrix<> A() const { return _A; }
-	Matrix<> Q() const { return _Q; }
-	Matrix<> R() const { return _R; }
 
+    Matrix<> solve(const Matrix<>& b) const;
 
-    Matrix<> solve(const Matrix<>& b) const {
-        // Compute Q^T * b
-        Matrix<> Qt_b = Q().transpose() * b;
-
-        // Solve Rx = Qt_b for x using back-substitution
-        Matrix<> x = (R().inverse(), Qt_b);
-        return x;
-    }
-
-    Matrix<> pseudoinverse() const {
-        // A^{+} = R^{-1} * Q^T
-        Matrix<> R = (_R + Matrix<>::identity(_R.rows_size()) * 1e-8);
-        std::cout << "R: " << std::endl;
-        for (size_t i = 0; i < R.rows_size(); ++i) {
-            for (size_t j = 0; j < R.cols_size(); ++j) {
-                std::cout << _R(i, j) << " ";
-            }
-            std::cout << std::endl;
-        }
-        Matrix<> R_inv = R.inverse();
-        return R_inv * _Q.transpose();
-    }
+    Matrix<> pseudoInverse() const;
 };
 
-inline QR::QR(const Matrix<>& mat) : _A(mat) {
+inline QR::QR(const Matrix<>& _A) {
+    if (_A.rows_size() < 1 || _A.cols_size() < 1) {
+        throw std::runtime_error("Matrix should be: rows > 0 && cols > 0");
+    }
+    this->_A = _A;
 }
+
+QR::QR(const QR &other) : _A(other._A), _Q(other._Q), _R(other._R) {}
 
 inline void QR::qr() {
-    qrGS();
+    qrСGS();
 }
 
-inline void QR::qrGS()
-{
+QR::QR(QR &&other) noexcept : _A(std::move(other._A)), _Q(std::move(other._Q)), _R(std::move(other._R)) {}
+
+QR &QR::operator=(const QR &other) {
+    QR temp(other);
+    std::swap(_A, temp._A);
+    std::swap(_Q, temp._Q);
+    std::swap(_R, temp._R);
+    return *this;
+}
+
+inline QR& QR::operator=(QR&& other) noexcept {
+    QR temp(std::move(other));
+    std::swap(_A, temp._A);
+    std::swap(_Q, temp._Q);
+    std::swap(_R, temp._R);
+    return *this;
+}
+
+bool operator==(const QR &A, const QR &B) {
+    return A.A() == B.A() && A.Q() == B.Q() && A.R() == B.R();
+}
+
+bool operator!=(const QR &A, const QR &B) {
+    return !(A == B);
+}
+
+inline void QR::qrСGS() {
     size_t m = _A.rows_size();
     size_t n = _A.cols_size();
     size_t min_mn = std::min(m, n);
@@ -127,6 +151,71 @@ inline void QR::qrGS()
             }
         }
     }
+}
+
+void QR::qrMGS() {
+
+}
+
+void QR::qrIGS() {
+
+}
+
+void QR::qrBGS() {
+
+}
+
+void QR::qrRGS() {
+
+}
+
+void QR::qrCGSP() {
+
+}
+
+void QR::qrHouseholder() {
+
+}
+
+void QR::qrGivens() {
+
+}
+
+Matrix<> QR::solve(const Matrix<>& b) const // TODO: write test
+{
+    // Compute Q^T * b
+    Matrix<> Qt_b = Q().transpose() * b;
+
+    // Solve Rx = Qt_b for x using back-substitution
+    Matrix<> x = (R().inverse(), Qt_b);
+    return x;
+}
+
+Matrix<> QR::pseudoInverse() const // TODO: write test
+{
+    // A^{+} = R^{-1} * Q^T
+    Matrix<> R = (_R + Matrix<>::identity(_R.rows_size()) * 1e-8);
+    std::cout << "R: " << std::endl;
+    for (size_t i = 0; i < R.rows_size(); ++i) {
+        for (size_t j = 0; j < R.cols_size(); ++j) {
+            std::cout << _R(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    Matrix<> R_inv = R.inverse();
+    return R_inv * _Q.transpose();
+}
+
+Matrix<> QR::A() const {
+    return _A;
+}
+
+Matrix<> QR::Q() const {
+    return _Q;
+}
+
+Matrix<> QR::R() const {
+    return _R;
 }
 
 #endif // QR_H

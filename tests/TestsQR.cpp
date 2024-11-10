@@ -1,16 +1,140 @@
 #include <gtest/gtest.h>
 
-#include "Matrix.h"
-#include "QR.h"
+#include "../headers/Matrix.h"
+#include "../headers/decomposition/QR.h"
 
-TEST(QRTests, qrGS_part1) {
+TEST(defaultStructureQRClass, matrixConstructor) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+    QR test(A);
+    EXPECT_EQ(test.A(), A);
+    Matrix<> def;
+    EXPECT_TRUE(test.Q() == def);
+    EXPECT_TRUE(test.R() == def);
+
+    Matrix<> B;
+    EXPECT_THROW(QR test2(B), std::runtime_error);
+}
+
+TEST(defaultStructureQRClass, copyConstructor) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+    QR original(A);
+    QR copy(original);
+
+    EXPECT_EQ(copy.A(), original.A());
+    EXPECT_EQ(copy.Q(), original.Q());
+    EXPECT_EQ(copy.R(), original.R());
+}
+
+TEST(defaultStructureQRClass, moveConstructor) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+    QR original(A);
+
+    QR moved(std::move(original));
+
+    EXPECT_EQ(moved.A(), A);
+    EXPECT_EQ(moved.Q(), Matrix<>());
+    EXPECT_EQ(moved.R(), Matrix<>());
+
+    EXPECT_EQ(original.A(), Matrix<>());
+}
+
+TEST(defaultStructureQRClass, assignmnentOperator) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+    Matrix<> B = {
+            {5, 6},
+            {7, 8}
+    };
+
+    QR qrA(A);
+    QR qrB(B);
+
+    qrB = qrA;
+
+    EXPECT_EQ(qrB.A(), qrA.A());
+    EXPECT_EQ(qrB.Q(), qrA.Q());
+    EXPECT_EQ(qrB.R(), qrA.R());
+}
+
+TEST(defaultStructureQRClass, moveAssignmnentOperator) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+    QR qrA(A);
+
+    Matrix<> B = {
+            {5, 6},
+            {7, 8}
+    };
+    QR qrB(B);
+
+    qrB = std::move(qrA);
+
+    EXPECT_EQ(qrB.A(), A);
+    EXPECT_EQ(qrA.A(), Matrix<>());
+}
+
+TEST(defaultStructureQRClass, equaltyOperator) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+
+    QR qr1(A);
+    QR qr2(A);
+
+    EXPECT_TRUE(qr1 == qr2);
+
+    Matrix<> B = {
+            {5, 6},
+            {7, 8}
+    };
+    QR qr3(B);
+
+    EXPECT_FALSE(qr1 == qr3);
+}
+
+TEST(defaultStructureQRClass, inEqualtyOperator) {
+    Matrix<> A = {
+            {1, 2},
+            {3, 4}
+    };
+
+    QR qr1(A);
+    QR qr2(A);
+
+    EXPECT_FALSE(qr1 != qr2);
+
+    Matrix<> B = {
+            {5, 6},
+            {7, 8}
+    };
+    QR qr3(B);
+
+    EXPECT_TRUE(qr1 != qr3);
+}
+
+
+TEST(QR_CGS, qrGS_part1) {
     Matrix<> A = {
             {1, 2},
             {3, 4},
             {5, 6}
     };
     QR qr(A);
-    qr.qrGS();
+    qr.qrСGS();
     
     // VolframAlpha result
     Matrix<> Q = {
@@ -40,7 +164,7 @@ TEST(QRTests, qrGS_part1) {
     }
 }
 
-TEST(QRTests, qrGS_part2) {
+TEST(QR_CGS, qrGS_part2) {
     Matrix<> A = { 
         {1, 2, 7},
         {3, 4, 8},
@@ -48,7 +172,7 @@ TEST(QRTests, qrGS_part2) {
     };
 
     QR qr(A);
-    qr.qrGS();
+    qr.qrСGS();
 
     // VolframAlpha result
     Matrix<> Q = {
@@ -80,7 +204,7 @@ TEST(QRTests, qrGS_part2) {
 }
 
 
-TEST(QRTests, qrGS_part3) {
+TEST(QR_CGS, qrGS_part3) {
     // 14x19
     Matrix<> A = {
         {41,21,12,28,49,43,87,64,98,13,4,93,15,89,79,11,58,81,35},
@@ -157,7 +281,7 @@ TEST(QRTests, qrGS_part3) {
 
     // compute
     QR qr(A);
-    qr.qrGS();
+    qr.qrСGS();
 
     // A = QR
     Matrix<> A_qr = qr.Q() * qr.R();
@@ -236,7 +360,7 @@ TEST(QRTests, qrGS_part3) {
     }
 }
 
-TEST(QRTests, qrGS_part4) {
+TEST(QR_CGS, qrGS_part4) {
     Matrix<> A = {
         { 2, 0, -2 ,0 ,4 ,0 ,-4, 0 },
         { 0, 0, 0, 0, 0, 2, 0, -2 },
@@ -289,7 +413,7 @@ TEST(QRTests, qrGS_part4) {
 
     // compute
     QR qr(A);
-    qr.qrGS();
+    qr.qrСGS();
 
     // A = QR
     Matrix<> A_qr = qr.Q() * qr.R();

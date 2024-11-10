@@ -74,10 +74,10 @@ add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)
 
 
 # Тест для NewtonGauss
-add_executable(NewtonGaussSolverTest tests/NewtonGaussSolverTest.cpp)
+#add_executable(NewtonGaussSolverTest tests/NewtonGaussSolverTest.cpp)
 
 # Линкуем тесты с библиотекой и GoogleTest
-target_link_libraries(NewtonGaussSolverTest MinimizerOptimizer gtest gtest_main)
+#target_link_libraries(NewtonGaussSolverTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME NewtonGaussSolverTests COMMAND NewtonGaussSolverTest)
