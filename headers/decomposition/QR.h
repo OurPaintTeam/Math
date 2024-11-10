@@ -57,7 +57,6 @@ public:
 	Matrix<> Q() const;
 	Matrix<> R() const;
 
-
     Matrix<> solve(const Matrix<>& b) const;
 
     Matrix<> pseudoInverse() const;
@@ -73,6 +72,7 @@ inline QR::QR(const Matrix<>& _A) {
 QR::QR(const QR &other) : _A(other._A), _Q(other._Q), _R(other._R) {}
 
 inline void QR::qr() {
+
     qrСGS();
 }
 
@@ -154,8 +154,66 @@ inline void QR::qrСGS() {
 }
 
 void QR::qrMGS() {
+    size_t m = _A.rows_size();
+    size_t n = _A.cols_size();
+    size_t min_mn = std::min(m, n);
 
+    _Q = Matrix<>(m, min_mn); // Orthogonal matrix
+    _R = Matrix<>(min_mn, n); // Upper triangular matrix
+
+    std::vector<std::vector<double>> V(n); // Vectors to be orthogonalized
+
+    // Initialize V with the columns of A
+    for (size_t i = 0; i < n; ++i) {
+        V[i] = _A.getCol(i);
+    }
+
+    const double epsilon = 1e-10;
+
+    for (size_t j = 0; j < min_mn; ++j) {
+        // Compute R(j, j) = ||V[j]|| (2-norm)
+        double normVec = 0.0;
+        for (size_t k = 0; k < m; ++k) {
+            normVec += V[j][k] * V[j][k];
+        }
+        normVec = sqrt(normVec);
+
+        _R(j, j) = normVec;
+
+        if (normVec > epsilon) {
+            // Normalize Q(:, j) = V[j] / R(j, j)
+            std::vector<double> q_j(m);
+            for (size_t k = 0; k < m; ++k) {
+                q_j[k] = V[j][k] / normVec;
+            }
+            _Q.setCol(q_j, j);
+
+            // Update the remaining vectors in V
+            for (size_t k = j + 1; k < n; ++k) {
+                // R(j, k) = Q(:, j)^T * V[k]
+                double dotProduct = 0.0;
+                for (size_t l = 0; l < m; ++l) {
+                    dotProduct += q_j[l] * V[k][l];
+                }
+                _R(j, k) = dotProduct;
+
+                // V[k] = V[k] - R(j, k) * Q(:, j)
+                for (size_t l = 0; l < m; ++l) {
+                    V[k][l] -= dotProduct * q_j[l];
+                }
+            }
+        }
+        else {
+            std::vector<double> zero_col(m, 0.0);
+            _Q.setCol(zero_col, j);
+
+            for (size_t k = j + 1; k < n; ++k) {
+                _R(j, k) = 0.0;
+            }
+        }
+    }
 }
+
 
 void QR::qrIGS() {
 
