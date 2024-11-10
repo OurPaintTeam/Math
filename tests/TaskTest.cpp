@@ -19,13 +19,13 @@ TEST(TaskFTest, SingleVariableQuadratic) {
     EXPECT_DOUBLE_EQ(error, x_value * x_value);
 
     Matrix<> grad = task.gradient();
-    EXPECT_EQ(grad.row_size(), 1);
-    EXPECT_EQ(grad.col_size(), 1);
+    EXPECT_EQ(grad.rows_size(), 1);
+    EXPECT_EQ(grad.cols_size(), 1);
     EXPECT_DOUBLE_EQ(grad(0, 0), 2 * x_value);
 
     Matrix<> hessian = task.hessian();
-    EXPECT_EQ(hessian.row_size(), 1);
-    EXPECT_EQ(hessian.col_size(), 1);
+    EXPECT_EQ(hessian.rows_size(), 1);
+    EXPECT_EQ(hessian.cols_size(), 1);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 2.0);
 }
 TEST(TaskFFTest, TwoVariableQuadratic) {
@@ -45,14 +45,14 @@ TEST(TaskFFTest, TwoVariableQuadratic) {
     EXPECT_DOUBLE_EQ(error, x_value * x_value + y_value * y_value);
 
     Matrix<> grad = task.gradient();
-    EXPECT_EQ(grad.row_size(), 2);
-    EXPECT_EQ(grad.col_size(), 1);
+    EXPECT_EQ(grad.rows_size(), 2);
+    EXPECT_EQ(grad.cols_size(), 1);
     EXPECT_DOUBLE_EQ(grad(0, 0), 2 * x_value);
     EXPECT_DOUBLE_EQ(grad(1, 0), 2 * y_value);
 
     Matrix<> hessian = task.hessian();
-    EXPECT_EQ(hessian.row_size(), 2);
-    EXPECT_EQ(hessian.col_size(), 2);
+    EXPECT_EQ(hessian.rows_size(), 2);
+    EXPECT_EQ(hessian.cols_size(), 2);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 2.0); // d^2f/dx^2
     EXPECT_DOUBLE_EQ(hessian(0, 1), 0.0); // d^2f/dxdy
     EXPECT_DOUBLE_EQ(hessian(1, 0), 0.0); // d^2f/dydx
@@ -74,14 +74,14 @@ TEST(TaskFTest, TwoVariableMultiplication) {
     EXPECT_DOUBLE_EQ(error, x_value * y_value);
 
     Matrix<> grad = task.gradient();
-    EXPECT_EQ(grad.row_size(), 2);
-    EXPECT_EQ(grad.col_size(), 1);
+    EXPECT_EQ(grad.rows_size(), 2);
+    EXPECT_EQ(grad.cols_size(), 1);
     EXPECT_DOUBLE_EQ(grad(0, 0), y_value); // df/dx = y
     EXPECT_DOUBLE_EQ(grad(1, 0), x_value); // df/dy = x
 
     Matrix<> hessian = task.hessian();
-    EXPECT_EQ(hessian.row_size(), 2);
-    EXPECT_EQ(hessian.col_size(), 2);
+    EXPECT_EQ(hessian.rows_size(), 2);
+    EXPECT_EQ(hessian.cols_size(), 2);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 0.0); // d^2f/dx^2
     EXPECT_DOUBLE_EQ(hessian(0, 1), 1.0); // d^2f/dxdy
     EXPECT_DOUBLE_EQ(hessian(1, 0), 1.0); // d^2f/dydx
