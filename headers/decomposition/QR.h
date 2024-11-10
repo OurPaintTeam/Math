@@ -46,7 +46,7 @@ public:
 	Matrix<> R() const { return _R; }
 };
 
-inline QR::QR(const Matrix<>& _A) : _A(_A), _Q(), _R() {
+inline QR::QR(const Matrix<>& mat) : _A(mat) {
 }
 
 inline void QR::qr() {
@@ -88,14 +88,19 @@ inline void QR::qrGS()
             }
             normVec = sqrt(normVec);
 
-            _R(i, i) = normVec;
+            if (normVec > 1e-10) {
+                _R(i, i) = normVec;
 
-            std::vector<double> e_i(m);
-            for (size_t k = 0; k < m; ++k) {
-                e_i[k] = u_i[k] / normVec;
+                std::vector<double> e_i(m);
+                for (size_t k = 0; k < m; ++k) {
+                    e_i[k] = u_i[k] / normVec;
+                }
+
+                _Q.setCol(e_i, i);
             }
-
-            _Q.setCol(e_i, i);
+            else {
+                _R(i, i) = 0.0;
+            }
         }
     }
 }

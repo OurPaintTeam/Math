@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "../headers/Matrix.h"
-#include "../headers/decomposition/QR.h"
+#include "Matrix.h"
+#include "QR.h"
 
 TEST(QRTests, qrGS_part1) {
     Matrix<> A = {
@@ -234,4 +234,136 @@ TEST(QRTests, qrGS_part3) {
             EXPECT_NEAR(qr.Q()(i, j), Q_volfRes(i, j), eps) << "Mismatch at Q(" << i << "," << j << ")";
         }
     }
+}
+
+TEST(QRTests, qrGS_part4) {
+    Matrix<> A = {
+        { 2, 0, -2 ,0 ,4 ,0 ,-4, 0 },
+        { 0, 0, 0, 0, 0, 2, 0, -2 },
+        { -2, 0, 2, 0, -4, 0, 4, 0 },
+        { 0, 0, 0, 0, 0, -2, 0, 2 },
+        { 4, 0, -4, 0, 2, 0, -2, 0 },
+        { 0, 2, 0, -2, 0, 0, 0, 0 },
+        { -4, 0, 4, 0, -2, 0, 2, 0 },
+        { 0, -2, 0, 2, 0, 0, 0, 0 }
+    };
+
+    // volframMath result
+    Matrix<> Q_volfRes = {
+        { -0.316228,  0. ,  0.316228,  0. ,  -0.632456,  0.      ,   0.632456, 0.       },
+        {  0.      ,  0. ,  0.      ,  0. ,   0.      , -0.707107,   0.      , 0.707107 },
+        { -0.948683,  0. , -0.105409,  0. ,   0.210819,  0.      ,  -0.210819, 0.       },
+        {  0.      , -1. ,  0.      ,  0. ,   0.      ,  0.      ,   0.      , 0.       },
+        {  0.      ,  0. , -0.942809,  0. ,  -0.235702,  0.      ,   0.235702, 0.       },
+        {  0.      ,  0. ,  0.      , -1. ,   0.      ,  0.      ,   0.      , 0.       },
+        {  0.      ,  0. ,  0.      ,  0. ,   0.707107,  0.      ,   0.707107, 0.       },
+        {  0.      ,  0. ,  0.      ,  0. ,   0.      ,  0.707107,   0.      , 0.707107 }
+    };
+
+    // volframMath result
+    Matrix<> R_volfRes{
+        { -6.32456,  0.     ,  6.32456,  0.     , -5.05964,  0. ,  5.05964,  0. },
+        {  0.     , -2.82843,  0.     ,  2.82843,  0.     ,  0. ,  0.     ,  0. },
+        {  0.     ,  0.     ,  0.     ,  0.     , -2.52982,  0. ,  2.52982,  0. },
+        {  0.     ,  0.     ,  0.     ,  0.     ,  0.     , -2. ,  0.     ,  2. },
+        {  0.     ,  0.     ,  0.     ,  0.     ,  2.82843,  0. , -2.82843,  0. },
+        {  0.     ,  0.     ,  0.     ,  0.     ,  0.     ,  2. ,  0.     , -2. },
+        {  0.     ,  0.     ,  0.     ,  0.     ,  0.     ,  0. ,  0.     ,  0. },
+        {  0.     ,  0.     ,  0.     ,  0.     ,  0.     ,  0. ,  0.     ,  0. }
+    };
+
+    double eps = 0.001;
+
+
+
+    // Checking volfram result
+
+    Matrix<> A_volfRes = Q_volfRes.transpose() * R_volfRes;
+    for (int i = 0; i < A.rows_size(); ++i) {
+        for (int j = 0; j < A.cols_size(); ++j) {
+            EXPECT_TRUE(A_volfRes(i, j) > A(i, j) - eps && A_volfRes(i, j) < A(i, j) + eps);
+        }
+    }
+
+    // Checking my result
+
+    // compute
+    QR qr(A);
+    qr.qrGS();
+
+    // A = QR
+    Matrix<> A_qr = qr.Q() * qr.R();
+    for (int i = 0; i < A.rows_size(); ++i) {
+        for (int j = 0; j < A.cols_size(); ++j) {
+            EXPECT_TRUE(A_qr(i, j) > A(i, j) - eps && A_qr(i, j) < A(i, j) + eps);
+        }
+    }
+    /*
+    // Correct signs columns Q_volfRes for Q_computed
+    Q_volfRes = Q_volfRes.transpose();
+    Q_volfRes *= -1.0;
+
+
+    // Additional tests
+
+    // orthogonal Q
+    size_t min_mn = std::min(A.rows_size(), A.cols_size());
+    Matrix<> QtQ = qr.Q().transpose() * qr.Q();
+    Matrix<> I(min_mn, min_mn);
+    for (size_t i = 0; i < min_mn; ++i) {
+        for (size_t j = 0; j < min_mn; ++j) {
+            I(i, j) = (i == j) ? 1.0 : 0.0;
+        }
+    }
+
+    for (size_t i = 0; i < QtQ.rows_size(); ++i) {
+        for (size_t j = 0; j < QtQ.cols_size(); ++j) {
+            EXPECT_NEAR(QtQ(i, j), I(i, j), eps) << "Orthogonality check failed at (" << i << "," << j << ")";
+        }
+    }
+
+    // Upper-triangular check R
+    for (size_t i = 0; i < qr.R().rows_size(); ++i) {
+        for (size_t j = 0; j < qr.R().cols_size(); ++j) {
+            if (j < i) {
+                EXPECT_NEAR(qr.R()(i, j), 0.0, eps) << "R is not upper triangular at (" << i << "," << j << ")";
+            }
+        }
+    }    
+
+    // Check norms Q
+    for (size_t j = 0; j < qr.Q().cols_size(); ++j) {
+        double norm = 0.0;
+        for (size_t i = 0; i < qr.Q().rows_size(); ++i) {
+            norm += qr.Q()(i, j) * qr.Q()(i, j);
+        }
+        norm = sqrt(norm);
+        EXPECT_NEAR(norm, 1.0, eps) << "Column " << j << " of Q is not normalized.";
+    }
+
+
+    // Ambiguity
+
+    // Adjust Q_computed column signs to match Q_ref
+    for (size_t j = 0; j < Q_volfRes.cols_size(); ++j) {
+        // Calculate the scalar product between columns
+        double dot_product = 0.0;
+        for (size_t i = 0; i < Q_volfRes.rows_size(); ++i) {
+            dot_product += qr.Q()(i, j) * Q_volfRes(i, j);
+        }
+
+        // If the scalar product is negative, change the sign of the column
+        if (dot_product < 0) {
+            for (size_t i = 0; i < Q_volfRes.rows_size(); ++i) {
+                Q_volfRes(i, j) *= -1;
+            }
+        }
+    }
+
+    // Comparison of elements of matrix Q
+    for (size_t i = 0; i < Q_volfRes.rows_size(); ++i) {
+        for (size_t j = 0; j < Q_volfRes.cols_size(); ++j) {
+            EXPECT_NEAR(qr.Q()(i, j), Q_volfRes(i, j), eps) << "Mismatch at Q(" << i << "," << j << ")";
+        }
+    }*/
 }
