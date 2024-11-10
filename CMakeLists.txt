@@ -8,9 +8,10 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Добавьте папки с заголовочными файлами
 include_directories(headers)
 include_directories(headers/Optimizers)
+include_directories(headers/decomposition)
 
 # Сборка основной библиотеки
-add_library(MinimizerOptimizer src/Function.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
+add_library(MinimizerOptimizer src/Function.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp src/NewtonGaussSolver.cpp)
 
 # Сборка тестов
 enable_testing()
@@ -72,6 +73,15 @@ add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)
 
 
 
+# Тест для NewtonGauss
+add_executable(NewtonGaussSolverTest tests/NewtonGaussSolverTest.cpp)
+
+# Линкуем тесты с библиотекой и GoogleTest
+target_link_libraries(NewtonGaussSolverTest MinimizerOptimizer gtest gtest_main)
+
+# Запускаем тесты
+add_test(NAME NewtonGaussSolverTests COMMAND NewtonGaussSolverTest)
+
 # Тест для LSMTask
 add_executable(LSMTaskTest tests/LSMTaskTest.cpp)
 
@@ -91,8 +101,6 @@ target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
 
 # Запускаем тесты
 add_test(NAME MatrixTest COMMAND MatrixTest)
-
-
 
 # Тест для QR
 add_executable(QRTest tests/TestsQR.cpp)

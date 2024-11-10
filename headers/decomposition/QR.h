@@ -44,6 +44,30 @@ public:
 	Matrix<> A() const { return _A; }
 	Matrix<> Q() const { return _Q; }
 	Matrix<> R() const { return _R; }
+
+
+    Matrix<> solve(const Matrix<>& b) const {
+        // Compute Q^T * b
+        Matrix<> Qt_b = Q().transpose() * b;
+
+        // Solve Rx = Qt_b for x using back-substitution
+        Matrix<> x = (R().inverse(), Qt_b);
+        return x;
+    }
+
+    Matrix<> pseudoinverse() const {
+        // A^{+} = R^{-1} * Q^T
+        Matrix<> R = (_R + Matrix<>::identity(_R.rows_size()) * 1e-8);
+        std::cout << "R: " << std::endl;
+        for (size_t i = 0; i < R.rows_size(); ++i) {
+            for (size_t j = 0; j < R.cols_size(); ++j) {
+                std::cout << _R(i, j) << " ";
+            }
+            std::cout << std::endl;
+        }
+        Matrix<> R_inv = R.inverse();
+        return R_inv * _Q.transpose();
+    }
 };
 
 inline QR::QR(const Matrix<>& mat) : _A(mat) {

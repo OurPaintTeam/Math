@@ -6,7 +6,7 @@
 #define MINIMIZEROPTIMIZER_NEWTONOPTIMIZER_H
 
 #include "Optimizer.h"
-
+#include "../decomposition/QR.h"
 class NewtonOptimizer : public Optimizer {
     Task *task;
     std::vector<double> result;

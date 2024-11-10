@@ -61,9 +61,9 @@ public:
         return hessian;
     }
     Matrix<> jacobian() const{
-        Matrix<> jac(m_X.size(), m_functions.size());
-        for (int i = 0; i < m_X.size(); i++) {
-            for (int j = 0; j < m_functions.size(); j++) {
+        Matrix<> jac(m_functions.size(), m_X.size());
+        for (int i = 0; i < m_functions.size(); i++) {
+            for (int j = 0; j < m_X.size(); j++) {
                 jac(i, j) = 2 * m_functions[i]->evaluate() * m_functions[i]->derivative(m_X[j])->evaluate();
             }
         }

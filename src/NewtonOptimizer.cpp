@@ -25,12 +25,22 @@ void NewtonOptimizer::optimize(){
             break;
         }
         Matrix<> hess = task->hessian();
-        Matrix<> step = hess.inverse() * grad;
+        for (int i = 0; i < hess.rows_size(); i++) {
+            for (int j = 0; j < hess.cols_size(); j++) {
+                std::cout << hess(i, j) << " ";
+            }
+            std::cout << std::endl;
+        }
+        QR qrH = hess;
+        qrH.qrGS();
+        Matrix<> HInv = qrH.pseudoinverse();
+        Matrix<> step = HInv * grad;
         for (int i = 0; i < result.size(); i++) {
             result[i] -= step(i, 0);
         }
         double err = task->setError(result);
     }
+    std::cout << "NewtonOptimizer: " << itr << " iterations" << std::endl;
 }
 bool NewtonOptimizer::isConverged() const {
     return converged;
