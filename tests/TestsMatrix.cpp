@@ -926,6 +926,18 @@ TEST(MatrixTests, onesMatrix) {
     EXPECT_EQ(A, B);
 }
 
+// Ones matrix (static)
+TEST(MatrixTests, onesRowColMatrix) {
+    Matrix<> A = Matrix<>::ones(4, 5);
+    Matrix<> B = {
+            {1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1},
+            {1, 1, 1, 1, 1}
+    };
+    EXPECT_EQ(A, B);
+}
+
 // set ones matrix
 TEST(MatrixTests, setOnesMatrix) {
     Matrix<> A = {
@@ -944,7 +956,49 @@ TEST(MatrixTests, setOnesMatrix) {
     EXPECT_EQ(A, B);
 }
 
-// Ones matrix (static)
+// Identity matrix (static)
+TEST(MatrixTests, identityMatrix) {
+    Matrix<> A = Matrix<>::identity(4);
+    Matrix<> B = {
+            {1, 0, 0, 0},
+            {0, 1, 0, 0},
+            {0, 0, 1, 0},
+            {0, 0, 0, 1}
+    };
+    EXPECT_EQ(A, B);
+}
+
+// Identity matrix (static)
+TEST(MatrixTests, identityRowColMatrix) {
+    Matrix<> A = Matrix<>::identity(4, 5);
+    Matrix<> B = {
+            {1, 0, 0, 0, 0},
+            {0, 1, 0, 0, 0},
+            {0, 0, 1, 0, 0},
+            {0, 0, 0, 1, 0}
+    };
+    EXPECT_EQ(A, B);
+}
+
+// set Identity matrix
+TEST(MatrixTests, setIdentityMatrix) {
+    Matrix<> A = {
+            {1, 2, 3, 4},
+            {1, 4, 23, 5},
+            {0, 23, 93, 54},
+            {1, 87, 35, 9}
+    };
+    A.setIdentity();
+    Matrix<> B = {
+            {1, 2, 3, 4},
+            {1, 1, 23, 5},
+            {0, 23, 1, 54},
+            {1, 87, 35, 1}
+    };
+    EXPECT_EQ(A, B);
+}
+
+// Zeroes matrix (static)
 TEST(MatrixTests, zeroesMatrix) {
     Matrix<> A = Matrix<>::zeroes(4);
     Matrix<> B = {
@@ -956,7 +1010,7 @@ TEST(MatrixTests, zeroesMatrix) {
     EXPECT_EQ(A, B);
 }
 
-// set ones matrix
+// set zeroes matrix
 TEST(MatrixTests, setZeroesMatrix) {
     Matrix<> A = {
         {1, 2, 3, 4},
@@ -973,6 +1027,8 @@ TEST(MatrixTests, setZeroesMatrix) {
     };
     EXPECT_EQ(A, B);
 }
+
+
 
 // random matrix
 TEST(MatrixTests, randomMatrix) {

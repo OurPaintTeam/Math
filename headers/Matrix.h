@@ -148,6 +148,10 @@ public:
     static Matrix ones(const size_type& rows, const size_type& cols);
     void setOnes();
 
+    static Matrix identity(const size_type& size);
+    static Matrix identity(const size_type& rows, const size_type& cols);
+    void setIdentity();
+
     static Matrix zeroes(const size_type& size);
     static Matrix zeroes(const size_type& rows, const size_type& cols);
     void setZeroes();
@@ -163,6 +167,8 @@ private:
     size_type rows;
     size_type cols;
     T** matrix;
+
+    void setIdentity() const;
 };
 
 template <Arithmetic T>
@@ -1014,20 +1020,6 @@ inline T Matrix<T>::minor(const size_type& ix, const size_type& jx, const Matrix
 }
 
 template<Arithmetic T>
-inline Matrix<T> Matrix<T>::ones(const size_type& size)
-{
-    Matrix<T> result(size, size);
-    for (size_type i = 0; i < size; i++)
-    {
-        for (size_type j = 0; j < size; j++)
-        {
-            result(i, j) = T(1);
-        }
-    }
-    return result;
-}
-
-template<Arithmetic T>
 inline T Matrix<T>::trace() const
 {
     T result = 0.0;
@@ -1076,6 +1068,20 @@ inline std::vector<T> Matrix<T>::diag(const Matrix<T>& mat)
 }
 
 template<Arithmetic T>
+inline Matrix<T> Matrix<T>::ones(const size_type& size)
+{
+    Matrix<T> result(size, size);
+    for (size_type i = 0; i < size; i++)
+    {
+        for (size_type j = 0; j < size; j++)
+        {
+            result(i, j) = T(1);
+        }
+    }
+    return result;
+}
+
+template<Arithmetic T>
 inline Matrix<T> Matrix<T>::ones(const size_type& rows, const size_type& cols)
 {
     Matrix<T> result(rows, cols);
@@ -1098,6 +1104,33 @@ inline void Matrix<T>::setOnes()
         {
             matrix[i][j] = T(1);
         }
+    }
+}
+
+template<Arithmetic T>
+Matrix<T> Matrix<T>::identity(const Matrix::size_type &size) {
+    Matrix<T> result(size, size);
+    for (size_type i = 0; i < size; i++)
+    {
+        result(i, i) = T(1);
+    }
+    return result;
+}
+
+template<Arithmetic T>
+Matrix<T> Matrix<T>::identity(const size_type& rows, const size_type& cols) {
+    Matrix<T> result(rows, cols);
+    for (size_type i = 0; i < rows; i++) {
+        result(i, i) = T(1);
+    }
+    return result;
+}
+
+template<Arithmetic T>
+void Matrix<T>::setIdentity() {
+    for (size_type i = 0; i < rows; i++)
+    {
+        matrix[i][i] = T(1);
     }
 }
 
