@@ -53,7 +53,7 @@ public:
     explicit Matrix(const V& vec);
 
     Matrix(const std::initializer_list<std::initializer_list<T>>& values);
-    Matrix(const std::initializer_list<T>& vec);
+    Matrix(const std::initializer_list<T> &values);
 
 
     // operators
@@ -108,17 +108,17 @@ public:
 
     // Matrix function
 
-    std::vector<T> getCol(const iterator_type& cols) const;
-    std::vector<T> getRow(const iterator_type& rows) const;
+    std::vector<T> getCol(const iterator_type& colI) const;
+    std::vector<T> getRow(const iterator_type& rowI) const;
 
-    std::vector<T> getCol(const iterator_type& cols, const size_type& count) const;
-    std::vector<T> getRow(const iterator_type& rows, const size_type& count) const;
+    std::vector<T> getCol(const iterator_type& colI, const size_type& count) const;
+    std::vector<T> getRow(const iterator_type& rowI, const size_type& count) const;
 
     void setCol(const std::vector<T>& colV, const iterator_type& colI) const;
-    void setRow(const std::vector<T>& rowV, const iterator_type& colI) const;
+    void setRow(const std::vector<T>& rowV, const iterator_type& rowI) const;
 
-    void setCol(const Matrix<T>& colV, const iterator_type& colI) const;
-    void setRow(const Matrix<T>& rowV, const iterator_type& colI) const;
+    void setCol(const Matrix<T>& A, const iterator_type& colI) const;
+    void setRow(const Matrix<T>& A, const iterator_type& rowI) const;
 
     Matrix transpose() const;
     void setTranspose();
@@ -134,9 +134,6 @@ public:
 
     T minor(const size_type& i, const size_type& j) const;
     static T minor(const size_type& i, const size_type& j, const Matrix<T>& mat);
-
-    // Matrix Decomposition
-    Matrix pseudoInverse() const; // TODO
 
     T trace() const;
     static T trace(const Matrix& mat);
@@ -167,8 +164,6 @@ private:
     size_type rows;
     size_type cols;
     T** matrix;
-
-    void setIdentity() const;
 };
 
 template <Arithmetic T>
@@ -654,19 +649,19 @@ inline bool operator!=(const Matrix<V>& A, const std::initializer_list<std::init
 }
 
 template <Arithmetic T>
-inline T& Matrix<T>::operator()(iterator_type rows, iterator_type cols) {
-    if (rows >= this->rows || cols >= this->cols) {
+inline T& Matrix<T>::operator()(iterator_type rowI, iterator_type colI) {
+    if (rowI >= this->rows || colI >= this->cols) {
         throw std::out_of_range("Index out of range");
     }
-    return matrix[rows][cols];
+    return matrix[rowI][colI];
 }
 
 template <Arithmetic T>
-inline T Matrix<T>::operator()(iterator_type rows, iterator_type cols) const {
-    if (rows >= this->rows || cols >= this->cols) {
+inline T Matrix<T>::operator()(iterator_type rowI, iterator_type colI) const {
+    if (rowI >= this->rows || colI >= this->cols) {
         throw std::out_of_range("Index out of range");
     }
-    return matrix[rows][cols];
+    return matrix[rowI][colI];
 }
 
 template<Arithmetic T>
