@@ -1,6 +1,4 @@
 #include "Function.h"
-#include <cmath>
-#include <stdexcept>
 
 // -------------------- Constant Implementations --------------------
 
@@ -29,9 +27,8 @@ double Variable::evaluate() const {
 Function* Variable::derivative(Variable* var) const {
     if (*this == var) {
         return new Constant(1.0);
-    } else {
-        return new Constant(0.0);
     }
+    return new Constant(0.0);
 }
 
 Function* Variable::clone() const {
@@ -39,7 +36,6 @@ Function* Variable::clone() const {
 }
 
 bool Variable::operator==(Variable* other) const {
-    // Corrected comparison: compare the pointers, not the addresses of the pointers
     return this->value == other->value;
 }
 
