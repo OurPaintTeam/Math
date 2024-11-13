@@ -32,11 +32,20 @@ jobs:
       - name: Build Project
         run: cmake --build build
 
+      - name: Run MatrixTest
+        run: ./build/MatrixTest
+
       - name: Run QRTest
         run: ./build/QRTest
 
-      - name: Run LMTest
-        run: ./build/LMTest
+      - name: Run FunctionTest
+        run: ./build/FunctionTest
+
+      - name: Run ErrorFunctionsTest
+        run: ./build/ErrorFunctionTest
+
+      - name: Run OptimizationTaskTest
+        run: ./build/OptimizationTaskTest
 
       - name: Run LSMTaskTest
         run: ./build/LSMTaskTest
@@ -44,14 +53,8 @@ jobs:
       - name: Run GradientOptimizerTest
         run: ./build/GradientOptimizerTest
 
-      - name: Run ErrorFunctionsTest
-        run: ./build/ErrorFunctionsTest
+      - name: Run NewtonOptimizerTests
+        run: ./build/NewtonOptimizerTest
 
-      - name: Run FunctionTest
-        run: ./build/FunctionTest
-
-      - name: Run MatrixTest
-        run: ./build/MatrixTest
-
-      - name: Run OptimizationTaskTest
-        run: ./build/OptimizationTaskTest
+      - name: Run LMTest
+        run: ./build/LMTest
