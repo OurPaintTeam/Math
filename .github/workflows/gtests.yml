@@ -1,4 +1,4 @@
-name: Run GTests
+name: Run GTests Sequentially
 
 on: [push, pull_request]
 
@@ -13,14 +13,18 @@ jobs:
         uses: jwlawson/actions-setup-cmake@v1
 
       - name: Install dependencies
-        run: sudo apt-get install -y cmake g++ libgtest-dev
+        run: sudo apt-get install -y cmake g++
 
-      - name: Build Google Test
+      - name: Download and Install Google Test
         run: |
-          cd /usr/src/gtest
-          sudo cmake .
-          sudo make
+          git clone https://github.com/google/googletest.git
+          cd googletest
+          mkdir build
+          cd build
+          cmake ..
+          make
           sudo cp *.a /usr/lib
+          cd ../..
 
       - name: Configure Project
         run: cmake -B build -S .
@@ -28,26 +32,26 @@ jobs:
       - name: Build Project
         run: cmake --build build
 
-      - name: Run Test QRTest
+      - name: Run QRTest
         run: ./build/tests/QRTest
 
-      - name: Run Test LMTest
+      - name: Run LMTest
         run: ./build/tests/LMTest
 
-      - name: Run Test LSMTaskTest
+      - name: Run LSMTaskTest
         run: ./build/tests/LSMTaskTest
 
-      - name: Run Test GradientOptimizerTest
+      - name: Run GradientOptimizerTest
         run: ./build/tests/GradientOptimizerTest
 
-      - name: Run Test ErrorFunctionsTest
+      - name: Run ErrorFunctionsTest
         run: ./build/tests/ErrorFunctionsTest
 
-      - name: Run Test FunctionTest
+      - name: Run FunctionTest
         run: ./build/tests/FunctionTest
 
-      - name: Run Test MatrixTest
+      - name: Run MatrixTest
         run: ./build/tests/MatrixTest
 
-      - name: Run Test OptimizationTaskTest
+      - name: Run OptimizationTaskTest
         run: ./build/tests/OptimizationTaskTest
