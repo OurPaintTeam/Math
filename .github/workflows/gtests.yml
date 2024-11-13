@@ -1,77 +1,53 @@
-name: Run GTests in Parallel
+name: Run GTests
 
 on: [push, pull_request]
 
 jobs:
-  build:
+  build_and_test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
       - name: Set up CMake
         uses: jwlawson/actions-setup-cmake@v1
+
       - name: Install dependencies
         run: sudo apt-get install -y cmake g++ libgtest-dev
+
       - name: Build Google Test
         run: |
           cd /usr/src/gtest
           sudo cmake .
           sudo make
           sudo cp *.a /usr/lib
+
       - name: Configure Project
         run: cmake -B build -S .
+
       - name: Build Project
         run: cmake --build build
 
-
-
-  test1:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
       - name: Run Test QRTest
         run: ./build/tests/QRTest
 
-  test2:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
       - name: Run Test LMTest
         run: ./build/tests/LMTest
 
-  test3:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
       - name: Run Test LSMTaskTest
         run: ./build/tests/LSMTaskTest
-  test4:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Run Test GradientOptimizerTest
         run: ./build/tests/GradientOptimizerTest
-  test5:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Run Test ErrorFunctionsTest
         run: ./build/tests/ErrorFunctionsTest
-  test6:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Run Test FunctionTest
         run: ./build/tests/FunctionTest
-  test7:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Run Test MatrixTest
         run: ./build/tests/MatrixTest
-  test8:
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Run Test OptimizationTaskTest
         run: ./build/tests/OptimizationTaskTest
