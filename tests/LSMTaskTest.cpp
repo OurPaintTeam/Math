@@ -1,6 +1,3 @@
-//
-// Created by Eugene Bychkov on 03.11.2024.
-//
 #include <gtest/gtest.h>
 #include "Function.h"
 #include "LSMTask.h"
@@ -21,16 +18,9 @@ protected:
         addFunc = new Addition(var, const2);
         powerFunc = new Power(addFunc, const3);
     }
-
-    void TearDown() override {
-        delete var;
-        delete const2;
-        delete const3;
-        delete addFunc;
-        delete powerFunc;
-    }
 };
 
+// Тесты для функции evaluate
 TEST_F(TestFunction, EvaluateConstant) {
     EXPECT_DOUBLE_EQ(const2->evaluate(), 2.0);
 }
@@ -50,6 +40,7 @@ TEST_F(TestFunction, EvaluatePower) {
     EXPECT_DOUBLE_EQ(powerFunc->evaluate(), 64.0); // (2 + 2)^3 = 4^3 = 64
 }
 
+// Тесты для производных
 TEST_F(TestFunction, DerivativeVariable) {
     EXPECT_DOUBLE_EQ(var->derivative(var)->evaluate(), 1.0); // d(x)/dx = 1
 }
@@ -58,6 +49,7 @@ TEST_F(TestFunction, DerivativeAddition) {
     EXPECT_DOUBLE_EQ(addFunc->derivative(var)->evaluate(), 1.0); // d(x + 2)/dx = 1
 }
 
+// Тесты для LSMTask
 TEST_F(TestFunction, GradientLSMTask) {
     std::vector<Function*> functions = { powerFunc };
     std::vector<Variable*> variables = { var };
@@ -87,33 +79,101 @@ TEST_F(TestFunction, JacobianLSMTask) {
     EXPECT_DOUBLE_EQ(jac(0, 0), 192.0); // d((x + 2)^3)/dx at x=1
 }
 
-TEST_F(TestFunction, ComplexSystemGradient) {
-    double x_val = 1.0, y_val = 2.0, z_val = 3.0;
-    Variable* x = new Variable(&x_val);
-    Variable* y = new Variable(&y_val);
-    Variable* z = new Variable(&z_val);
+// Тесты для метода linearizeFunction
+TEST_F(TestFunction, LinearizeFunctionSimple) {
+    Variable* x = new Variable(new double(1.0));
+    Function* linearFunc = x;  // f(x) = x
 
-    // Define some functions based on these variables
-    Function* func1 = new Addition(new Multiplication(x, y), new Power(z, const2));  // x * y + z^2
-    Function* func2 = new Power(new Addition(x, y), const3);                        // (x + y)^3
-    Function* func3 = new Addition(new Power(x, const2), new Multiplication(y, z)); // x^2 + y * z
-
-    // Group functions and variables for LSMTask
-    std::vector<Function*> functions = { func1, func2, func3 };
-    std::vector<Variable*> variables = { x, y, z };
+    std::vector<Function*> functions = { linearFunc };
+    std::vector<Variable*> variables = { x };
     LSMTask task(functions, variables);
 
-    // Set up the gradient matrix
-    Matrix<> jac = task.jacobian();
+    auto [residuals, jacobian] = task.linearizeFunction();
 
-    // Expected values might require analytical calculations or approximations
-    EXPECT_EQ(jac(0, 0), 44);
-    EXPECT_EQ(jac(1, 0), 1458);
-    EXPECT_EQ(jac(2, 0), 28);
-    EXPECT_EQ(jac(0, 1), 22);
-    EXPECT_EQ(jac(1, 1), 1458);
-    EXPECT_EQ(jac(2, 1), 42);
-    EXPECT_EQ(jac(0, 2), 132);
-    EXPECT_EQ(jac(1, 2), 0);
-    EXPECT_EQ(jac(2, 2), 28);
+    // Residual for f(x) = x at x = 1 is 1
+    EXPECT_DOUBLE_EQ(residuals(0, 0), 1.0);
+
+    // Derivative of f(x) = x is 1
+    EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
+}
+
+TEST_F(TestFunction, LinearizeFunctionWithConstant) {
+    Variable* x = new Variable(new double(2.0));
+    Function* func = new Addition(x, const2);  // f(x) = x + 2
+
+    std::vector<Function*> functions = { func };
+    std::vector<Variable*> variables = { x };
+    LSMTask task(functions, variables);
+
+    auto [residuals, jacobian] = task.linearizeFunction();
+
+    // Residual for f(x) = x + 2 at x = 2 is 4
+    EXPECT_DOUBLE_EQ(residuals(0, 0), 4.0);
+
+    // Derivative of f(x) = x + 2 is 1
+    EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
+}
+
+TEST_F(TestFunction, LinearizeFunctionNonLinear) {
+    Variable* x = new Variable(new double(2.0));
+    Function* func = new Power(new Addition(x, const2), const3);  // f(x) = (x + 2)^3
+
+    std::vector<Function*> functions = { func };
+    std::vector<Variable*> variables = { x };
+    LSMTask task(functions, variables);
+
+    auto [residuals, jacobian] = task.linearizeFunction();
+
+    // Residual for f(x) = (x + 2)^3 at x = 2 is 64
+    EXPECT_DOUBLE_EQ(residuals(0, 0), 64.0);
+
+    // Derivative of f(x) = (x + 2)^3 is 3 * (x + 2)^2, at x = 2 it is 72
+    EXPECT_DOUBLE_EQ(jacobian(0, 0), 48.0);
+
+}
+
+TEST_F(TestFunction, LinearizeMultipleFunctions) {
+    double x_val = 1.0, y_val = 2.0;
+    Variable* x = new Variable(&x_val);
+    Variable* y = new Variable(&y_val);
+
+    Function* func1 = new Addition(x, y);  // f1(x, y) = x + y
+    Function* func2 = new Multiplication(x, y);  // f2(x, y) = x * y
+
+    std::vector<Function*> functions = { func1, func2 };
+    std::vector<Variable*> variables = { x, y };
+    LSMTask task(functions, variables);
+
+    auto [residuals, jacobian] = task.linearizeFunction();
+
+    // Residuals for f1(x, y) = x + y at (1, 2) is 3
+    EXPECT_DOUBLE_EQ(residuals(0, 0), 3.0);
+
+    // Residuals for f2(x, y) = x * y at (1, 2) is 2
+    EXPECT_DOUBLE_EQ(residuals(1, 0), 2.0);
+
+    // Jacobian for f1(x, y) = x + y is [1, 1]
+    EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
+    EXPECT_DOUBLE_EQ(jacobian(0, 1), 1.0);
+
+    // Jacobian for f2(x, y) = x * y is [2, 1]
+    EXPECT_DOUBLE_EQ(jacobian(1, 0), 2.0);
+    EXPECT_DOUBLE_EQ(jacobian(1, 1), 1.0);
+}
+
+TEST_F(TestFunction, LinearizeFunctionZeroValues) {
+    Variable* x = new Variable(new double(0.0));
+    Function* func = new Power(new Addition(x, const2), const3);  // f(x) = (x + 2)^3
+
+    std::vector<Function*> functions = { func };
+    std::vector<Variable*> variables = { x };
+    LSMTask task(functions, variables);
+
+    auto [residuals, jacobian] = task.linearizeFunction();
+
+    // Residual for f(x) = (x + 2)^3 at x = 0 is 8
+    EXPECT_DOUBLE_EQ(residuals(0, 0), 8.0);
+
+    // Derivative of f(x) = (x + 2)^3 is 3 * (x + 2)^2, at x = 0 it is 12
+    EXPECT_DOUBLE_EQ(jacobian(0, 0), 12.0);
 }

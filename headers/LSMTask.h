@@ -14,12 +14,12 @@ class LSMTask: public Task{
 public:
     LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(std::move(functions)), m_X(std::move(x)) {
         int i = 0;
-        for (auto &function : m_functions){
+        for (auto &function: m_functions) {
             Constant *c = new Constant(2);
             Power *p = new Power(function, c);
             if (i == 0) {
                 c_function = p;
-            }else{
+            } else {
                 c_function = new Addition(c_function, p);
             }
             i++;
@@ -30,7 +30,7 @@ public:
     }
     inline std::vector<double> getValues() const override{
         std::vector<double> values;
-        for (auto & x : m_X) {
+        for (auto &x: m_X) {
             values.push_back(x->evaluate());
         }
         return values;
@@ -68,6 +68,26 @@ public:
             }
         }
         return jac;
+    }
+
+    std::pair<Matrix<>, Matrix<> > linearizeFunction() const {
+        Matrix<> residuals(m_functions.size(), 1);
+        Matrix<> jac(m_functions.size(), m_X.size());
+
+        for (int i = 0; i < m_functions.size(); ++i) {
+            residuals(i, 0) = m_functions[i]->evaluate();
+            for (int j = 0; j < m_X.size(); ++j) {
+                jac(i, j) = m_functions[i]->derivative(m_X[j])->evaluate();
+            }
+        }
+        return {residuals, jac};
+    }
+
+    ~LSMTask() {
+        delete c_function;
+        for (auto func: m_functions) {
+            delete func;
+        }
     }
 };
 
