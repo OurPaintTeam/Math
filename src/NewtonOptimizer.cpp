@@ -25,16 +25,10 @@ void NewtonOptimizer::optimize(){
             break;
         }
         Matrix<> hess = task->hessian();
-        for (int i = 0; i < hess.rows_size(); i++) {
-            for (int j = 0; j < hess.cols_size(); j++) {
-                std::cout << hess(i, j) << " ";
-            }
-            std::cout << std::endl;
-        }
         QR qrH = hess;
-        qrH.qrGS();
-        Matrix<> HInv = qrH.pseudoinverse();
-        Matrix<> step = HInv * grad;
+        qrH.qr();
+        Matrix<> HInv = qrH.pseudoInverse();
+        Matrix<> step = (HInv + Matrix<>::identity(HInv.cols_size()) * 0.0001) * grad;
         for (int i = 0; i < result.size(); i++) {
             result[i] -= step(i, 0);
         }

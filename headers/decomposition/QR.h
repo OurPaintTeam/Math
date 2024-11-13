@@ -27,10 +27,10 @@ public:
 	friend bool operator==(const QR& A, const QR& B);
 	friend bool operator!=(const QR& A, const QR& B);
 
-	void qr();
+    void qr();
 
 	// Classical Gram-Schmidt,
-	void qrCGS();
+    void qrCGS();
 
 	// Modified Gram - Schmidt
 	void qrMGS();

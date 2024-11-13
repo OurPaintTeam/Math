@@ -1,6 +1,6 @@
-#include "../headers/decomposition/QR.h"
+#include "QR.h"
 
-inline QR::QR(const Matrix<>& _A) {
+QR::QR(const Matrix<>& _A) {
     if (_A.rows_size() < 1 || _A.cols_size() < 1) {
         throw std::runtime_error("Matrix should be: rows > 0 && cols > 0");
     }
@@ -9,8 +9,7 @@ inline QR::QR(const Matrix<>& _A) {
 
 QR::QR(const QR &other) : _A(other._A), _Q(other._Q), _R(other._R) {}
 
-inline void QR::qr() {
-
+void QR::qr() {
     qrMGS();
 }
 
@@ -24,7 +23,7 @@ QR &QR::operator=(const QR &other) {
     return *this;
 }
 
-inline QR& QR::operator=(QR&& other) noexcept {
+QR& QR::operator=(QR&& other) noexcept {
     QR temp(std::move(other));
     std::swap(_A, temp._A);
     std::swap(_Q, temp._Q);
@@ -40,7 +39,7 @@ bool operator!=(const QR &A, const QR &B) {
     return !(A == B);
 }
 
-inline void QR::qrCGS() {
+void QR::qrCGS() {
     size_t m = _A.rows_size();
     size_t n = _A.cols_size();
     size_t min_mn = std::min(m, n);
