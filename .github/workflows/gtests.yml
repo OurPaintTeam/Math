@@ -23,7 +23,7 @@ jobs:
           cd build
           cmake ..
           make
-          sudo cp *.a /usr/lib
+          sudo cp lib/*.a /usr/lib
           cd ../..
 
       - name: Configure Project
