@@ -25,7 +25,7 @@ include_directories(headers/Optimizers)
 include_directories(headers/decomposition)
 
 # Сборка основной библиотеки
-add_library(MinimizerOptimizer src/Function.cpp src/ErrorFunctions.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
+add_library(MinimizerOptimizer src/QR.cpp src/Function.cpp src/ErrorFunctions.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
 
 # Сборка тестов
 enable_testing()
@@ -43,6 +43,12 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(gtest)
 
 # Добавляем исполняемые файлы тестов
+add_executable(MatrixTest tests/TestsMatrix.cpp)
+target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
+
+add_executable(QRTest tests/TestsQR.cpp)
+target_link_libraries(QRTest MinimizerOptimizer gtest gtest_main)
+
 add_executable(FunctionTest tests/FunctionTest.cpp)
 target_link_libraries(FunctionTest MinimizerOptimizer gtest gtest_main)
 
@@ -55,15 +61,8 @@ target_link_libraries(GradientOptimizerTest MinimizerOptimizer gtest gtest_main)
 add_executable(NewtonOptimizerTest tests/NewtonOptimizerTest.cpp)
 target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
 
-
 add_executable(LSMTaskTest tests/LSMTaskTest.cpp)
 target_link_libraries(LSMTaskTest MinimizerOptimizer gtest gtest_main)
-
-add_executable(MatrixTest tests/TestsMatrix.cpp)
-target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
-
-add_executable(QRTest tests/TestsQR.cpp)
-target_link_libraries(QRTest MinimizerOptimizer gtest gtest_main)
 
 add_executable(ErrorFunctionTest tests/ErrorFunctionsTests.cpp)
 target_link_libraries(ErrorFunctionTest MinimizerOptimizer gtest gtest_main)

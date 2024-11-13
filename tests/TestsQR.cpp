@@ -137,7 +137,7 @@ TEST(QR_CGS, qrGS_part1) {
             {5, 6}
     };
     QR qr(A);
-    qr.qrСGS();
+    qr.qrCGS();
     
     // VolframAlpha result
     Matrix<> Q = {
@@ -175,7 +175,7 @@ TEST(QR_CGS, qrGS_part2) {
     };
 
     QR qr(A);
-    qr.qrСGS();
+    qr.qrCGS();
 
     // VolframAlpha result
     Matrix<> Q = {
@@ -284,7 +284,7 @@ TEST(QR_CGS, qrGS_part3) {
 
     // compute
     QR qr(A);
-    qr.qrСGS();
+    qr.qrCGS();
 
     // A = QR
     Matrix<> A_qr = qr.Q() * qr.R();
@@ -416,7 +416,7 @@ TEST(QR_CGS, qrGS_part4) {
 
     // compute
     QR qr(A);
-    qr.qrСGS();
+    qr.qrCGS();
 
     // A = QR
     Matrix<> A_qr = qr.Q() * qr.R();
