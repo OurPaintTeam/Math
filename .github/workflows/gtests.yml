@@ -18,9 +18,11 @@ jobs:
           sudo cmake .
           sudo make
           sudo cp *.a /usr/lib
-      - name: Configure and Build Project
+      - name: Configure Project
         run: cmake -B build -S .
+      - name: Build Project
         run: cmake --build build
+
 
 
   test1:
