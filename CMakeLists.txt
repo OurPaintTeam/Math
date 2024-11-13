@@ -25,7 +25,7 @@ include_directories(headers/Optimizers)
 include_directories(headers/decomposition)
 
 # Сборка основной библиотеки
-add_library(MinimizerOptimizer src/QR.cpp src/Function.cpp src/ErrorFunctions.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
+add_library(MinimizerOptimizer src/LevenbergMarquardtSolver.cpp src/QR.cpp src/Function.cpp src/ErrorFunctions.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
 
 # Сборка тестов
 enable_testing()
@@ -70,6 +70,8 @@ target_link_libraries(ErrorFunctionTest MinimizerOptimizer gtest gtest_main)
 add_executable(LMTest tests/LMTest.cpp)
 target_link_libraries(LMTest MinimizerOptimizer gtest gtest_main)
 
+add_executable(LMTestWithOurMatrix tests/OurLMTest.cpp)
+target_link_libraries(LMTestWithOurMatrix MinimizerOptimizer gtest gtest_main)
 # Запускаем тесты
 add_test(NAME FunctionTests COMMAND FunctionTest)
 add_test(NAME OptimizationTaskTest COMMAND OptimizationTaskTest)
@@ -79,3 +81,4 @@ add_test(NAME MatrixTest COMMAND MatrixTest)
 add_test(NAME QRTest COMMAND QRTest)
 add_test(NAME ErrorFunctionTest COMMAND ErrorFunctionTest)
 add_test(NAME LMTest COMMAND LMTest)
+add_test(NAME LMTestWithOurMatrix COMMAND LMTestWithOurMatrix)

@@ -58,3 +58,6 @@ jobs:
 
       - name: Run LMTest
         run: ./build/LMTest
+
+      - name: Run LMTest
+        run: ./build/LMTestWithOurMatrix
