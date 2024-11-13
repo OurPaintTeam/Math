@@ -1,0 +1,53 @@
+name: Run GTests
+
+on: [push, pull_request]
+
+jobs:
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up CMake
+        uses: jwlawson/actions-setup-cmake@v1
+
+      - name: Install dependencies
+        run: sudo apt-get install -y cmake g++ libgtest-dev
+
+      - name: Build Google Test
+        run: |
+          cd /usr/src/gtest
+          sudo cmake .
+          sudo make
+          sudo cp *.a /usr/lib
+
+      - name: Configure Project
+        run: cmake -B build -S .
+
+      - name: Build Project
+        run: cmake --build build
+
+      - name: Run Test QRTest
+        run: ./build/tests/QRTest
+
+      - name: Run Test LMTest
+        run: ./build/tests/LMTest
+
+      - name: Run Test LSMTaskTest
+        run: ./build/tests/LSMTaskTest
+
+      - name: Run Test GradientOptimizerTest
+        run: ./build/tests/GradientOptimizerTest
+
+      - name: Run Test ErrorFunctionsTest
+        run: ./build/tests/ErrorFunctionsTest
+
+      - name: Run Test FunctionTest
+        run: ./build/tests/FunctionTest
+
+      - name: Run Test MatrixTest
+        run: ./build/tests/MatrixTest
+
+      - name: Run Test OptimizationTaskTest
+        run: ./build/tests/OptimizationTaskTest
