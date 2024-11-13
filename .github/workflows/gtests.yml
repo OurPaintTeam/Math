@@ -33,25 +33,25 @@ jobs:
         run: cmake --build build
 
       - name: Run QRTest
-        run: ./build/tests/QRTest
+        run: ./build/QRTest
 
       - name: Run LMTest
-        run: ./build/tests/LMTest
+        run: ./build/LMTest
 
       - name: Run LSMTaskTest
-        run: ./build/tests/LSMTaskTest
+        run: ./build/LSMTaskTest
 
       - name: Run GradientOptimizerTest
-        run: ./build/tests/GradientOptimizerTest
+        run: ./build/GradientOptimizerTest
 
       - name: Run ErrorFunctionsTest
-        run: ./build/tests/ErrorFunctionsTest
+        run: ./build/ErrorFunctionsTest
 
       - name: Run FunctionTest
-        run: ./build/tests/FunctionTest
+        run: ./build/FunctionTest
 
       - name: Run MatrixTest
-        run: ./build/tests/MatrixTest
+        run: ./build/MatrixTest
 
       - name: Run OptimizationTaskTest
-        run: ./build/tests/OptimizationTaskTest
+        run: ./build/OptimizationTaskTest
