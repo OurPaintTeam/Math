@@ -105,3 +105,97 @@ TEST(SectionSectionPerpendicularErrorTest, IncorrectVariableCount) {
     std::vector<Variable*> incorrectVariables = { new Variable(p1), new Variable(p2), new Variable(p3) };
     EXPECT_THROW(SectionSectionPerpendicularError errorFunc(incorrectVariables), std::invalid_argument);
 }
+//------------------------- SECTIONCIRCLEDISTANCE TESTS -------------------------
+TEST(SectionCircleDistanceErrorTest, CorrectErrorValue) {
+    double xs[] = {0.0}; double ys[] = {0.0};
+    double xe[] = {4.0}; double ye[] = {0.0};
+    double xc[] = {2.0}; double yc[] = {2.0};
+    double r[]  = {2.0};
+
+    std::vector<Variable*> variables = {
+            new Variable(xs), new Variable(ys),
+            new Variable(xe), new Variable(ye),
+            new Variable(xc), new Variable(yc),
+            new Variable(r)
+    };
+
+    SectionCircleDistanceError errorFunc(variables, 0.0);
+    EXPECT_NEAR(errorFunc.evaluate(), -2.2495131, 1e-5);
+}
+
+TEST(SectionCircleDistanceErrorTest, IncorrectVariableCount) {
+    double xs[] = {0.0}; double ys[] = {0.0};
+    double xe[] = {4.0}; double ye[] = {0.0};
+    double xc[] = {2.0}; double yc[] = {2.0};
+
+    std::vector<Variable*> variables = {
+            new Variable(xs), new Variable(ys),
+            new Variable(xe), new Variable(ye),
+            new Variable(xc), new Variable(yc)
+    };
+
+    EXPECT_THROW(SectionCircleDistanceError errorFunc(variables, 0.0), std::invalid_argument);
+}
+
+//------------------------- SECTIONONCIRCLE TESTS -------------------------
+TEST(SectionOnCircleErrorTest, CorrectZeroErrorValue) {
+    double xs[] = {2.0}; double ys[] = {0.0};
+    double xe[] = {0.0}; double ye[] = {2.0};
+    double xc[] = {0.0}; double yc[] = {0.0};
+    double r[]  = {2.0};
+
+    std::vector<Variable*> variables = {
+            new Variable(xs), new Variable(ys),
+            new Variable(xe), new Variable(ye),
+            new Variable(xc), new Variable(yc),
+            new Variable(r)
+    };
+
+    SectionOnCircleError errorFunc(variables);
+    EXPECT_NEAR(errorFunc.evaluate(), -2.0, 1e-5);
+}
+
+TEST(SectionOnCircleErrorTest, IncorrectVariableCount) {
+    double xs[] = {2.0}; double ys[] = {0.0};
+    double xe[] = {0.0}; double ye[] = {2.0};
+    double xc[] = {0.0}; double yc[] = {0.0};
+
+    std::vector<Variable*> variables = {
+            new Variable(xs), new Variable(ys),
+            new Variable(xe), new Variable(ye),
+            new Variable(xc), new Variable(yc)
+    };
+
+    EXPECT_THROW(SectionOnCircleError errorFunc(variables), std::invalid_argument);
+}
+//------------------------- SECTIONSECTIONANGLE TESTS -------------------------
+TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
+    double x1s[] = {0.0}; double y1s[] = {0.0};
+    double x1e[] = {1.0}; double y1e[] = {0.0};
+    double x2s[] = {2.0}; double y2s[] = {2.0};
+    double x2e[] = {3.0}; double y2e[] = {3.0};
+
+    std::vector<Variable*> variables = {
+            new Variable(x1s), new Variable(y1s),
+            new Variable(x1e), new Variable(y1e),
+            new Variable(x2s), new Variable(y2s),
+            new Variable(x2e), new Variable(y2e)
+    };
+
+    SectionSectionAngleError* errorFunc = new SectionSectionAngleError(variables, 45);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-2);
+}
+
+TEST(SectionSectionAngleErrorTest, IncorrectVariableCount) {
+    double x1s[] = {0.0}; double y1s[] = {0.0};
+    double x1e[] = {1.0}; double y1e[] = {0.0};
+    double x2s[] = {0.0}; double y2s[] = {0.0};
+
+    std::vector<Variable*> variables = {
+            new Variable(x1s), new Variable(y1s),
+            new Variable(x1e), new Variable(y1e),
+            new Variable(x2s), new Variable(y2s)
+    };
+
+    EXPECT_THROW(SectionSectionAngleError errorFunc(variables, 90.0), std::invalid_argument);
+}

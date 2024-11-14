@@ -82,7 +82,7 @@ public:
 };
 
 //6
-class SectionOnCircleError : public ErrorFunctions {
+class SectionOnCircleError : public SectionCircleDistanceError {
 public:
     SectionOnCircleError(std::vector<Variable *> x);
 
