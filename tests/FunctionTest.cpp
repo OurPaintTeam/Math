@@ -226,6 +226,111 @@ TEST_F(FunctionTest, TestLogarithmOfNonPositive) {
     delete f;
 }
 
+// -------------------- Sqrt Test Implementation --------------------
+TEST_F(FunctionTest, TestSqrt) {
+    double x_val = 4.0;
+    Variable x(&x_val);
+    std::unique_ptr<Function> f(new Sqrt(x.clone()));
+    double res = f->evaluate();
+    EXPECT_EQ(res, std::sqrt(x_val)); // Sqrt(x)
+
+    // 2 * Sqrt(5y)
+    double y_val = 2.0;
+    Variable y(&y_val);
+    Function* mu(new Multiplication(new Constant(5.0), y.clone()));
+    Function* sqrtFunc(new Sqrt(mu->clone()));
+    Function* mu2(new Multiplication(new Constant(2.0), sqrtFunc->clone()));
+    EXPECT_EQ(mu2->evaluate(), 2 * std::sqrt(5 * y_val)); // 2 * Sqrt(5y)
+
+    // d/dy (2 * Sqrt(5y)) = (2 * (5)) / (2 * Sqrt(5y)) = 5 / Sqrt(5y)
+    Function* mu2D(mu2->derivative(&y));
+    double expected_derivative = 5.0 / std::sqrt(5 * y_val);
+    EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+}
+
+
+TEST_F(FunctionTest, TestSin) {
+    double x_val = 1;
+    Variable x(&x_val);
+    Function* f = new Sin(x.clone());
+    double res = f->evaluate();
+    EXPECT_EQ(res, std::sin(x_val));
+
+    // Creating func:  2 * sin(5y)
+    double y_val = 7;
+    Variable y(&y_val);
+    Function* mu = new Multiplication(new Constant(5.0), y.clone());
+    Function* sinFunc = new Sin(mu);
+    Function* mu2 = new Multiplication(new Constant(2.0), sinFunc);
+    EXPECT_EQ(mu2->evaluate(), 2 * std::sin(5 * y_val));
+    Function* mu2D = mu2->derivative(&y);
+    EXPECT_EQ(mu2D->evaluate(), 10 * std::cos(5 * y_val));
+}
+
+TEST_F(FunctionTest, TestCos) {
+    double x_val = 1;
+    Variable x(&x_val);
+    Function* f = new Cos(x.clone());
+    double res = f->evaluate();
+    EXPECT_EQ(res, std::cos(x_val));
+
+    // Creating func:  2 * cos(5y)
+    double y_val = 7;
+    Variable y(&y_val);
+    Function* mu = new Multiplication(new Constant(5.0), y.clone());
+    Function* cosFunc = new Cos(mu);
+    Function* mu2 = new Multiplication(new Constant(2.0), cosFunc);
+    EXPECT_EQ(mu2->evaluate(), 2 * std::cos(5 * y_val));
+    Function* mu2D = mu2->derivative(&y);
+    EXPECT_EQ(mu2D->evaluate(), -10 * std::sin(5 * y_val));
+}
+
+// -------------------- Asin Test Implementation --------------------
+TEST_F(FunctionTest, TestAsin) {
+    double x_val = 0.5;
+    Variable x(&x_val);
+    Function* f = new Asin(x.clone());
+    double res = f->evaluate();
+    EXPECT_EQ(res, std::asin(x_val)); // Asin(x)
+
+    // 2 * Asin(5y)
+    double y_val = 0.1;
+    Variable y(&y_val);
+    Function* mu = new Multiplication(new Constant(5.0), y.clone());
+    Function* asinFunc = new Asin(mu);
+    Function* mu2 = new Multiplication(new Constant(2.0), asinFunc);
+    EXPECT_EQ(mu2->evaluate(), 2 * std::asin(5 * y_val)); // 2 * Asin(5y)
+
+    // d/dy (2 * Asin(5y)) = 10 / sqrt(1 - (5y)^2)
+    Function* mu2D = mu2->derivative(&y);
+    double expected_derivative = 10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
+    EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+}
+
+// -------------------- Acos Test Implementation --------------------
+TEST_F(FunctionTest, TestAcos) {
+    double x_val = 0.5;
+    Variable x(&x_val);
+    Function* f = new Acos(x.clone());
+    double res = f->evaluate();
+    EXPECT_EQ(res, std::acos(x_val)); // Acos(x)
+
+    // 2 * Acos(5y)
+    double y_val = 0.1;
+    Variable y(&y_val);
+    Function* mu = new Multiplication(new Constant(5.0), y.clone());
+    Function* acosFunc = new Acos(mu);
+    Function* mu2 = new Multiplication(new Constant(2.0), acosFunc);
+    EXPECT_EQ(mu2->evaluate(), 2 * std::acos(5 * y_val)); // 2 * Acos(5y)
+
+    // d/dy (2 * Acos(5y)) = -10 / sqrt(1 - (5y)^2)
+    Function* mu2D = mu2->derivative(&y);
+    double expected_derivative = -10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
+    EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+}
+
+
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

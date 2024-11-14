@@ -215,3 +215,142 @@ Function* Logarithm::derivative(Variable* var) const {
 Function* Logarithm::clone() const {
     return new Logarithm(argument->clone());
 }
+
+// -------------------- Sqrt Implementations --------------------
+
+Sqrt::Sqrt(Function *argument)
+        : argument(argument) {}
+
+double Sqrt::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::sqrt(arg_value);
+}
+
+Function *Sqrt::derivative(Variable* var) const {
+    // (sqrt(f(x)))' = f'(x) / (2 * sqrt(f(x)))
+
+    // f'(x)
+    Function* f_prime = argument->derivative(var);
+
+    // 2 * sqrt(f(x))
+    Function* two = new Constant(2.0);
+    Function* sqrt_f = this->clone(); // sqrt(f(x))
+    Function* denominator = new Multiplication(two, sqrt_f);
+
+    // f'(x) / (2 * sqrt(f(x)))
+    return new Division(f_prime, denominator);
+}
+
+Function *Sqrt::clone() const {
+    return new Sqrt(argument->clone());
+}
+
+
+// -------------------- Sin Implementations --------------------
+
+Sin::Sin(Function *argument)
+        : argument(argument) {}
+
+double Sin::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::sin(arg_value);
+}
+
+Function *Sin::derivative(Variable* var) const {
+    // (sin(f(x))' = f'(x) * cos(f(x)));
+    Function* f_prime = argument->derivative(var);
+    return new Multiplication(f_prime, new Cos(argument));
+}
+
+Function *Sin::clone() const {
+    return new Sin(argument->clone());
+}
+
+// -------------------- Cos Implementations --------------------
+
+Cos::Cos(Function *argument)
+        : argument(argument) {}
+
+double Cos::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::cos(arg_value);
+}
+
+Function *Cos::derivative(Variable* var) const {
+    // (cos(f(x))' = (-1) * f'(x) * sin(f(x)));
+    Function *f_prime = argument->derivative(var);
+    Function *sin_func = new Sin(argument->clone());
+    Function *mul = new Multiplication(f_prime, sin_func);
+    return new Multiplication(new Constant(-1), mul);
+}
+
+Function *Cos::clone() const {
+    return new Cos(argument->clone());
+}
+
+// -------------------- Asin Implementations --------------------
+
+Asin::Asin(Function *argument)
+        : argument(argument) {}
+
+double Asin::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::asin(arg_value);
+}
+
+Function *Asin::derivative(Variable* var) const {
+    // (acos(f(x)))' = f'(x) / sqrt(1 - f(x)^2)
+    Function* f_prime = argument->derivative(var);
+
+    // 1 - f(x)^2
+    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+    Function* one_minus_f_squared = new Subtraction(new Constant(1.0), f_squared);
+
+    // sqrt(1 - f(x)^2)
+    Function* denominator = new Sqrt(one_minus_f_squared);
+
+    // 1 / sqrt(1 - f(x)^2)
+    Function* reciprocal = new Division(new Constant(1.0), denominator);
+
+    // f'(x) * (1 / sqrt(1 - f(x)^2))
+    return new Multiplication(f_prime, reciprocal);
+}
+
+Function *Asin::clone() const {
+    return new Asin(argument->clone());
+}
+
+// -------------------- Acos Implementations --------------------
+
+Acos::Acos(Function *argument)
+        : argument(argument) {}
+
+double Acos::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::acos(arg_value);
+}
+
+Function *Acos::derivative(Variable* var) const {
+    // (acos(f(x)))' = -f'(x) / sqrt(1 - f(x)^2)
+    Function* f_prime = argument->derivative(var);
+
+    // 1 - f(x)^2
+    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+    Function* one_minus_f_squared = new Subtraction(new Constant(1.0), f_squared);
+
+    // sqrt(1 - f(x)^2)
+    Function* denominator = new Sqrt(one_minus_f_squared);
+
+    // 1 / sqrt(1 - f(x)^2)
+    Function* reciprocal = new Division(new Constant(1.0), denominator);
+
+    // -1
+    Function* negative_one = new Constant(-1.0);
+
+    // -f'(x) * (1 / sqrt(1 - f(x)^2))
+    return new Multiplication(new Multiplication(negative_one, f_prime), reciprocal);
+}
+
+Function *Acos::clone() const {
+    return new Acos(argument->clone());
+}

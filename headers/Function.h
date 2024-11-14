@@ -1,12 +1,32 @@
-//
-// Created by Ardrass on 20.10.2024
-//
-
 #ifndef MINIMIZEROPTIMIZER_FUNCTION_H
 #define MINIMIZEROPTIMIZER_FUNCTION_H
 
 #include <cmath>
 #include <stdexcept>
+
+
+
+// Function
+
+//  Constant
+//  Variable
+//  Addition
+//  Subtraction
+//  Multiplication
+//  Division
+//  Power
+//  Exponential
+//  Logarithm
+//  Sqrt
+//  Sin
+//  Cos
+//  Asin
+//  Acos
+
+
+
+
+
 
 // Forward declaration
 class Variable;
@@ -213,6 +233,103 @@ public:
     // Disable copy constructor and copy assignment to prevent shallow copies
     Logarithm(const Logarithm&) = delete;
     Logarithm& operator=(const Logarithm&) = delete;
+};
+
+// class sqrt (sqrt(x))
+class Sqrt : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Sqrt(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Sqrt(const Sqrt&) = delete;
+    Sqrt& operator=(const Sqrt&) = delete;
+};
+
+// Class sin (sin(x))
+class Sin : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Sin(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Sin(const Sin&) = delete;
+    Sin& operator=(const Sin&) = delete;
+};
+
+// Class cos (cos(x))
+class Cos : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Cos(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Cos(const Cos&) = delete;
+    Cos& operator=(const Cos&) = delete;
+};
+
+// Class sin (sin(x))
+class Asin : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Asin(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Asin(const Asin&) = delete;
+    Asin& operator=(const Asin&) = delete;
+};
+
+// Class cos (cos(x))
+class Acos : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Acos(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Acos(const Acos&) = delete;
+    Acos& operator=(const Acos&) = delete;
 };
 
 #endif // MINIMIZEROPTIMIZER_FUNCTION_H
