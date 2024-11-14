@@ -32,7 +32,7 @@ concept VectorVectorType = IsVector<T> && IsVector<typename T::value_type>;
 // The matrix class
 template <Arithmetic T = double>
 class Matrix {
-protected:
+public:
     using size_type = size_t;
     using iterator_type = size_t;
 
@@ -64,42 +64,41 @@ public:
 
     // Matrix and Matrix operators
 
-    template <Arithmetic V> friend const Matrix<V> operator+(const Matrix<V>& A, const Matrix<V>& B);
-    template <Arithmetic V> friend const Matrix<V> operator-(const Matrix<V>& A, const Matrix<V>& B);
-    template <Arithmetic V> friend const Matrix<V> operator*(const Matrix<V>& A, const Matrix<V>& B);
+    //operator+(const Matrix<T>& A, const Matrix<T>& B)
+    //operator-(const Matrix<T>& A, const Matrix<T>& B)
+    //operator*(const Matrix<T>& A, const Matrix<T>& B)
 
+    //Matrix<V>& operator+=(Matrix<T>& A, const Matrix<T>& B)
+    //Matrix<V>& operator-=(Matrix<T>& A, const Matrix<T>& B)
+    //Matrix<V>& operator*=(Matrix<T>& A, const Matrix<T>& B)
 
-    template <Arithmetic V> friend Matrix<V>& operator+=(Matrix<V>& A, const Matrix<V>& B);
-    template <Arithmetic V> friend Matrix<V>& operator-=(Matrix<V>& A, const Matrix<V>& B);
-    template <Arithmetic V> friend Matrix<V>& operator*=(Matrix<V>& A, const Matrix<V>& B);
-
-    template <Arithmetic V> friend bool operator==(const Matrix<V>& A, const Matrix<V>& B);
-    template <Arithmetic V> friend bool operator!=(const Matrix<V>& A, const Matrix<V>& B);
+    //bool operator==(const Matrix<T>& A, const Matrix<T>& B)
+    //bool operator!=(const Matrix<T>& A, const Matrix<T>& B)
 
     // Matrix and scalar operators
 
-    template <Arithmetic V> friend const Matrix<V> operator+(const Matrix<V>& A, const V& scalar);
-    template <Arithmetic V> friend const Matrix<V> operator-(const Matrix<V>& A, const V& scalar);
-    template <Arithmetic V> friend const Matrix<V> operator*(const Matrix<V>& A, const V& scalar);
-    template <Arithmetic V> friend const Matrix<V> operator/(const Matrix<V>& A, const V& scalar);
+    //Matrix<T> operator+(const Matrix<T>& A, const V& scalar)
+    //Matrix<T> operator-(const Matrix<T>& A, const V& scalar)
+    //Matrix<T> operator*(const Matrix<T>& A, const V& scalar)
+    //Matrix<T> operator/(const Matrix<t>& A, const V& scalar)
 
-    template <Arithmetic V> friend Matrix<V>& operator+=(Matrix<V>& A, const V& scalar);
-    template <Arithmetic V> friend Matrix<V>& operator-=(Matrix<V>& A, const V& scalar);
-    template <Arithmetic V> friend Matrix<V>& operator*=(Matrix<V>& A, const V& scalar);
-    template <Arithmetic V> friend Matrix<V>& operator/=(Matrix<V>& A, const V& scalar);
+    //Matrix<T>& operator+=(Matrix<T>& A, const V& scalar)
+    //Matrix<T>& operator-=(Matrix<T>& A, const V& scalar)
+    //Matrix<T>& operator*=(Matrix<T>& A, const V& scalar)
+    //Matrix<T>& operator/=(Matrix<T>& A, const V& scalar)
 
     // Matrix and List operators
 
-    template <Arithmetic V> friend const Matrix<V> operator+(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
-    template <Arithmetic V> friend const Matrix<V> operator-(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
-    template <Arithmetic V> friend const Matrix<V> operator*(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
+    //Matrix<T> operator+(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
+    //Matrix<T> operator-(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
+    //Matrix<T> operator*(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
 
-    template <Arithmetic V> friend Matrix<V>& operator+=(Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
-    template <Arithmetic V> friend Matrix<V>& operator-=(Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
-    template <Arithmetic V> friend Matrix<V>& operator*=(Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
+    //Matrix<T>& operator+=(Matrix<T>& A, const std::initializer_list<std::initializer_list<T>> L)
+    //Matrix<T>& operator-=(Matrix<T>& A, const std::initializer_list<std::initializer_list<T>> L)
+    //Matrix<T>& operator*=(Matrix<T>& A, const std::initializer_list<std::initializer_list<T>> L)
 
-    template <Arithmetic V> friend bool operator==(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
-    template <Arithmetic V> friend bool operator!=(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
+    //bool operator==(const Matrix<T>& A, const std::initializer_list<std::initializer_list<T>> L)
+    //bool operator!=(const Matrix<T>& A, const std::initializer_list<std::initializer_list<T>> L)
 
     // Element Access
     T& operator()(iterator_type rowIndex, iterator_type colIndex);
@@ -218,9 +217,9 @@ template<VectorVectorType V>
 inline Matrix<T>::Matrix(const V& vec) : rows(vec.size()), cols(vec[0].size())
 {
     matrix = new T * [rows];
-    for (typename Matrix<T>::iterator_type i = 0; i < rows; i++) {
+    for (iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
-        for (typename Matrix<T>::iterator_type j = 0; j < cols; j++) {
+        for (iterator_type j = 0; j < cols; j++) {
             matrix[i][j] = vec[i][j];
         }
     }
@@ -284,8 +283,6 @@ inline Matrix<T>::Matrix(const std::initializer_list<T>& values)
     }
 }
 
-
-
 template <Arithmetic T>
 inline Matrix<T>::~Matrix() {
     for (iterator_type i = 0; i < rows; i++)
@@ -345,9 +342,10 @@ inline Matrix<T>& Matrix<T>::operator=(const std::initializer_list<std::initiali
     return *this;
 }
 
-template<Arithmetic V>
-inline const Matrix<V> operator+(const Matrix<V>& A, const Matrix<V>& B)
-{
+//////////////////////////////////////////////////////////////////////////////////////// out operators start
+
+template <Arithmetic V>
+inline Matrix<V> operator+(const Matrix<V>& A, const Matrix<V>& B) {
     if (A.rows_size() != B.rows_size() || A.cols_size() != B.cols_size()) {
         throw std::invalid_argument("Matrices must have the same size for addition.");
     }
@@ -357,7 +355,7 @@ inline const Matrix<V> operator+(const Matrix<V>& A, const Matrix<V>& B)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator-(const Matrix<V>& A, const Matrix<V>& B)
+inline Matrix<V> operator-(const Matrix<V>& A, const Matrix<V>& B)
 {
     if (A.rows_size() != B.rows_size() || A.cols_size() != B.cols_size()) {
         throw std::invalid_argument("Matrices must have the same size for subtract.");
@@ -368,7 +366,7 @@ inline const Matrix<V> operator-(const Matrix<V>& A, const Matrix<V>& B)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator*(const Matrix<V>& A, const Matrix<V>& B)
+inline Matrix<V> operator*(const Matrix<V>& A, const Matrix<V>& B)
 {
     Matrix<V> result(A);
     result *= B;
@@ -376,7 +374,7 @@ inline const Matrix<V> operator*(const Matrix<V>& A, const Matrix<V>& B)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator+(const Matrix<V>& A, const V& scalar)
+inline Matrix<V> operator+(const Matrix<V>& A, const V& scalar)
 {
     Matrix<V> res(A);
     for (typename Matrix<V>::iterator_type i = 0; i < A.rows_size(); i++) {
@@ -388,7 +386,7 @@ inline const Matrix<V> operator+(const Matrix<V>& A, const V& scalar)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator-(const Matrix<V>& A, const V& scalar)
+inline Matrix<V> operator-(const Matrix<V>& A, const V& scalar)
 {
     Matrix<V> res(A);
     for (typename Matrix<V>::iterator_type i = 0; i < A.rows_size(); i++) {
@@ -400,7 +398,7 @@ inline const Matrix<V> operator-(const Matrix<V>& A, const V& scalar)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator*(const Matrix<V>& A, const V& scalar)
+inline Matrix<V> operator*(const Matrix<V>& A, const V& scalar)
 {
     Matrix<V> res(A);
     for (typename Matrix<V>::iterator_type i = 0; i < A.rows_size(); i++) {
@@ -412,7 +410,7 @@ inline const Matrix<V> operator*(const Matrix<V>& A, const V& scalar)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator/(const Matrix<V>& A, const V& scalar)
+inline Matrix<V> operator/(const Matrix<V>& A, const V& scalar)
 {
     if (scalar == V())
     {
@@ -503,7 +501,7 @@ inline Matrix<V>& operator/=(Matrix<V>& A, const V& scalar)
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator+(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
+inline Matrix<V> operator+(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
 {
     typename Matrix<V>::size_type r = L.size();
     typename Matrix<V>::size_type c = L.begin()->size();
@@ -522,7 +520,7 @@ inline const Matrix<V> operator+(const Matrix<V>& A, const std::initializer_list
 }
 
 template<Arithmetic V>
-inline const Matrix<V> operator-(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
+inline Matrix<V> operator-(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L)
 {
     typename Matrix<V>::size_type r = L.size();
     typename Matrix<V>::size_type c = L.begin()->size();
@@ -541,7 +539,7 @@ inline const Matrix<V> operator-(const Matrix<V>& A, const std::initializer_list
 }
 
 template <Arithmetic V>
-inline const Matrix<V> operator*(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L) {
+inline Matrix<V> operator*(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L) {
     typename Matrix<V>::size_type L_rows = L.size();
     if (L_rows == 0) {
         throw std::invalid_argument("Second matrix not be empty.");
@@ -647,6 +645,10 @@ inline bool operator!=(const Matrix<V>& A, const std::initializer_list<std::init
 {
     return !(A == B);
 }
+
+//////////////////////////////////////////////////////////////////////////////////////// out operators end
+
+
 
 template <Arithmetic T>
 inline T& Matrix<T>::operator()(iterator_type rowIndex, iterator_type colIndex) {
