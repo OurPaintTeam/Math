@@ -309,11 +309,9 @@ Function *Asin::derivative(Variable* var) const {
     // sqrt(1 - f(x)^2)
     Function* denominator = new Sqrt(one_minus_f_squared);
 
-    // 1 / sqrt(1 - f(x)^2)
-    Function* reciprocal = new Division(new Constant(1.0), denominator);
-
-    // f'(x) * (1 / sqrt(1 - f(x)^2))
-    return new Multiplication(f_prime, reciprocal);
+    // f'(x) / sqrt(1 - f(x)^2)
+    Function* f = new Division(f_prime, denominator);
+    return f;
 }
 
 Function *Asin::clone() const {
@@ -340,15 +338,10 @@ Function *Acos::derivative(Variable* var) const {
 
     // sqrt(1 - f(x)^2)
     Function* denominator = new Sqrt(one_minus_f_squared);
-
-    // 1 / sqrt(1 - f(x)^2)
-    Function* reciprocal = new Division(new Constant(1.0), denominator);
-
-    // -1
     Function* negative_one = new Constant(-1.0);
-
     // -f'(x) * (1 / sqrt(1 - f(x)^2))
-    return new Multiplication(new Multiplication(negative_one, f_prime), reciprocal);
+    Function* f = new Division(new Multiplication(negative_one, f_prime), denominator);
+    return f;
 }
 
 Function *Acos::clone() const {
