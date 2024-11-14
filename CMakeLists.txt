@@ -7,15 +7,15 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Используем FetchContent для загрузки Eigen
 include(FetchContent)
 
-# Загрузка Eigen
-FetchContent_Declare(
-        eigen
-        GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG        3.3  # Выберите версию, которую хотите использовать
-)
-
-# Загрузка Eigen, если он не был загружен
-FetchContent_MakeAvailable(eigen)
+if (NOT TARGET gtest)
+    FetchContent_Declare(
+            googletest
+            GIT_REPOSITORY https://github.com/google/googletest.git
+            GIT_TAG 03597a01ee50ed33e9dfd640b249b4be3799d395
+    )
+    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
+    FetchContent_MakeAvailable(googletest)
+endif()
 
 # Убедитесь, что директория Eigen подключена
 include_directories(${eigen_SOURCE_DIR})
