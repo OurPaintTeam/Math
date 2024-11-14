@@ -285,7 +285,6 @@ TEST_F(FunctionTest, TestCos) {
     EXPECT_EQ(mu2D->evaluate(), -10 * std::sin(5 * y_val));
 }
 
-// -------------------- Asin Test Implementation --------------------
 TEST_F(FunctionTest, TestAsin) {
     double x_val = 0.5;
     Variable x(&x_val);
@@ -307,7 +306,6 @@ TEST_F(FunctionTest, TestAsin) {
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
 }
 
-// -------------------- Acos Test Implementation --------------------
 TEST_F(FunctionTest, TestAcos) {
     double x_val = 0.5;
     Variable x(&x_val);
@@ -327,6 +325,74 @@ TEST_F(FunctionTest, TestAcos) {
     Function* mu2D = mu2->derivative(&y);
     double expected_derivative = -10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+}
+
+// -------------------- Negation Test Implementation --------------------
+TEST_F(FunctionTest, TestNegation) {
+    double x_val = 3.0;
+    Variable x(&x_val);
+    Function* negFunc(new Negation(x.clone()));
+    double res = negFunc->evaluate();
+    EXPECT_EQ(res, -x_val); // Check value Negation(x)
+
+    // Check derivative: 2 * Negation(5y)
+    double y_val = 2.0;
+    Variable y(&y_val);
+    Function* mu(new Multiplication(new Constant(5.0), y.clone()));
+    Function* negMu(new Negation(mu->clone()));
+    Function* mu2(new Multiplication(new Constant(2.0), negMu->clone()));
+    EXPECT_EQ(mu2->evaluate(), 2 * (-5.0 * y_val)); // check value 2 * Negation(5y)
+
+    // Check derivative: d/dy (2 * Negation(5y)) = -10
+    Function* mu2D(mu2->derivative(&y));
+    double expected_derivative = -10.0;
+    EXPECT_EQ(mu2D->evaluate(), expected_derivative); // check derivative value
+}
+
+
+TEST_F(FunctionTest, TestMod) {
+    // Example 1: Mod(10, 3) = 1
+    double num_val1 = 10.0;
+    double den_val1 = 3.0;
+    Variable num1(&num_val1);
+    Variable den1(&den_val1);
+    Function* modFunc1 = new Mod(num1.clone(), den1.clone());
+    double res1 = modFunc1->evaluate();
+    EXPECT_EQ(res1, std::fmod(num_val1, den_val1)); // should be 1.0
+
+
+    // Derivative Mod(x, y) = 0
+    Function* modDerivative1 = modFunc1->derivative(&num1);
+    double expected_derivative1 = 0.0;
+    EXPECT_EQ(modDerivative1->evaluate(), expected_derivative1);
+
+    // Example 2: Mod(7.5, 2.5) = 0
+    double num_val2 = 7.5;
+    double den_val2 = 2.5;
+    Variable num2(&num_val2);
+    Variable den2(&den_val2);
+    Function* modFunc2 = new Mod(num2.clone(), den2.clone());
+    double res2 = modFunc2->evaluate();
+    EXPECT_EQ(res2, std::fmod(num_val2, den_val2)); // Should be 0.0
+
+    // Derivative Mod(x, y) = 0
+    Function* modDerivative2 = modFunc2->derivative(&num2);
+    double expected_derivative2 = 0.0;
+    EXPECT_EQ(modDerivative2->evaluate(), expected_derivative2);
+
+    // Example 3: Mod(-5, 3) = 1
+    double num_val3 = -5.0;
+    double den_val3 = 3.0;
+    Variable num3(&num_val3);
+    Variable den3(&den_val3);
+    Function* modFunc3 = new Mod(num3.clone(), den3.clone());
+    double res3 = modFunc3->evaluate();
+    EXPECT_EQ(res3, std::fmod(num_val3, den_val3)); // Should be -2.0 in C++ fmod.
+
+    // Derivative Mod(x, y) = 0
+    Function* modDerivative3 = modFunc3->derivative(&num3);
+    double expected_derivative3 = 0.0;
+    EXPECT_EQ(modDerivative3->evaluate(), expected_derivative3);
 }
 
 

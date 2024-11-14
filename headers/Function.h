@@ -15,6 +15,8 @@
 //  Multiplication
 //  Division
 //  Power
+//  Negation
+//  Modulo
 //  Exponential
 //  Logarithm
 //  Sqrt
@@ -191,6 +193,49 @@ public:
     // Disable copy constructor and copy assignment to prevent shallow copies
     Power(const Power&) = delete;
     Power& operator=(const Power&) = delete;
+};
+
+// Class Negation
+class Negation : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Negation(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Negation(const Negation&) = delete;
+    Negation& operator=(const Negation&) = delete;
+};
+
+// Class Modulo
+class Mod : public Function {
+private:
+    Function* numerator;
+    Function* denominator;
+
+public:
+    explicit Mod(Function* numerator, Function* denominator);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Mod(const Mod&) = delete;
+    Mod& operator=(const Mod&) = delete;
 };
 
 // Class Exponential (e^x)

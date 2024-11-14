@@ -152,8 +152,6 @@ Function* Division::clone() const {
 Power::Power(Function* base, Function* exponent)
         : base(base), exponent(exponent) {}
 
-
-
 double Power::evaluate() const {
     return std::pow(base->evaluate(), exponent->evaluate());
 }
@@ -169,6 +167,48 @@ Function* Power::derivative(Variable* var) const {
 
 Function* Power::clone() const {
     return new Power(base->clone(), exponent->clone());
+}
+
+// -------------------- Negation Implementations --------------------
+
+Negation::Negation(Function* argument)
+        : argument(argument) {}
+
+double Negation::evaluate() const {
+    return -1 * argument->evaluate();
+}
+
+Function* Negation::derivative(Variable* var) const {
+    Function* f_prime = argument->derivative(var);
+    return new Multiplication(new Constant(-1), f_prime);
+}
+
+Function* Negation::clone() const {
+    return new Negation(argument->clone());
+}
+
+// -------------------- Modulo Implementations --------------------
+
+Mod::Mod(Function* numerator, Function* denominator)
+        : numerator(numerator), denominator(denominator) {}
+
+double Mod::evaluate() const {
+    double num = numerator->evaluate();
+    double den = denominator->evaluate();
+
+    if (den == 0.0) {
+        throw std::domain_error("Division by zero in Modulo function.");
+    }
+
+    return std::fmod(num, den);
+}
+
+Function* Mod::derivative(Variable* var) const {
+    return new Constant(0.0);
+}
+
+Function* Mod::clone() const {
+    return new Mod(numerator->clone(), denominator->clone());
 }
 
 // -------------------- Exponential Implementations --------------------
