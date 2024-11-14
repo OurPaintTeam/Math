@@ -4,6 +4,7 @@
 #include <cmath>
 #include <vector>
 #include <utility>
+#include <algorithm>
 #include "Matrix.h"
 
 // A = QR
@@ -35,8 +36,8 @@ public:
 	// Modified Gram - Schmidt
 	void qrMGS();
 
-    // Iterative Gram-Schmidt
-    void qrIGS();
+    // Iterative modified Gram-Schmidt
+    void qrIMGS();
 
     // Block Gram-Schmidt
     void qrBGS();

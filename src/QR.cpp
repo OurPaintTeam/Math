@@ -10,7 +10,7 @@ QR::QR(const Matrix<>& _A) {
 QR::QR(const QR &other) : _A(other._A), _Q(other._Q), _R(other._R) {}
 
 void QR::qr() {
-    qrMGS();
+    qrIMGS();
 }
 
 QR::QR(QR &&other) noexcept : _A(std::move(other._A)), _Q(std::move(other._Q)), _R(std::move(other._R)) {}
@@ -151,9 +151,96 @@ void QR::qrMGS() {
     }
 }
 
+void QR::qrIMGS() {
+    size_t m = _A.rows_size();
+    size_t n = _A.cols_size();
+    size_t min_mn = std::min(m, n);
 
-void QR::qrIGS() {
+    // init Q and R
+    _Q = Matrix<>(m, min_mn);
+    _R = Matrix<>(min_mn, n);
 
+    // init V with cols A
+    std::vector<std::vector<double>> V(n, std::vector<double>(m));
+    for (size_t i = 0; i < n; ++i) {
+        V[i] = _A.getCol(i);
+    }
+
+    const double epsilon = 1e-10; // Orthogonality accuracy
+    const int max_iterations = 10;
+    int iteration = 0;
+    bool is_orthogonal = false;
+
+    while (iteration < max_iterations && !is_orthogonal) {
+        _Q = Matrix<>(m, min_mn);
+        _R = Matrix<>(min_mn, n);
+
+        // Using MGS
+        for (size_t j = 0; j < min_mn; ++j) {
+            // norm V[j]
+            double normVec = 0.0;
+            for (size_t k = 0; k < m; ++k) {
+                normVec += V[j][k] * V[j][k];
+            }
+            normVec = sqrt(normVec);
+
+            _R(j, j) = normVec;
+
+            if (normVec > epsilon) {
+                // normalize Q col
+                std::vector<double> q_j(m);
+                for (size_t k = 0; k < m; ++k) {
+                    q_j[k] = V[j][k] / normVec;
+                }
+                _Q.setCol(q_j, j);
+
+                // Orthogonalize other vectors
+                for (size_t k = j + 1; k < n; ++k) {
+                    // Compute R(j, k) = Q(:, j)^T * V[k]
+                    double dotProduct = 0.0;
+                    for (size_t l = 0; l < m; ++l) {
+                        dotProduct += q_j[l] * V[k][l];
+                    }
+                    _R(j, k) = dotProduct;
+
+                    // Update V[k] = V[k] - R(j, k) * Q(:, j)
+                    for (size_t l = 0; l < m; ++l) {
+                        V[k][l] -= dotProduct * q_j[l];
+                    }
+                }
+            }
+            else {
+                // If norm too small, col be zero
+                std::vector<double> zero_col(m, 0.0);
+                _Q.setCol(zero_col, j);
+                for (size_t k = j + 1; k < n; ++k) {
+                    _R(j, k) = 0.0;
+                }
+            }
+        }
+
+        // Check Orthogonality Q matrix
+        is_orthogonal = true;
+        for (size_t i = 0; i < min_mn && is_orthogonal; ++i) {
+            for (size_t j = i + 1; j < min_mn && is_orthogonal; ++j) {
+                double dot = 0.0;
+                std::vector<double> col_i = _Q.getCol(i);
+                std::vector<double> col_j = _Q.getCol(j);
+                for (size_t k = 0; k < m; ++k) {
+                    dot += col_i[k] * col_j[k];
+                }
+                if (std::abs(dot) > epsilon) {
+                    is_orthogonal = false;
+                }
+            }
+        }
+
+        iteration++;
+    }
+
+    if (!is_orthogonal) {
+        throw std::runtime_error("Warning: Iterative Gram-Schmidt did not achieve desired orthogonality after ");
+    }
 }
 
 void QR::qrBGS() {
