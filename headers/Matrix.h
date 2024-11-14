@@ -37,7 +37,7 @@ protected:
     using iterator_type = size_t;
 
 public:
-    Matrix();
+    Matrix() = default;
     Matrix(const Matrix& other);
     Matrix(Matrix&& other) noexcept;
     ~Matrix();
@@ -102,8 +102,8 @@ public:
     template <Arithmetic V> friend bool operator!=(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L);
 
     // Element Access
-    T& operator()(iterator_type rows, iterator_type cols);
-    T operator()(iterator_type rows, iterator_type cols) const;
+    T& operator()(iterator_type rowIndex, iterator_type colIndex);
+    T operator()(iterator_type rowIndex, iterator_type colIndex) const;
 
 
     // Matrix function
@@ -129,8 +129,8 @@ public:
     Matrix inverse() const;
     void setInverse();
 
-    Matrix adjoint(const size_type& i, const size_type& j) const;                       // TODO
-    static Matrix adjoint(const size_type& i, const size_type& j, const Matrix<T>& mat);// TODO
+    Matrix adjoint(const size_type& i, const size_type& j) const;
+    static Matrix adjoint(const size_type& i, const size_type& j, const Matrix<T>& mat);
 
     T minor(const size_type& i, const size_type& j) const;
     static T minor(const size_type& i, const size_type& j, const Matrix<T>& mat);
@@ -157,37 +157,34 @@ public:
     static Matrix random(const size_type& rows, const size_type& cols, const T& leftNum = 0.0, const T& rightNum = 1.0);
     void setRandom(const T& leftNum = 0.0, const T& rightNum = 1.0);
 
-    [[nodiscard]] inline size_type rows_size() const { return rows; }
-    [[nodiscard]] inline size_type cols_size() const { return cols; }
+    inline size_type rows_size() const { return rows; }
+    inline size_type cols_size() const { return cols; }
 
 private:
-    size_type rows;
-    size_type cols;
-    T** matrix;
+    size_type rows = size_type(0);
+    size_type cols = size_type(0);
+    T** matrix = nullptr;
 };
-
-template <Arithmetic T>
-inline Matrix<T>::Matrix() : rows(0), cols(0), matrix(nullptr) {};
 
 template <Arithmetic T>
 inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols) : rows(rows), cols(cols) 
 {
     matrix = new T *[rows];
-    for (typename Matrix<T>::iterator_type i = 0; i < rows; i++) {
+    for (iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
-        for (typename Matrix<T>::iterator_type j = 0; j < cols; j++) {
+        for (iterator_type j = 0; j < cols; j++) {
             matrix[i][j] = T();
         }
     }
-};
+}
 
 template<Arithmetic T>
 inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols, const T& value) : rows(rows), cols(cols) 
 {
     matrix = new T * [rows];
-    for (typename Matrix<T>::iterator_type i = 0; i < rows; i++) {
+    for (iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
-        for (typename Matrix<T>::iterator_type j = 0; j < cols; j++) {
+        for (iterator_type j = 0; j < cols; j++) {
             matrix[i][j] = value;
         }
     }
@@ -296,7 +293,7 @@ inline Matrix<T>::~Matrix() {
         delete[] matrix[i];
     }
     if (rows != 0) delete[] matrix;
-};
+}
 
 template<Arithmetic T>
 inline Matrix<T>& Matrix<T>::operator=(const Matrix<T>& other)
@@ -355,7 +352,8 @@ inline const Matrix<V> operator+(const Matrix<V>& A, const Matrix<V>& B)
         throw std::invalid_argument("Matrices must have the same size for addition.");
     }
     Matrix<V> result(A);
-    return result += B;
+    result += B;
+    return result;
 }
 
 template<Arithmetic V>
@@ -365,14 +363,16 @@ inline const Matrix<V> operator-(const Matrix<V>& A, const Matrix<V>& B)
         throw std::invalid_argument("Matrices must have the same size for subtract.");
     }
     Matrix<V> result(A);
-    return result -= B;
+    result -= B;
+    return result;
 }
 
 template<Arithmetic V>
 inline const Matrix<V> operator*(const Matrix<V>& A, const Matrix<V>& B)
 {
     Matrix<V> result(A);
-    return result *= B;
+    result *= B;
+    return result;
 }
 
 template<Arithmetic V>
@@ -544,7 +544,7 @@ template <Arithmetic V>
 inline const Matrix<V> operator*(const Matrix<V>& A, const std::initializer_list<std::initializer_list<V>> L) {
     typename Matrix<V>::size_type L_rows = L.size();
     if (L_rows == 0) {
-        throw std::invalid_argument("Second matrice not be empty.");
+        throw std::invalid_argument("Second matrix not be empty.");
     }
     typename Matrix<V>::size_type L_cols = L.begin()->size();
     for (const auto& rows : L) {
@@ -649,19 +649,19 @@ inline bool operator!=(const Matrix<V>& A, const std::initializer_list<std::init
 }
 
 template <Arithmetic T>
-inline T& Matrix<T>::operator()(iterator_type rowI, iterator_type colI) {
-    if (rowI >= this->rows || colI >= this->cols) {
+inline T& Matrix<T>::operator()(iterator_type rowIndex, iterator_type colIndex) {
+    if (rowIndex >= this->rows || colIndex >= this->cols) {
         throw std::out_of_range("Index out of range");
     }
-    return matrix[rowI][colI];
+    return matrix[rowIndex][colIndex];
 }
 
 template <Arithmetic T>
-inline T Matrix<T>::operator()(iterator_type rowI, iterator_type colI) const {
-    if (rowI >= this->rows || colI >= this->cols) {
+inline T Matrix<T>::operator()(iterator_type rowIndex, iterator_type colIndex) const {
+    if (rowIndex >= this->rows || colIndex >= this->cols) {
         throw std::out_of_range("Index out of range");
     }
-    return matrix[rowI][colI];
+    return matrix[rowIndex][colIndex];
 }
 
 template<Arithmetic T>
@@ -951,6 +951,34 @@ inline Matrix<T> Matrix<T>::inverse() const
 }
 
 template<Arithmetic T>
+inline Matrix<T> Matrix<T>::adjoint(const size_type& i, const size_type& j) const {
+    return adjoint(i, j, *this);
+}
+
+template<Arithmetic T>
+inline Matrix<T> Matrix<T>::adjoint(const size_type& i, const size_type& j, const Matrix<T>& mat) {
+    if (i >= mat.rows || j >= mat.cols) {
+        throw std::out_of_range("Index out of range");
+    }
+
+    Matrix<T> result(mat.rows - 1, mat.cols - 1);
+
+    size_type result_row = 0, result_col = 0;
+    for (size_type row = 0; row < mat.rows; ++row) {
+        if (row == i) continue;
+        result_col = 0;
+        for (size_type col = 0; col < mat.cols; ++col) {
+            if (col == j) continue;
+            result.matrix[result_row][result_col] = mat.matrix[row][col];
+            ++result_col;
+        }
+        ++result_row;
+    }
+
+    return result;
+}
+
+template<Arithmetic T>
 inline void Matrix<T>::setInverse()
 {
     (*this) = (*this).inverse();
@@ -962,24 +990,24 @@ inline T Matrix<T>::minor(const size_type& ix, const size_type& jx) const
     if (rows != cols) {
         throw std::invalid_argument("Matrix should be square!");
     }
-    std::vector<std::vector<T>> submatrix;
+    std::vector<std::vector<T>> subMatrix;
     for (size_type i = 0; i < rows; ++i) 
     {
         if (i == ix) continue;
-        std::vector<T> subrow;
+        std::vector<T> subRow;
         for (size_type j = 0; j < rows; ++j) 
         {
             if (j == jx) continue;
-            subrow.push_back(matrix[i][j]);
+            subRow.push_back(matrix[i][j]);
         }
-        submatrix.push_back(subrow);
+        subMatrix.push_back(subRow);
     }
     Matrix<T> res(rows - 1, cols - 1);
     for (size_type i = 0; i < rows - 1; i++)
     {
         for (size_type j = 0; j < cols - 1; j++)
         {
-            res(i, j) = submatrix[i][j];
+            res(i, j) = subMatrix[i][j];
         }
     }
     return determinant(res);
@@ -991,24 +1019,24 @@ inline T Matrix<T>::minor(const size_type& ix, const size_type& jx, const Matrix
     if (mat.rows != mat.cols) {
         throw std::invalid_argument("Matrix should be square!");
     }
-    std::vector<std::vector<T>> submatrix;
+    std::vector<std::vector<T>> subMatrix;
     for (size_type i = 0; i < mat.rows; ++i)
     {
         if (i == ix) continue;
-        std::vector<T> subrow;
+        std::vector<T> subRow;
         for (size_type j = 0; j < mat.rows; ++j)
         {
             if (j == jx) continue;
-            subrow.push_back(mat(i, j));
+            subRow.push_back(mat(i, j));
         }
-        submatrix.push_back(subrow);
+        subMatrix.push_back(subRow);
     }
     Matrix<T> res(mat.rows - 1, mat.cols - 1);
     for (size_type i = 0; i < mat.rows - 1; i++)
     {
         for (size_type j = 0; j < mat.cols - 1; j++)
         {
-            res(i, j) = submatrix[i][j];
+            res(i, j) = subMatrix[i][j];
         }
     }
     return determinant(res);

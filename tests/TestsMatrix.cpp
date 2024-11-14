@@ -911,8 +911,63 @@ TEST(MatrixTests, StaticMatrixMinor) {
 }
 
 // adj
+TEST(MatrixTests, adjMatrix) {
+    // 3x3
+    Matrix<int> mat = {
+            { 1, 2, 3},
+            { 4, 5, 6},
+            { 7, 8, 9}
+    };
+
+    auto subMat = mat.adjoint(0, 1);
+
+    // check sub matrix
+    EXPECT_EQ(subMat.rows_size(), 2);
+    EXPECT_EQ(subMat.cols_size(), 2);
+
+    // check sub matrix values
+    EXPECT_EQ(subMat(0, 0), 4);
+    EXPECT_EQ(subMat(0, 1), 6);
+    EXPECT_EQ(subMat(1, 0), 7);
+    EXPECT_EQ(subMat(1, 1), 9);
+
+    EXPECT_THROW(mat.adjoint(3, 0), std::out_of_range);
+    EXPECT_THROW(mat.adjoint(0, 3), std::out_of_range);
+    EXPECT_THROW(mat.adjoint(3, 3), std::out_of_range);
+}
 
 // adj static
+TEST(MatrixTests, adjStaticMatrix) {
+    // 4x4
+    Matrix<int> mat(4, 4);
+    int counter = 1;
+    for (size_t i = 0; i < 4; ++i) {
+        for (size_t j = 0; j < 4; ++j) {
+            mat(i, j) = counter++;
+        }
+    }
+
+    auto subMat = Matrix<int>::adjoint(1, 2, mat);
+
+    EXPECT_EQ(subMat.rows_size(), 3);
+    EXPECT_EQ(subMat.cols_size(), 3);
+
+    EXPECT_EQ(subMat(0, 0), 1);
+    EXPECT_EQ(subMat(0, 1), 2);
+    EXPECT_EQ(subMat(0, 2), 4);
+
+    EXPECT_EQ(subMat(1, 0), 9);
+    EXPECT_EQ(subMat(1, 1), 10);
+    EXPECT_EQ(subMat(1, 2), 12);
+
+    EXPECT_EQ(subMat(2, 0), 13);
+    EXPECT_EQ(subMat(2, 1), 14);
+    EXPECT_EQ(subMat(2, 2), 16);
+
+    EXPECT_THROW(Matrix<int>::adjoint(4, 0, mat), std::out_of_range);
+    EXPECT_THROW(Matrix<int>::adjoint(0, 4, mat), std::out_of_range);
+    EXPECT_THROW(Matrix<int>::adjoint(4, 4, mat), std::out_of_range);
+}
 
 // Ones matrix (static)
 TEST(MatrixTests, onesMatrix) {
@@ -999,13 +1054,38 @@ TEST(MatrixTests, setIdentityMatrix) {
 }
 
 // Zeroes matrix (static)
-TEST(MatrixTests, zeroesMatrix) {
-    Matrix<> A = Matrix<>::zeroes(4);
+TEST(MatrixTests, zeroesSizeMatrix) {
+    Matrix<> A = {
+            {1, 2, 3, 4},
+            {1, 1, 23, 5},
+            {0, 23, 1, 54},
+            {1, 87, 35, 1}
+    };
+    A = Matrix<>::zeroes(4);
     Matrix<> B = {
-        {0, 0, 0, 0},
-        {0, 0, 0, 0},
-        {0, 0, 0, 0},
-        {0, 0, 0, 0}
+            {0, 0, 0, 0},
+            {0, 0, 0, 0},
+            {0, 0, 0, 0},
+            {0, 0, 0, 0}
+    };
+    EXPECT_EQ(A, B);
+}
+
+// Zeroes matrix (static)
+TEST(MatrixTests, zeroesRowColMatrix) {
+    Matrix<> A = {
+            {1, 2, 3, 4},
+            {1, 1, 23, 5},
+            {0, 23, 1, 54},
+            {1, 87, 35, 1}
+    };
+
+    A = Matrix<>::zeroes(4, 3);
+    Matrix<> B = {
+        { 0, 0, 0 },
+        { 0, 0, 0 },
+        { 0, 0, 0 },
+        { 0, 0, 0 }
     };
     EXPECT_EQ(A, B);
 }
