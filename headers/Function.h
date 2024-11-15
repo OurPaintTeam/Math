@@ -16,6 +16,8 @@
 //  Division
 //  Power
 //  Negation
+//  Abs
+//  Sign
 //  Modulo
 //  Exponential
 //  Logarithm
@@ -24,6 +26,8 @@
 //  Cos
 //  Asin
 //  Acos
+//  Tan
+//  Atan
 
 
 
@@ -216,6 +220,48 @@ public:
     Negation& operator=(const Negation&) = delete;
 };
 
+// Class Abs
+class Abs : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Abs(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Abs(const Abs&) = delete;
+    Abs& operator=(const Abs&) = delete;
+};
+
+// Class Sign
+class Sign : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Sign(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Sign(const Sign&) = delete;
+    Sign& operator=(const Sign&) = delete;
+};
+
 // Class Modulo
 class Mod : public Function {
 private:
@@ -339,7 +385,7 @@ public:
     Cos& operator=(const Cos&) = delete;
 };
 
-// Class sin (sin(x))
+// Class asin (asin(x))
 class Asin : public Function {
 private:
     Function* argument;
@@ -358,7 +404,7 @@ public:
     Asin& operator=(const Asin&) = delete;
 };
 
-// Class cos (cos(x))
+// Class acos (acos(x))
 class Acos : public Function {
 private:
     Function* argument;
@@ -375,6 +421,44 @@ public:
     // Disable copy constructor and copy assignment to prevent shallow copies
     Acos(const Acos&) = delete;
     Acos& operator=(const Acos&) = delete;
+};
+
+// Class Tan (Tan(x))
+class Tan : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Tan(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Tan(const Tan&) = delete;
+    Tan& operator=(const Tan&) = delete;
+};
+
+// Class Atan (Atan(x))
+class Atan : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Atan(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Atan(const Atan&) = delete;
+    Atan& operator=(const Atan&) = delete;
 };
 
 #endif // MINIMIZEROPTIMIZER_FUNCTION_H

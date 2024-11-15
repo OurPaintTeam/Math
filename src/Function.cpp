@@ -112,14 +112,12 @@ Function* Multiplication::clone() const {
 Division::Division(Function* numerator, Function* denominator)
         : numerator(numerator), denominator(denominator) {}
 
-
-
 double Division::evaluate() const {
-    double denom = denominator->evaluate();
-    if (denom == 0.0) {
+    double den = denominator->evaluate();
+    if (den == 0.0) {
         throw std::runtime_error("Division by zero");
     }
-    return numerator->evaluate() / denom;
+    return numerator->evaluate() / den;
 }
 
 Function* Division::derivative(Variable* var) const {
@@ -186,6 +184,52 @@ Function* Negation::derivative(Variable* var) const {
 Function* Negation::clone() const {
     return new Negation(argument->clone());
 }
+
+// -------------------- Abs Implementations --------------------
+
+Abs::Abs(Function* argument)
+        : argument(argument) {}
+
+double Abs::evaluate() const {
+    return std::abs(argument->evaluate());
+}
+
+Function* Abs::derivative(Variable* var) const {
+    // d/dx |f(x)| = f'(x) * sign(f(x))
+    Function* f_prime = argument->derivative(var);
+    Function* sign_fx = new Sign(argument->clone());
+    Function* derivative = new Multiplication(f_prime, sign_fx);
+    return derivative;
+}
+
+Function* Abs::clone() const {
+    return new Abs(argument->clone());
+}
+
+// -------------------- Sign Implementations --------------------
+
+Sign::Sign(Function* argument)
+        : argument(argument) {}
+
+double Sign::evaluate() const {
+    double arg_value = argument->evaluate();
+    if (arg_value > 0.0) {
+        return 1.0;
+    } else if (arg_value < 0.0) {
+        return -1.0;
+    } else {
+        return 0.0; // By convention, sign(0) = 0
+    }
+}
+
+Function* Sign::derivative(Variable* var) const {
+    return new Constant(0.0);
+}
+
+Function* Sign::clone() const {
+    return new Sign(argument->clone());
+}
+
 
 // -------------------- Modulo Implementations --------------------
 
@@ -386,4 +430,66 @@ Function *Acos::derivative(Variable* var) const {
 
 Function *Acos::clone() const {
     return new Acos(argument->clone());
+}
+
+// -------------------- Tan Implementations --------------------
+
+Tan::Tan(Function *argument)
+        : argument(argument) {}
+
+double Tan::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::tan(arg_value);
+}
+
+Function *Tan::derivative(Variable* var) const {
+    // (tan(f(x)))' = f'(x) / cos^2(f(x))
+    Function* f_prime = argument->derivative(var);
+
+    // cos(f(x))
+    Function* cos_fx = new Cos(argument->clone());
+
+    // cos(f(x)) * cos(f(x)) = cos^2(f(x))
+    Function* cos_fx_squared = new Multiplication(cos_fx->clone(), cos_fx->clone());
+
+    // f'(x) / cos^2(f(x))
+    Function* derivative = new Division(f_prime, cos_fx_squared);
+
+    return derivative;
+}
+
+Function *Tan::clone() const {
+    return new Tan(argument->clone());
+}
+
+// -------------------- Atan Implementations --------------------
+
+Atan::Atan(Function *argument)
+        : argument(argument) {}
+
+double Atan::evaluate() const {
+    double arg_value = argument->evaluate();
+    return std::atan(arg_value);
+}
+
+Function *Atan::derivative(Variable* var) const {
+    // (atan(f(x)))' = f'(x) / (1 + f(x)^2)
+
+    // f'(x)
+    Function* f_prime = argument->derivative(var);
+
+    // f(x) * f(x) = f(x)^2
+    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+
+    // 1 + f(x)^2
+    Function* one_plus_f_squared = new Addition(new Constant(1.0), f_squared);
+
+    // f'(x) / (1 + f(x)^2)
+    Function* derivative = new Division(f_prime, one_plus_f_squared);
+
+    return derivative;
+}
+
+Function *Atan::clone() const {
+    return new Atan(argument->clone());
 }

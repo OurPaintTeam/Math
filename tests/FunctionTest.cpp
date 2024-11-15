@@ -395,7 +395,196 @@ TEST_F(FunctionTest, TestMod) {
     EXPECT_EQ(modDerivative3->evaluate(), expected_derivative3);
 }
 
+TEST_F(FunctionTest, TestTan) {
+    // Example 1: Tan(0) = 0
+    double x_val1 = 0.0;
+    Variable x1(&x_val1);
+    Function* tanFunc1 = new Tan(x1.clone());
+    double res1 = tanFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, std::tan(x_val1)); // Check value Tan(0)
 
+    // Derivative: sec^2(0) = 1
+    Function* tanDerivative1 = tanFunc1->derivative(&x1);
+    double expected_derivative1 = 1.0 / (std::cos(x_val1) * std::cos(x_val1));
+    EXPECT_DOUBLE_EQ(tanDerivative1->evaluate(), expected_derivative1); // Check derivative at 0
+
+    // Example 2: Tan(pi/4) = 1
+    double x_val2 = M_PI / 4;
+    Variable x2(&x_val2);
+    Function* tanFunc2 = new Tan(x2.clone());
+    double res2 = tanFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, std::tan(x_val2)); // Check value Tan(pi/4)
+
+    // Derivative: sec^2(pi/4) = 2
+    Function* tanDerivative2 = tanFunc2->derivative(&x2);
+    double expected_derivative2 = 1.0 / (std::cos(x_val2) * std::cos(x_val2));
+    EXPECT_DOUBLE_EQ(tanDerivative2->evaluate(), expected_derivative2); // Check derivative at pi/4
+
+    // Example 3: Tan(pi/3) = sqrt(3)
+    double x_val3 = M_PI / 3;
+    Variable x3(&x_val3);
+    Function* tanFunc3 = new Tan(x3.clone());
+    double res3 = tanFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, std::tan(x_val3)); // Check value Tan(pi/3)
+
+    // Derivative: sec^2(pi/3) = 4
+    Function* tanDerivative3 = tanFunc3->derivative(&x3);
+    double expected_derivative3 = 1.0 / (std::cos(x_val3) * std::cos(x_val3));
+    EXPECT_DOUBLE_EQ(tanDerivative3->evaluate(), expected_derivative3); // Check derivative at pi/3
+}
+
+TEST_F(FunctionTest, TestAtan) {
+    // Example 1: Atan(0) = 0
+    double x_val1 = 0.0;
+    Variable x1(&x_val1);
+    Function* atanFunc1 = new Atan(x1.clone());
+    double res1 = atanFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, std::atan(x_val1)); // Check value Atan(0)
+
+    // Derivative: 1 / (1 + 0^2) = 1
+    Function* atanDerivative1 = atanFunc1->derivative(&x1);
+    double expected_derivative1 = 1.0 / (1.0 + x_val1 * x_val1);
+    EXPECT_DOUBLE_EQ(atanDerivative1->evaluate(), expected_derivative1); // Check derivative at 0
+
+    // Example 2: Atan(1) = pi/4
+    double x_val2 = 1.0;
+    Variable x2(&x_val2);
+    Function* atanFunc2 = new Atan(x2.clone());
+    double res2 = atanFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, std::atan(x_val2)); // Check value Atan(1)
+
+    // Derivative: 1 / (1 + 1^2) = 0.5
+    Function* atanDerivative2 = atanFunc2->derivative(&x2);
+    double expected_derivative2 = 1.0 / (1.0 + x_val2 * x_val2);
+    EXPECT_DOUBLE_EQ(atanDerivative2->evaluate(), expected_derivative2); // Check derivative at 1
+
+    // Example 3: Atan(sqrt(3)) = pi/3
+    double x_val3 = std::sqrt(3.0);
+    Variable x3(&x_val3);
+    Function* atanFunc3 = new Atan(x3.clone());
+    double res3 = atanFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, std::atan(x_val3)); // Check value Atan(sqrt(3))
+
+    // Derivative: 1 / (1 + (sqrt(3))^2) = 0.25
+    Function* atanDerivative3 = atanFunc3->derivative(&x3);
+    double expected_derivative3 = 1.0 / (1.0 + x_val3 * x_val3);
+    EXPECT_DOUBLE_EQ(atanDerivative3->evaluate(), expected_derivative3); // Check derivative at sqrt(3))
+}
+
+// -------------------- Abs Test Implementation --------------------
+TEST_F(FunctionTest, TestAbs) {
+    /*
+    // Example 1: Abs(5) = 5
+    double x_val = 5.0;
+    Constant x1(x_val);
+    Function* absFunc = new Abs(x1.clone());
+    double res1 = absFunc->evaluate();
+    EXPECT_DOUBLE_EQ(res1, std::abs(x_val)); // Check value Abs(5)
+
+    // Derivative: d/dx Abs(x) = 1
+    Function* absDerivative = absFunc->derivative(&x1);
+    double expected_derivative = 1.0;
+    EXPECT_DOUBLE_EQ(absDerivative->evaluate(), expected_derivative); // Check derivative at 5
+     */
+
+    // Example 1: Abs(5) = 5
+    double x_val1 = 5.0;
+    Variable x1(&x_val1);
+    Function* absFunc1 = new Abs(x1.clone());
+    double res1 = absFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, std::abs(x_val1)); // Check value Abs(5)
+
+    // Derivative: d/dx Abs(x) = 1
+    Function* absDerivative1 = absFunc1->derivative(&x1);
+    double expected_derivative1 = 1.0;
+    EXPECT_DOUBLE_EQ(absDerivative1->evaluate(), expected_derivative1); // Check derivative at 5
+
+    // Example 2: Abs(-3) = 3
+    double x_val2 = -3.0;
+    Variable x2(&x_val2);
+    Function* absFunc2 = new Abs(x2.clone());
+    double res2 = absFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, std::abs(x_val2)); // Check value Abs(-3)
+
+    // Derivative: d/dx Abs(x) = sign(x) => sign(-3) = -1
+    Function* absDerivative2 = absFunc2->derivative(&x2);
+    double expected_derivative2 = -1.0;
+    EXPECT_DOUBLE_EQ(absDerivative2->evaluate(), expected_derivative2); // Check derivative at -3
+
+    // Example 3: Abs(0) = 0
+    double x_val3 = 0.0;
+    Variable x3(&x_val3);
+    Function* absFunc3 = new Abs(x3.clone());
+    double res3 = absFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, std::abs(x_val3)); // Check value Abs(0)
+
+    // Derivative: d/dx Abs(x) = sign(x) => sign(0) = 0 (by convention)
+    Function* absDerivative3 = absFunc3->derivative(&x3);
+    double expected_derivative3 = 0.0;
+    EXPECT_DOUBLE_EQ(absDerivative3->evaluate(), expected_derivative3); // Check derivative at 0
+}
+
+TEST_F(FunctionTest, TestSign) {
+    // Example 1: Sign(5) = 1
+    double x_val1 = 5.0;
+    Variable x1(&x_val1);
+    Function* signFunc1 = new Sign(x1.clone());
+    double res1 = signFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, 1.0); // Check value Sign(5)
+
+    // Derivative: d/dx Sign(5) = 0
+    Function* signDerivative1 = signFunc1->derivative(&x1);
+    double expected_derivative1 = 0.0;
+    EXPECT_DOUBLE_EQ(signDerivative1->evaluate(), expected_derivative1); // Check derivative at 5
+
+    // Example 2: Sign(-3) = -1
+    double x_val2 = -3.0;
+    Variable x2(&x_val2);
+    Function* signFunc2 = new Sign(x2.clone());
+    double res2 = signFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, -1.0); // Check value Sign(-3)
+
+    // Derivative: d/dx Sign(-3) = 0
+    Function* signDerivative2 = signFunc2->derivative(&x2);
+    double expected_derivative2 = 0.0;
+    EXPECT_DOUBLE_EQ(signDerivative2->evaluate(), expected_derivative2); // Check derivative at -3
+
+    // Example 3: Sign(0) = 0
+    double x_val3 = 0.0;
+    Variable x3(&x_val3);
+    Function* signFunc3 = new Sign(x3.clone());
+    double res3 = signFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, 0.0); // Check value Sign(0)
+
+    // Derivative: d/dx Sign(0) = 0 (by convention)
+    Function* signDerivative3 = signFunc3->derivative(&x3);
+    double expected_derivative3 = 0.0;
+    EXPECT_DOUBLE_EQ(signDerivative3->evaluate(), expected_derivative3); // Check derivative at 0
+
+    // Example 4: Sign(2.718) ≈ 1
+    double x_val4 = 2.718;
+    Variable x4(&x_val4);
+    Function* signFunc4 = new Sign(x4.clone());
+    double res4 = signFunc4->evaluate();
+    EXPECT_DOUBLE_EQ(res4, 1.0); // Check value Sign(2.718)
+
+    // Derivative: d/dx Sign(2.718) = 0
+    Function* signDerivative4 = signFunc4->derivative(&x4);
+    double expected_derivative4 = 0.0;
+    EXPECT_DOUBLE_EQ(signDerivative4->evaluate(), expected_derivative4); // Check derivative at 2.718
+
+    // Example 5: Sign(-0.001) = -1
+    double x_val5 = -0.001;
+    Variable x5(&x_val5);
+    Function* signFunc5 = new Sign(x5.clone());
+    double res5 = signFunc5->evaluate();
+    EXPECT_DOUBLE_EQ(res5, -1.0); // Check value Sign(-0.001)
+
+    // Derivative: d/dx Sign(-0.001) = 0
+    Function* signDerivative5 = signFunc5->derivative(&x5);
+    double expected_derivative5 = 0.0;
+    EXPECT_DOUBLE_EQ(signDerivative5->evaluate(), expected_derivative5); // Check derivative at -0.001
+}
 
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
