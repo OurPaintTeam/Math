@@ -48,7 +48,7 @@ SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable *>
     Function *v2 = new Subtraction(x[3], x[1]);
     Function *w1 = new Subtraction(x[6], x[4]);
     Function *w2 = new Subtraction(x[7], x[5]);
-    Function* F = new Subtraction(new Multiplication(v1, v2), new Multiplication(w1, w2));
+    Function* F = new Subtraction(new Multiplication(v1, w2), new Multiplication(v2, w1));
     c_f = F;
 }
 //------------------------- SECSECPERPENDICULAR IMPLEMENTATION -------------------------

@@ -68,8 +68,8 @@ TEST(PointOnPointErrorTest, CorrectZeroErrorValue) {
 
 //------------------------- SECSECPARALLEL TESTS -------------------------
 TEST(SectionSectionParallelErrorTest, CorrectParallelErrorValue) {
-    double p1[] = {1.0}; double p2[] = {1.0}; double p3[] = {4.0}; double p4[] = {4.0};
-    double s1[] = {2.0}; double s2[] = {2.0}; double s3[] = {5.0}; double s4[] = {5.0};
+    double p1[] = {20.0}; double p2[] = {20.0}; double p3[] = {30.0}; double p4[] = {30.0};
+    double s1[] = {20.0}; double s2[] = {30.0}; double s3[] = {30.0}; double s4[] = {40.0};
 
     std::vector<Variable*> variables = {
             new Variable(p1), new Variable(p2), new Variable(p3), new Variable(p4),
