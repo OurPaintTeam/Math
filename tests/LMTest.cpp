@@ -164,6 +164,37 @@ TEST(TestsForCAD, PerpLenghtSetTestBigSize) {
     EXPECT_TRUE(converged);
     EXPECT_NEAR(error, 0.0,1e-6);
 }
+TEST(TestsForCAD, PPDistanceTest) {
+    // Define variables for the endpoints of the two line segments
+    double x1_value = 20.0, y1_value = 20.0;
+    double x2_value = 30.0, y2_value = 30.0;
+    double x3_value = 200.0, y3_value = 30.0;
+    double x4_value = 300.0, y4_value = 400.0;
+    std::vector<Variable*> variables = {
+            new Variable(&x1_value), new Variable(&y1_value),
+            new Variable(&x2_value), new Variable(&y2_value),
+            new Variable(&x3_value), new Variable(&y3_value),
+            new Variable(&x4_value), new Variable(&y4_value),
+    };
+    std::vector<Variable*> ppReq = {
+            variables[0], variables[1], variables[2], variables[3]
+    };
+    PointPointDistanceError* f4 = new PointPointDistanceError(ppReq, 20);
+    LSMFORLMTask task({f4}, ppReq);
+    // Initialize optimizer and run optimization
+    LevenbergMarquardtSolver optimizer; // maxIterations=1000
+    optimizer.setTask(&task);
+    optimizer.optimize();
+    std::vector<double> result = optimizer.getResult();
+    for (int i = 0; i < result.size(); i++) {
+        std::cout << result[i] << std::endl;
+    }
+    bool converged = optimizer.isConverged();
+    double error = optimizer.getCurrentError();
+    std::cout << error << std::endl;
+    EXPECT_TRUE(converged);
+    EXPECT_NEAR(error, 0.0,1e-6);
+}
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

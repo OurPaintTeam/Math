@@ -26,8 +26,8 @@ private:
     int maxIterations;
 
 public:
-    LevenbergMarquardtSolver(double initLambda = 1.0, double b_increase = 2.0, double b_decrease = 2.0,
-                             double epsilon1 = 1e-6, double epsilon2 = 1e-6, int maxIterations = 100)
+    LevenbergMarquardtSolver(int maxIterations = 100, double initLambda = 0.1, double b_increase = 2.0, double b_decrease = 2.0,
+                             double epsilon1 = 1e-6, double epsilon2 = 1e-6)
             : lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1), epsilon2(epsilon2),
               maxIterations(maxIterations), converged(false) {}
 
@@ -36,7 +36,7 @@ public:
         if (!this->task) {
             throw std::invalid_argument("Task is not of type LSMFORLMTask.");
         }
-        result = Eigen::VectorXd::Zero(task->getValues().size());
+        result = Eigen::Map<Eigen::VectorXd>(task->getValues().data(), task->getValues().size());;
         currentError = task->getError();
     }
 
@@ -59,7 +59,7 @@ public:
             hessian = jacobian.transpose() * jacobian;
 
             Eigen::MatrixXd dampedHessian = hessian + lambda * Eigen::MatrixXd::Identity(hessian.rows(), hessian.cols());
-            Eigen::VectorXd delta = dampedHessian.ldlt().solve(gradient);
+            Eigen::VectorXd delta = dampedHessian.fullPivHouseholderQr().solve(gradient);
             if (delta.norm() < epsilon1){
                 converged = true;
                 break;
