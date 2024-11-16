@@ -230,7 +230,7 @@ TEST_F(FunctionTest, TestLogarithmOfNonPositive) {
 TEST_F(FunctionTest, TestSqrt) {
     double x_val = 4.0;
     Variable x(&x_val);
-    std::unique_ptr<Function> f(new Sqrt(x.clone()));
+    Function* f(new Sqrt(x.clone()));
     double res = f->evaluate();
     EXPECT_EQ(res, std::sqrt(x_val)); // Sqrt(x)
 
@@ -246,6 +246,12 @@ TEST_F(FunctionTest, TestSqrt) {
     Function* mu2D(mu2->derivative(&y));
     double expected_derivative = 5.0 / std::sqrt(5 * y_val);
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+
+    delete f;
+    delete mu;
+    delete sqrtFunc;
+    delete mu2;
+    delete mu2D;
 }
 
 
@@ -265,6 +271,12 @@ TEST_F(FunctionTest, TestSin) {
     EXPECT_EQ(mu2->evaluate(), 2 * std::sin(5 * y_val));
     Function* mu2D = mu2->derivative(&y);
     EXPECT_EQ(mu2D->evaluate(), 10 * std::cos(5 * y_val));
+
+    delete f;
+    delete mu;
+    delete sinFunc;
+    delete mu2;
+    delete mu2D;
 }
 
 TEST_F(FunctionTest, TestCos) {
@@ -283,6 +295,12 @@ TEST_F(FunctionTest, TestCos) {
     EXPECT_EQ(mu2->evaluate(), 2 * std::cos(5 * y_val));
     Function* mu2D = mu2->derivative(&y);
     EXPECT_EQ(mu2D->evaluate(), -10 * std::sin(5 * y_val));
+
+    delete f;
+    delete mu;
+    delete cosFunc;
+    delete mu2;
+    delete mu2D;
 }
 
 TEST_F(FunctionTest, TestAsin) {
@@ -304,6 +322,12 @@ TEST_F(FunctionTest, TestAsin) {
     Function* mu2D = mu2->derivative(&y);
     double expected_derivative = 10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+
+    delete f;
+    delete mu;
+    delete asinFunc;
+    delete mu2;
+    delete mu2D;
 }
 
 TEST_F(FunctionTest, TestAcos) {
@@ -325,6 +349,12 @@ TEST_F(FunctionTest, TestAcos) {
     Function* mu2D = mu2->derivative(&y);
     double expected_derivative = -10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
+
+    delete f;
+    delete mu;
+    delete acosFunc;
+    delete mu2;
+    delete mu2D;
 }
 
 // -------------------- Negation Test Implementation --------------------
@@ -347,6 +377,12 @@ TEST_F(FunctionTest, TestNegation) {
     Function* mu2D(mu2->derivative(&y));
     double expected_derivative = -10.0;
     EXPECT_EQ(mu2D->evaluate(), expected_derivative); // check derivative value
+
+    delete negFunc;
+    delete mu;
+    delete negMu;
+    delete mu2;
+    delete mu2D;
 }
 
 
@@ -393,6 +429,13 @@ TEST_F(FunctionTest, TestMod) {
     Function* modDerivative3 = modFunc3->derivative(&num3);
     double expected_derivative3 = 0.0;
     EXPECT_EQ(modDerivative3->evaluate(), expected_derivative3);
+
+    delete modFunc1;
+    delete modDerivative1;
+    delete modFunc2;
+    delete modDerivative2;
+    delete modFunc3;
+    delete modDerivative3;
 }
 
 TEST_F(FunctionTest, TestTan) {
@@ -431,6 +474,13 @@ TEST_F(FunctionTest, TestTan) {
     Function* tanDerivative3 = tanFunc3->derivative(&x3);
     double expected_derivative3 = 1.0 / (std::cos(x_val3) * std::cos(x_val3));
     EXPECT_DOUBLE_EQ(tanDerivative3->evaluate(), expected_derivative3); // Check derivative at pi/3
+
+    delete tanFunc1;
+    delete tanDerivative1;
+    delete tanFunc2;
+    delete tanDerivative2;
+    delete tanFunc3;
+    delete tanDerivative3;
 }
 
 TEST_F(FunctionTest, TestAtan) {
@@ -469,25 +519,18 @@ TEST_F(FunctionTest, TestAtan) {
     Function* atanDerivative3 = atanFunc3->derivative(&x3);
     double expected_derivative3 = 1.0 / (1.0 + x_val3 * x_val3);
     EXPECT_DOUBLE_EQ(atanDerivative3->evaluate(), expected_derivative3); // Check derivative at sqrt(3))
+
+    delete atanFunc1;
+    delete atanDerivative1;
+    delete atanFunc2;
+    delete atanDerivative2;
+    delete atanFunc3;
+    delete atanDerivative3;
 }
 
 // -------------------- Abs Test Implementation --------------------
 TEST_F(FunctionTest, TestAbs) {
-    /*
-    // Example 1: Abs(5) = 5
-    double x_val = 5.0;
-    Constant x1(x_val);
-    Function* absFunc = new Abs(x1.clone());
-    double res1 = absFunc->evaluate();
-    EXPECT_DOUBLE_EQ(res1, std::abs(x_val)); // Check value Abs(5)
-
-    // Derivative: d/dx Abs(x) = 1
-    Function* absDerivative = absFunc->derivative(&x1);
-    double expected_derivative = 1.0;
-    EXPECT_DOUBLE_EQ(absDerivative->evaluate(), expected_derivative); // Check derivative at 5
-     */
-
-    // Example 1: Abs(5) = 5
+    // Example 1: Abs(x) = 5
     double x_val1 = 5.0;
     Variable x1(&x_val1);
     Function* absFunc1 = new Abs(x1.clone());
@@ -522,6 +565,14 @@ TEST_F(FunctionTest, TestAbs) {
     Function* absDerivative3 = absFunc3->derivative(&x3);
     double expected_derivative3 = 0.0;
     EXPECT_DOUBLE_EQ(absDerivative3->evaluate(), expected_derivative3); // Check derivative at 0
+
+
+    delete absFunc1;
+    delete absDerivative1;
+    delete absFunc2;
+    delete absDerivative2;
+    delete absFunc3;
+    delete absDerivative3;
 }
 
 TEST_F(FunctionTest, TestSign) {
@@ -584,6 +635,17 @@ TEST_F(FunctionTest, TestSign) {
     Function* signDerivative5 = signFunc5->derivative(&x5);
     double expected_derivative5 = 0.0;
     EXPECT_DOUBLE_EQ(signDerivative5->evaluate(), expected_derivative5); // Check derivative at -0.001
+
+    delete signFunc1;
+    delete signDerivative1;
+    delete signFunc2;
+    delete signDerivative2;
+    delete signFunc3;
+    delete signDerivative3;
+    delete signFunc4;
+    delete signDerivative4;
+    delete signFunc5;
+    delete signDerivative5;
 }
 
 int main(int argc, char **argv) {
