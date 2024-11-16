@@ -730,6 +730,172 @@ TEST_F(FunctionTest, TestSign) {
     delete signDerivative5;
 }
 
+TEST_F(FunctionTest, TestMax) {
+    // Example 1: Max(3, 5) = 5
+    double a_val1 = 3.0;
+    double b_val1 = 5.0;
+    Variable a1(&a_val1);
+    Variable b1(&b_val1);
+    Function* maxFunc1 = new Max(a1.clone(), b1.clone());
+    double res1 = maxFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, 5.0); // Check value Max(3, 5)
+
+    // Derivative: d/dx Max(x, 5) = 1 if x > 5, else 0
+    Function* maxDerivative1 = maxFunc1->derivative(&a1);
+    double expected_derivative1 = 0.0; // Since a_val1 = 3 < 5
+    EXPECT_DOUBLE_EQ(maxDerivative1->evaluate(), expected_derivative1); // Check derivative at x=3
+
+    // Example 2: Max(7, 2) = 7
+    double a_val2 = 7.0;
+    double b_val2 = 2.0;
+    Variable a2(&a_val2);
+    Variable b2(&b_val2);
+    Function* maxFunc2 = new Max(a2.clone(), b2.clone());
+    double res2 = maxFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, 7.0); // Check value Max(7, 2)
+
+    // Derivative: d/dx Max(x, 2) = 1 if x > 2, else 0
+    Function* maxDerivative2 = maxFunc2->derivative(&a2);
+    double expected_derivative2 = 1.0; // Since a_val2 = 7 > 2
+    EXPECT_DOUBLE_EQ(maxDerivative2->evaluate(), expected_derivative2); // Check derivative at x=7
+
+    // Example 3: Max(x, x) = x
+    double a_val3 = 4.0;
+    double b_val3 = 4.0;
+    Variable a3(&a_val3);
+    Variable b3(&b_val3);
+    Function* maxFunc3 = new Max(a3.clone(), b3.clone());
+    double res3 = maxFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, 4.0); // Check value Max(4, 4)
+
+    // Derivative: d/dx Max(x, x) = 0 by convention
+    Function* maxDerivative3 = maxFunc3->derivative(&a3);
+    double expected_derivative3 = 0.0;
+    EXPECT_DOUBLE_EQ(maxDerivative3->evaluate(), expected_derivative3); // Check derivative at x=4
+
+    // Example 4: Max(x, 10) where x = 15
+    double a_val4 = 15.0;
+    double b_val4 = 10.0;
+    Variable a4(&a_val4);
+    Variable b4(&b_val4);
+    Function* maxFunc4 = new Max(a4.clone(), b4.clone());
+    double res4 = maxFunc4->evaluate();
+    EXPECT_DOUBLE_EQ(res4, 15.0); // Check value Max(15, 10)
+
+    // Derivative: d/dx Max(x, 10) = 1
+    Function* maxDerivative4 = maxFunc4->derivative(&a4);
+    double expected_derivative4 = 1.0;
+    EXPECT_DOUBLE_EQ(maxDerivative4->evaluate(), expected_derivative4); // Check derivative at x=15
+
+    // Example 5: Max(x, -5) where x = -10
+    double a_val5 = -10.0;
+    double b_val5 = -5.0;
+    Variable a5(&a_val5);
+    Variable b5(&b_val5);
+    Function* maxFunc5 = new Max(a5.clone(), b5.clone());
+    double res5 = maxFunc5->evaluate();
+    EXPECT_DOUBLE_EQ(res5, -5.0); // Check value Max(-10, -5)
+
+    // Derivative: d/dx Max(x, -5) = 0
+    Function* maxDerivative5 = maxFunc5->derivative(&a5);
+    double expected_derivative5 = 0.0;
+    EXPECT_DOUBLE_EQ(maxDerivative5->evaluate(), expected_derivative5); // Check derivative at x=-10
+
+    delete maxFunc1;
+    delete maxDerivative1;
+    delete maxFunc2;
+    delete maxDerivative2;
+    delete maxFunc3;
+    delete maxDerivative3;
+    delete maxFunc4;
+    delete maxDerivative4;
+    delete maxFunc5;
+    delete maxDerivative5;
+}
+
+TEST_F(FunctionTest, TestMin) {
+    // Example 1: Min(3, 5) = 3
+    double a_val1 = 3.0;
+    double b_val1 = 5.0;
+    Variable a1(&a_val1);
+    Variable b1(&b_val1);
+    Function* minFunc1 = new Min(a1.clone(), b1.clone());
+    double res1 = minFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, 3.0); // Check value Min(3, 5)
+
+    // Derivative: d/dx Min(x, 5) = 1 if x < 5, else 0
+    Function* minDerivative1 = minFunc1->derivative(&a1);
+    double expected_derivative1 = 1.0; // Since a_val1 = 3 < 5
+    EXPECT_DOUBLE_EQ(minDerivative1->evaluate(), expected_derivative1); // Check derivative at x=3
+
+    // Example 2: Min(7, 2) = 2
+    double a_val2 = 7.0;
+    double b_val2 = 2.0;
+    Variable a2(&a_val2);
+    Variable b2(&b_val2);
+    Function* minFunc2 = new Min(a2.clone(), b2.clone());
+    double res2 = minFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, 2.0); // Check value Min(7, 2)
+
+    // Derivative: d/dx Min(x, 2) = 0 since x > 2
+    Function* minDerivative2 = minFunc2->derivative(&a2);
+    double expected_derivative2 = 0.0; // Since a_val2 = 7 > 2
+    EXPECT_DOUBLE_EQ(minDerivative2->evaluate(), expected_derivative2); // Check derivative at x=7
+
+    // Example 3: Min(x, x) = x
+    double a_val3 = 4.0;
+    double b_val3 = 4.0;
+    Variable a3(&a_val3);
+    Variable b3(&b_val3);
+    Function* minFunc3 = new Min(a3.clone(), b3.clone());
+    double res3 = minFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, 4.0); // Check value Min(4, 4)
+
+    // Derivative: d/dx Min(x, x) = 0 by convention
+    Function* minDerivative3 = minFunc3->derivative(&a3);
+    double expected_derivative3 = 0.0;
+    EXPECT_DOUBLE_EQ(minDerivative3->evaluate(), expected_derivative3); // Check derivative at x=4
+
+    // Example 4: Min(x, 10) where x = 15
+    double a_val4 = 15.0;
+    double b_val4 = 10.0;
+    Variable a4(&a_val4);
+    Variable b4(&b_val4);
+    Function* minFunc4 = new Min(a4.clone(), b4.clone());
+    double res4 = minFunc4->evaluate();
+    EXPECT_DOUBLE_EQ(res4, 10.0); // Check value Min(15, 10)
+
+    // Derivative: d/dx Min(x, 10) = 0
+    Function* minDerivative4 = minFunc4->derivative(&a4);
+    double expected_derivative4 = 0.0;
+    EXPECT_DOUBLE_EQ(minDerivative4->evaluate(), expected_derivative4); // Check derivative at x=15
+
+    // Example 5: Min(x, -5) where x = -10
+    double a_val5 = -10.0;
+    double b_val5 = -5.0;
+    Variable a5(&a_val5);
+    Variable b5(&b_val5);
+    Function* minFunc5 = new Min(a5.clone(), b5.clone());
+    double res5 = minFunc5->evaluate();
+    EXPECT_DOUBLE_EQ(res5, -10.0); // Check value Min(-10, -5)
+
+    // Derivative: d/dx Min(x, -5) = 1
+    Function* minDerivative5 = minFunc5->derivative(&a5);
+    double expected_derivative5 = 1.0;
+    EXPECT_DOUBLE_EQ(minDerivative5->evaluate(), expected_derivative5); // Check derivative at x=-10
+
+    delete minFunc1;
+    delete minDerivative1;
+    delete minFunc2;
+    delete minDerivative2;
+    delete minFunc3;
+    delete minDerivative3;
+    delete minFunc4;
+    delete minDerivative4;
+    delete minFunc5;
+    delete minDerivative5;
+}
+
 int main(int argc, char **argv) {
     ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();

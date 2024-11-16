@@ -520,3 +520,63 @@ Function *Atan::derivative(Variable* var) const {
 Function *Atan::clone() const {
     return new Atan(argument->clone());
 }
+
+// -------------------- Max Implementations --------------------
+
+Max::Max(Function *left, Function *right)
+: left(left), right(right) {}
+
+double Max::evaluate() const {
+    double left_val = left->evaluate();
+    double right_val = right->evaluate();
+    return std::max(left_val, right_val);
+}
+
+Function *Max::derivative(Variable *var) const {
+    double left_val = left->evaluate();
+    double right_val = right->evaluate();
+
+    if (left_val > right_val) {
+        return left->derivative(var);
+    } else if (right_val > left_val) {
+        return right->derivative(var);
+    } else {
+        // At points where left == right, derivative is undefined.
+        // Here we choose to return a zero function by convention.
+        return new Constant(0.0);
+    }
+}
+
+Function *Max::clone() const {
+    return new Max(left->clone(), right->clone());
+}
+
+// -------------------- Max Implementations --------------------
+
+Min::Min(Function *left, Function *right)
+        : left(left), right(right) {}
+
+double Min::evaluate() const {
+    double left_val = left->evaluate();
+    double right_val = right->evaluate();
+    return std::min(left_val, right_val);
+}
+
+Function *Min::derivative(Variable *var) const {
+    double left_val = left->evaluate();
+    double right_val = right->evaluate();
+
+    if (left_val < right_val) {
+        return left->derivative(var);
+    } else if (right_val < left_val) {
+        return right->derivative(var);
+    } else {
+        // At points where left == right, derivative is undefined.
+        // Here we choose to return a zero function by convention.
+        return new Constant(0.0);
+    }
+}
+
+Function *Min::clone() const {
+    return new Min(left->clone(), right->clone());
+}

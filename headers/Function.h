@@ -29,7 +29,8 @@
 //  Acos
 //  Tan
 //  Atan
-
+//  Max
+//  Min
 
 
 
@@ -482,6 +483,46 @@ public:
     // Disable copy constructor and copy assignment to prevent shallow copies
     Atan(const Atan&) = delete;
     Atan& operator=(const Atan&) = delete;
+};
+
+// Class Max (Max(x, y))
+class Max : public Function {
+private:
+    Function* left;
+    Function* right;
+
+public:
+    explicit Max(Function* left, Function* right);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Max(const Max&) = delete;
+    Max& operator=(const Max&) = delete;
+};
+
+// Class Min (Min(x, y))
+class Min : public Function {
+private:
+    Function* left;
+    Function* right;
+
+public:
+    explicit Min(Function* left, Function* right);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Min(const Min&) = delete;
+    Min& operator=(const Min&) = delete;
 };
 
 #endif // MINIMIZEROPTIMIZER_FUNCTION_H
