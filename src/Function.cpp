@@ -257,32 +257,30 @@ Function* Mod::clone() const {
 
 // -------------------- Exponential Implementations --------------------
 
-Exponential::Exponential(Function* exponent)
+Exp::Exp(Function* exponent)
         : exponent(exponent) {}
 
-
-
-double Exponential::evaluate() const {
+double Exp::evaluate() const {
     return std::exp(exponent->evaluate());
 }
 
-Function* Exponential::derivative(Variable* var) const {
+Function* Exp::derivative(Variable* var) const {
     // (e^{f(x)})' = f'(x) * e^{f(x)}
     Function* f_prime = exponent->derivative(var);
     return new Multiplication(f_prime, this->clone());
 }
 
-Function* Exponential::clone() const {
-    return new Exponential(exponent->clone());
+Function* Exp::clone() const {
+    return new Exp(exponent->clone());
 }
 
 // -------------------- Logarithm Implementations --------------------
 
-Logarithm::Logarithm(Function* argument)
+Ln::Ln(Function* argument)
         : argument(argument) {}
 
 
-double Logarithm::evaluate() const {
+double Ln::evaluate() const {
     double arg_value = argument->evaluate();
     if (arg_value <= 0.0) {
         throw std::runtime_error("Logarithm of non-positive value");
@@ -290,14 +288,14 @@ double Logarithm::evaluate() const {
     return std::log(arg_value);
 }
 
-Function* Logarithm::derivative(Variable* var) const {
+Function* Ln::derivative(Variable* var) const {
     // (ln(f(x)))' = f'(x) / f(x)
     Function* f_prime = argument->derivative(var);
     return new Division(f_prime, argument->clone());
 }
 
-Function* Logarithm::clone() const {
-    return new Logarithm(argument->clone());
+Function* Ln::clone() const {
+    return new Ln(argument->clone());
 }
 
 // -------------------- Sqrt Implementations --------------------

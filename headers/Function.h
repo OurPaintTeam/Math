@@ -19,8 +19,8 @@
 //  Abs
 //  Sign
 //  Modulo
-//  Exponential
-//  Logarithm
+//  Exp
+//  Ln
 //  Sqrt
 //  Sin
 //  Cos
@@ -285,12 +285,12 @@ public:
 };
 
 // Class Exponential (e^x)
-class Exponential : public Function {
+class Exp : public Function {
 private:
     Function* exponent;
 
 public:
-    explicit Exponential(Function* exponent);
+    explicit Exp(Function* exponent);
 
     double evaluate() const override;
 
@@ -301,17 +301,17 @@ public:
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
-    Exponential(const Exponential&) = delete;
-    Exponential& operator=(const Exponential&) = delete;
+    Exp(const Exp&) = delete;
+    Exp& operator=(const Exp&) = delete;
 };
 
 // Class Logarithm (ln(x))
-class Logarithm : public Function {
+class Ln : public Function {
 private:
     Function* argument;
 
 public:
-    explicit Logarithm(Function* argument);
+    explicit Ln(Function* argument);
 
     double evaluate() const override;
 
@@ -322,8 +322,8 @@ public:
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
-    Logarithm(const Logarithm&) = delete;
-    Logarithm& operator=(const Logarithm&) = delete;
+    Ln(const Ln&) = delete;
+    Ln& operator=(const Ln&) = delete;
 };
 
 // class sqrt (sqrt(x))

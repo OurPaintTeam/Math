@@ -60,7 +60,7 @@ TEST_F(FunctionTest, TestExponentialFunction) {
     Variable x(&x_val);
     Variable y(&y_val);
     Function* xy = new Multiplication(x.clone(), y.clone());
-    Function* f = new Exponential(xy);
+    Function* f = new Exp(xy);
     double expected_f = std::exp(6.0);
     double computed_f = f->evaluate();
     EXPECT_TRUE(almost_equal(computed_f, expected_f));
@@ -132,10 +132,10 @@ TEST_F(FunctionTest, TestMultipleVariablesFunction) {
     delete f;
 }
 
-TEST_F(FunctionTest, TestLogarithmFunction) {
+TEST_F(FunctionTest, TestLnFunction) {
     double x_val = std::exp(1.0);
     Variable x(&x_val);
-    Function* f = new Logarithm(x.clone());
+    Function* f = new Ln(x.clone());
     double expected_f = 1.0;
     double computed_f = f->evaluate();
     EXPECT_TRUE(almost_equal(computed_f, expected_f));
@@ -151,7 +151,7 @@ TEST_F(FunctionTest, TestExponentialOfSquareFunction) {
     double x_val = 1.0;
     Variable x(&x_val);
     Function* x_squared = new Power(x.clone(), new Constant(2.0));
-    Function* f = new Exponential(x_squared);
+    Function* f = new Exp(x_squared);
     double expected_f = std::exp(1.0);
     double computed_f = f->evaluate();
     EXPECT_TRUE(almost_equal(computed_f, expected_f));
@@ -173,7 +173,7 @@ TEST_F(FunctionTest, TestComplexFunction) {
     Function* y_squared = new Power(y.clone(), new Constant(2.0));
     Function* sum = new Addition(x_squared, y_squared);
     Function* xy = new Multiplication(x.clone(), y.clone());
-    Function* exponential = new Exponential(xy);
+    Function* exponential = new Exp(xy);
     Function* f = new Multiplication(sum, exponential);
     double expected_f = (std::pow(x_val, 2) + std::pow(y_val, 2)) * std::exp(x_val * y_val);
     double computed_f = f->evaluate();
@@ -213,11 +213,11 @@ TEST_F(FunctionTest, TestDivisionByZero) {
     delete f;
 }
 
-TEST_F(FunctionTest, TestLogarithmOfNonPositive) {
+TEST_F(FunctionTest, TestLnOfNonPositive) {
     double x_val = -1.0;
     Variable x(&x_val);
 
-    Function* f = new Logarithm(x.clone());
+    Function* f = new Ln(x.clone());
 
     EXPECT_THROW({
                      f->evaluate();
