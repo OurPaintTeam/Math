@@ -753,6 +753,54 @@ TEST(MatrixTests, setRowMatrix) {
     EXPECT_EQ(A, B);
 }
 
+// getSubmatrix
+TEST(MatrixTests, getSubmatrix) {
+    Matrix<int> A = {
+            {1, 2, 3, 4},
+            {5, 6, 7, 8},
+            {9, 10, 11, 12},
+            {13, 14, 15, 16}
+    };
+
+    // Extract a 2x2 submatrix starting from row 1, column 1
+    Matrix<int> sub = A.getSubmatrix(1, 1, 2, 2);
+
+    Matrix<int> expected = {
+            {6, 7},
+            {10, 11}
+    };
+
+    EXPECT_EQ(sub, expected);
+}
+
+// setSubmatrix
+TEST(MatrixTests, setSubmatrix) {
+    Matrix<int> A = {
+            {1, 2, 3, 4},
+            {5, 6, 7, 8},
+            {9, 10, 11, 12},
+            {13, 14, 15, 16}
+    };
+
+    // Create a 2x2 block to insert
+    Matrix<int> block = {
+            {100, 100},
+            {100, 100}
+    };
+
+    // Insert the block starting at row 1, column 1
+    A.setSubmatrix(1, 1, block);
+
+    Matrix<int> expected = {
+            {1, 2, 3, 4},
+            {5, 100, 100, 8},
+            {9, 100, 100, 12},
+            {13, 14, 15, 16}
+    };
+
+    EXPECT_EQ(A, expected);
+}
+
 // Transpose Matrix
 TEST(MatrixTests, transposeMatrix) {
     Matrix<> A = {
