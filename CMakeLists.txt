@@ -46,6 +46,9 @@ target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
 add_executable(QRTest tests/TestsQR.cpp)
 target_link_libraries(QRTest MinimizerOptimizer gtest gtest_main)
 
+add_executable(QRPerformanceTest tests/QRPerformanceTests.cpp)
+target_link_libraries(QRPerformanceTest MinimizerOptimizer gtest gtest_main)
+
 add_executable(FunctionTest tests/FunctionTest.cpp)
 target_link_libraries(FunctionTest MinimizerOptimizer gtest gtest_main)
 
