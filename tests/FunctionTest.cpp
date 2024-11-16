@@ -226,7 +226,89 @@ TEST_F(FunctionTest, TestLnOfNonPositive) {
     delete f;
 }
 
-// -------------------- Sqrt Test Implementation --------------------
+TEST_F(FunctionTest, TestLog) {
+    // Example 1: Log base 2 of 8 = 3
+    double base_val1 = 2.0;
+    double arg_val1 = 8.0;
+    Variable base1(&base_val1);
+    Variable arg1(&arg_val1);
+    Function* logFunc1 = new Log(base1.clone(), arg1.clone());
+    double res1 = logFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, 3.0); // Check value Log2(8)
+
+    // Derivative: d/dx Log2(x) = 1 / (x * ln(2))
+    Function* logDerivative1 = logFunc1->derivative(&arg1);
+    double expected_derivative1 = 1.0 / (arg_val1 * std::log(base_val1));
+    EXPECT_NEAR(logDerivative1->evaluate(), expected_derivative1, 1e-9); // Check derivative at x=8
+
+    // Example 2: Log base 10 of 1000 = 3
+    double base_val2 = 10.0;
+    double arg_val2 = 1000.0;
+    Variable base2(&base_val2);
+    Variable arg2(&arg_val2);
+    Function* logFunc2 = new Log(base2.clone(), arg2.clone());
+    double res2 = logFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, 3.0); // Check value Log10(1000)
+
+    // Derivative: d/dx Log10(x) = 1 / (x * ln(10))
+    Function* logDerivative2 = logFunc2->derivative(&arg2);
+    double expected_derivative2 = 1.0 / (arg_val2 * std::log(base_val2));
+    EXPECT_NEAR(logDerivative2->evaluate(), expected_derivative2, 1e-9); // Check derivative at x=1000
+
+    // Example 3: Log base e of e = 1
+    double base_val3 = std::exp(1.0);
+    double arg_val3 = std::exp(1.0);
+    Variable base3(&base_val3);
+    Variable arg3(&arg_val3);
+    Function* logFunc3 = new Log(base3.clone(), arg3.clone());
+    double res3 = logFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, 1.0); // Check value Log_e(e)
+
+    // Derivative: d/dx Log_e(x) = 1 / x
+    Function* logDerivative3 = logFunc3->derivative(&arg3);
+    double expected_derivative3 = 1.0 / arg_val3;
+    EXPECT_DOUBLE_EQ(logDerivative3->evaluate(), expected_derivative3); // Check derivative at x=e
+
+    // Example 4: Log base 3 of 1 = 0
+    double base_val4 = 3.0;
+    double arg_val4 = 1.0;
+    Variable base4(&base_val4);
+    Variable arg4(&arg_val4);
+    Function* logFunc4 = new Log(base4.clone(), arg4.clone());
+    double res4 = logFunc4->evaluate();
+    EXPECT_DOUBLE_EQ(res4, 0.0); // Check value Log3(1)
+
+    // Derivative: d/dx Log3(x) = 1 / (ln(3) * x)
+    Function* logDerivative4 = logFunc4->derivative(&arg4);
+    double expected_derivative4 = 1.0 / std::log(base_val4);
+    EXPECT_DOUBLE_EQ(logDerivative4->evaluate(), expected_derivative4); // Check derivative at x=1
+
+    // Example 5: Log base 5 of 25 = 2
+    double base_val5 = 5.0;
+    double arg_val5 = 25.0;
+    Variable base5(&base_val5);
+    Variable arg5(&arg_val5);
+    Function* logFunc5 = new Log(base5.clone(), arg5.clone());
+    double res5 = logFunc5->evaluate();
+    EXPECT_DOUBLE_EQ(res5, 2.0); // Check value Log5(25)
+
+    // Derivative: d/dx Log5(x) = 1 / (x * ln(5))
+    Function* logDerivative5 = logFunc5->derivative(&arg5);
+    double expected_derivative5 = 1.0 / (arg_val5 * std::log(base_val5));
+    EXPECT_NEAR(logDerivative5->evaluate(), expected_derivative5, 1e-9); // Check derivative at x=25
+
+    delete logFunc1;
+    delete logDerivative1;
+    delete logFunc2;
+    delete logDerivative2;
+    delete logFunc3;
+    delete logDerivative3;
+    delete logFunc4;
+    delete logDerivative4;
+    delete logFunc5;
+    delete logDerivative5;
+}
+
 TEST_F(FunctionTest, TestSqrt) {
     double x_val = 4.0;
     Variable x(&x_val);

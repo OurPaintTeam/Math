@@ -21,6 +21,7 @@
 //  Modulo
 //  Exp
 //  Ln
+//  Log
 //  Sqrt
 //  Sin
 //  Cos
@@ -305,7 +306,7 @@ public:
     Exp& operator=(const Exp&) = delete;
 };
 
-// Class Logarithm (ln(x))
+// Class Ln (ln(x))
 class Ln : public Function {
 private:
     Function* argument;
@@ -324,6 +325,28 @@ public:
     // Disable copy constructor and copy assignment to prevent shallow copies
     Ln(const Ln&) = delete;
     Ln& operator=(const Ln&) = delete;
+};
+
+// Class Log (log(base, x))
+class Log : public Function {
+private:
+    Function* base;
+    Function* argument;
+
+public:
+    explicit Log(Function* base, Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Log(const Ln&) = delete;
+    Log& operator=(const Log&) = delete;
 };
 
 // class sqrt (sqrt(x))

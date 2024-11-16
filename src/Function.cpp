@@ -274,11 +274,10 @@ Function* Exp::clone() const {
     return new Exp(exponent->clone());
 }
 
-// -------------------- Logarithm Implementations --------------------
+// -------------------- Ln Implementations --------------------
 
 Ln::Ln(Function* argument)
         : argument(argument) {}
-
 
 double Ln::evaluate() const {
     double arg_value = argument->evaluate();
@@ -296,6 +295,36 @@ Function* Ln::derivative(Variable* var) const {
 
 Function* Ln::clone() const {
     return new Ln(argument->clone());
+}
+
+// -------------------- Log Implementations --------------------
+
+Log::Log(Function* base, Function* argument)
+        : base(base), argument(argument) {}
+
+
+double Log::evaluate() const {
+    double base_val = base->evaluate();
+    double arg_val = argument->evaluate();
+    if (base_val <= 0.0 || base_val == 1.0) {
+        throw std::runtime_error("Invalid base for logarithm");
+    }
+    if (arg_val <= 0.0) {
+        throw std::runtime_error("Logarithm of non-positive value");
+    }
+    return std::log(arg_val) / std::log(base_val);
+}
+
+Function* Log::derivative(Variable* var) const {
+    // d/dx log_b(f(x)) = f'(x) / (f(x) * ln(b))
+    Function* f_prime = argument->derivative(var);
+    Function* ln_b = new Ln(base->clone());
+    Function* denominator = new Multiplication(argument->clone(), ln_b);
+    return new Division(f_prime, denominator);
+}
+
+Function* Log::clone() const {
+    return new Log(base->clone(), argument->clone());
 }
 
 // -------------------- Sqrt Implementations --------------------
