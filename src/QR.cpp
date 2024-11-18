@@ -351,9 +351,118 @@ void QR::qrBGS() {
     }
 }
 
-
 void QR::qrRGS() {
+    size_t m = _A.rows_size(); // Number of rows in A
+    size_t n = _A.cols_size(); // Number of columns in A
+    size_t min_mn = std::min(m, n); // Minimum of m and n
 
+    // Initialize Q and R matrices
+    _Q = Matrix<>(m, min_mn, 0.0); // Q will be m x min(m, n)
+    _R = Matrix<>(min_mn, n, 0.0); // R will be min(m, n) x n
+
+    // Initialize V with columns of A
+    std::vector<std::vector<double>> V(n, std::vector<double>(m));
+    for (size_t i = 0; i < n; ++i) {
+        V[i] = _A.getCol(i);
+    }
+
+    const double epsilon = 1e-10; // Tolerance for zero
+    const int num_passes = 2; // Number of orthogonalization passes
+
+    // First pass of Modified Gram-Schmidt
+    for (int pass = 0; pass < num_passes; ++pass) {
+        for (size_t j = 0; j < min_mn; ++j) {
+            // Compute the norm of V[j]
+            double norm = 0.0;
+            for (size_t k = 0; k < m; ++k) {
+                norm += V[j][k] * V[j][k];
+            }
+            norm = sqrt(norm);
+
+            // Set R(j,j)
+            _R(j, j) = norm;
+
+            if (norm > epsilon) {
+                // Normalize Q(:,j)
+                std::vector<double> q_j(m);
+                for (size_t k = 0; k < m; ++k) {
+                    q_j[k] = V[j][k] / norm;
+                }
+                _Q.setCol(q_j, j);
+
+                // Orthogonalize remaining columns
+                for (size_t k = j + 1; k < n; ++k) {
+                    double proj = 0.0;
+                    for (size_t s = 0; s < m; ++s) {
+                        proj += q_j[s] * V[k][s];
+                    }
+                    _R(j, k) += proj;
+
+                    for (size_t s = 0; s < m; ++s) {
+                        V[k][s] -= proj * q_j[s];
+                    }
+                }
+            }
+            else {
+                // If norm is too small, set Q column to zero
+                std::vector<double> zero_col(m, 0.0);
+                _Q.setCol(zero_col, j);
+                for (size_t k = j + 1; k < n; ++k) {
+                    _R(j, k) = 0.0;
+                }
+            }
+        }
+    }
+
+    // Re-orthogonalization pass to improve numerical stability
+    for (size_t j = 0; j < min_mn; ++j) {
+        // Orthogonalize Q(:,j) against all previous Q columns
+        for (size_t i = 0; i < j; ++i) {
+            std::vector<double> q_i = _Q.getCol(i);
+            std::vector<double> q_j = _Q.getCol(j);
+
+            // Compute the projection coefficient
+            double proj = 0.0;
+            for (size_t k = 0; k < m; ++k) {
+                proj += q_i[k] * q_j[k];
+            }
+
+            if (std::abs(proj) > epsilon) {
+                // Update R
+                _R(i, j) += proj;
+
+                // Subtract the projection from Q(:,j)
+                for (size_t k = 0; k < m; ++k) {
+                    q_j[k] -= proj * q_i[k];
+                }
+
+                // Update Q(:,j)
+                _Q.setCol(q_j, j);
+
+                // Recompute the norm of Q(:,j)
+                double norm = 0.0;
+                for (size_t k = 0; k < m; ++k) {
+                    norm += q_j[k] * q_j[k];
+                }
+                norm = sqrt(norm);
+
+                if (norm > epsilon) {
+                    // Normalize Q(:,j)
+                    for (size_t k = 0; k < m; ++k) {
+                        q_j[k] /= norm;
+                    }
+                    _Q.setCol(q_j, j);
+                    _R(j, j) = norm;
+                }
+                else {
+                    // If norm is too small, set Q column to zero
+                    std::vector<double> zero_col(m, 0.0);
+                    _Q.setCol(zero_col, j);
+                    _R(j, j) = 0.0;
+                }
+            }
+        }
+    }
 }
 
 void QR::qrCGSP() {
