@@ -5,6 +5,7 @@
 
 //------------------------- POINTSECDIST IMPLEMENTATION -------------------------
 PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable *> x, double error) : ErrorFunctions(x) {
+    v_error = error;
     if (x.size() != 6) {
         throw std::invalid_argument("PointSectionDistanceError: wrong number of x");
     }
@@ -20,7 +21,15 @@ PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable *> x, 
     c_f = G;
 }
 
+Function *PointSectionDistanceError::clone() const {
+    return new PointSectionDistanceError(m_X, v_error);
+}
+
 PointOnSectionError::PointOnSectionError(std::vector<Variable *> x) : PointSectionDistanceError(x, 0){}
+
+Function *PointOnSectionError::clone() const {
+    return new PointOnSectionError(m_X);
+}
 
 // ------------------------- POINTPOINTDIST IMPLEMENTATION -------------------------
 
@@ -28,6 +37,7 @@ PointPointDistanceError::PointPointDistanceError(std::vector<Variable *> x, doub
     if (x.size() != 4) {
         throw std::invalid_argument("PointPointDistanceError: wrong number of x");
     }
+    v_error = error;
     Function *err = new Constant(error);
     Function *sq = new Constant(0.5);
     Function *pow2 = new Constant(2);
@@ -37,7 +47,16 @@ PointPointDistanceError::PointPointDistanceError(std::vector<Variable *> x, doub
     Function *F = new Subtraction(E, err);
     c_f = F;
 }
+
+Function *PointPointDistanceError::clone() const {
+    return new PointPointDistanceError(m_X, v_error);
+}
+
 PointOnPointError::PointOnPointError(std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
+
+Function *PointOnPointError::clone() const {
+    return new PointOnPointError(m_X);
+}
 
 // ------------------------- SECSECPARALLEL IMPLEMENTATION -------------------------
 SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable *> x): ErrorFunctions(x) {
@@ -51,6 +70,11 @@ SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable *>
     Function* F = new Subtraction(new Multiplication(v1, w2), new Multiplication(v2, w1));
     c_f = F;
 }
+
+Function *SectionSectionParallelError::clone() const {
+    return new SectionSectionParallelError(m_X);
+}
+
 //------------------------- SECSECPERPENDICULAR IMPLEMENTATION -------------------------
 SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<Variable *> x): ErrorFunctions(x) {
     if (x.size() != 8) {
@@ -64,12 +88,18 @@ SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<V
     Function* F = new Addition(new Multiplication(v1, w1), new Multiplication(v2, w2));
     c_f = F;
 }
+
+Function *SectionSectionPerpendicularError::clone() const {
+    return new SectionSectionPerpendicularError(m_X);
+}
+
 //------------------------- SECTIONCIRCLEDISTANCE IMPLEMENTATION -------------------------
 SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable *> x, double error):ErrorFunctions(x) {
     if (x.size() != 7) {
         throw std::invalid_argument("SectionCircleDistanceError: wrong number of x");
     }
     // xs ys xe ye xc yc r
+    v_error = error;
     Function *dist = new Addition(new Constant(error), new Constant(x[6]->evaluate()));
     Function *pow2 = new Constant(2);
     Function *A = new Subtraction(x[3], x[1]);
@@ -80,11 +110,23 @@ SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable *> x
     c_f = F;
 }
 
+Function *SectionCircleDistanceError::clone() const {
+    return new SectionCircleDistanceError(m_X, v_error);
+}
+
 SectionOnCircleError::SectionOnCircleError(std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
+
+Function *SectionOnCircleError::clone() const {
+    return new SectionOnCircleError(m_X);
+}
 
 //------------------------- SECTIONINCIRCLE IMPLEMENTATION -------------------------
 SectionInCircleError::SectionInCircleError(std::vector<Variable *> x) : ErrorFunctions(x) {
     //No implementation on simple Functions without Max
+}
+
+Function *SectionInCircleError::clone() const {
+    return new SectionInCircleError(m_X);
 }
 
 //------------------------- SECTIONSECTIONANGLE IMPLEMENTATION -------------------------
@@ -93,6 +135,7 @@ SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, do
         throw std::invalid_argument("SectionSectionAngleError: wrong number of x");
     }
     // x1s y1s x1e y1e x2s y2s x2e y2e
+    v_error = error;
     Function *err = new Constant(error);
     Constant *PI = new Constant(M_PI);
     Constant *PI_2deg = new Constant(180);
@@ -109,3 +152,6 @@ SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, do
     c_f = new Subtraction(angle, err);
 }
 
+Function *SectionSectionAngleError::clone() const {
+    return new SectionSectionAngleError(m_X, v_error);
+}
