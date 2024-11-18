@@ -521,6 +521,77 @@ Function *Atan::clone() const {
     return new Atan(argument->clone());
 }
 
+// -------------------- Cot Implementations --------------------
+
+Cot::Cot(Function *argument)
+        : argument(argument) {}
+
+double Cot::evaluate() const {
+    double arg_value = argument->evaluate();
+    return 1.0 / std::tan(arg_value);
+}
+
+Function *Cot::derivative(Variable* var) const {
+    // (cot(f(x)))' = -f'(x) / sin^2(f(x))
+
+    // f'(x)
+    Function* f_prime = argument->derivative(var);
+
+    // sin(f(x))
+    Function* sin_fx = new Sin(argument->clone());
+
+    // sin(f(x)) * sin(f(x)) = sin^2(f(x))
+    Function* sin_fx_squared = new Multiplication(sin_fx->clone(), sin_fx->clone());
+
+    // -f'(x)
+    Function* negative_f_prime = new Negation(f_prime);
+
+    // -f'(x) / sin^2(f(x))
+    Function* derivative = new Division(negative_f_prime, sin_fx_squared);
+
+    return derivative;
+}
+
+Function *Cot::clone() const {
+    return new Cot(argument->clone());
+}
+
+// -------------------- Acot Implementations --------------------
+
+Acot::Acot(Function *argument)
+        : argument(argument) {}
+
+double Acot::evaluate() const {
+    double arg_value = argument->evaluate();
+    // Acot(x) = π/2 - atan(x)
+    return (M_PI / 2.0) - std::atan(arg_value);
+}
+
+Function *Acot::derivative(Variable* var) const {
+    // (acot(f(x)))' = -f'(x) / (1 + f(x)^2)
+
+    // f'(x)
+    Function* f_prime = argument->derivative(var);
+
+    // f(x) * f(x) = f(x)^2
+    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+
+    // 1 + f(x)^2
+    Function* one_plus_f_squared = new Addition(new Constant(1.0), f_squared);
+
+    // -f'(x)
+    Function* negative_f_prime = new Negation(f_prime);
+
+    // -f'(x) / (1 + f(x)^2)
+    Function* derivative = new Division(negative_f_prime, one_plus_f_squared);
+
+    return derivative;
+}
+
+Function *Acot::clone() const {
+    return new Acot(argument->clone());
+}
+
 // -------------------- Max Implementations --------------------
 
 Max::Max(Function *left, Function *right)

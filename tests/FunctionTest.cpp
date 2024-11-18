@@ -610,6 +610,98 @@ TEST_F(FunctionTest, TestAtan) {
     delete atanDerivative3;
 }
 
+TEST_F(FunctionTest, TestCot) {
+    // Example 1: Cot(pi/4) = 1
+    double x_val1 = M_PI / 4;
+    Variable x1(&x_val1);
+    Function* cotFunc1 = new Cot(x1.clone());
+    double res1 = cotFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, 1.0); // Check value Cot(pi/4)
+
+    // Derivative: -1 / sin^2(pi/4) = -2
+    Function* cotDerivative1 = cotFunc1->derivative(&x1);
+    double expected_derivative1 = -1.0 / (std::sin(x_val1) * std::sin(x_val1));
+    EXPECT_DOUBLE_EQ(cotDerivative1->evaluate(), expected_derivative1); // Check derivative at pi/4
+
+    // Example 2: Cot(pi/3) = 1/sqrt(3)
+    double x_val2 = M_PI / 3;
+    Variable x2(&x_val2);
+    Function* cotFunc2 = new Cot(x2.clone());
+    double res2 = cotFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, 1.0 / std::sqrt(3.0)); // Check value Cot(pi/3)
+
+    // Derivative: -1 / sin^2(pi/3) = -4/3
+    Function* cotDerivative2 = cotFunc2->derivative(&x2);
+    double expected_derivative2 = -1.0 / (std::sin(x_val2) * std::sin(x_val2));
+    EXPECT_DOUBLE_EQ(cotDerivative2->evaluate(), expected_derivative2); // Check derivative at pi/3
+
+    // Example 3: Cot(pi/6) = sqrt(3)
+    double x_val3 = M_PI / 6;
+    Variable x3(&x_val3);
+    Function* cotFunc3 = new Cot(x3.clone());
+    double res3 = cotFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, std::sqrt(3.0)); // Check value Cot(pi/6)
+
+    // Derivative: -1 / sin^2(pi/6) = -4
+    Function* cotDerivative3 = cotFunc3->derivative(&x3);
+    double expected_derivative3 = -1.0 / (std::sin(x_val3) * std::sin(x_val3));
+    EXPECT_DOUBLE_EQ(cotDerivative3->evaluate(), expected_derivative3); // Check derivative at pi/6
+
+    // Clean up
+    delete cotFunc1;
+    delete cotDerivative1;
+    delete cotFunc2;
+    delete cotDerivative2;
+    delete cotFunc3;
+    delete cotDerivative3;
+}
+
+TEST_F(FunctionTest, TestAcot) {
+    // Example 1: Acot(1) = pi/4
+    double x_val1 = 1.0;
+    Variable x1(&x_val1);
+    Function* acotFunc1 = new Acot(x1.clone());
+    double res1 = acotFunc1->evaluate();
+    EXPECT_DOUBLE_EQ(res1, M_PI / 4.0); // Check value Acot(1)
+
+    // Derivative: -1 / (1 + 1^2) = -0.5
+    Function* acotDerivative1 = acotFunc1->derivative(&x1);
+    double expected_derivative1 = -1.0 / (1.0 + x_val1 * x_val1);
+    EXPECT_DOUBLE_EQ(acotDerivative1->evaluate(), expected_derivative1); // Check derivative at 1
+
+    // Example 2: Acot(sqrt(3)) = pi/6
+    double x_val2 = std::sqrt(3.0);
+    Variable x2(&x_val2);
+    Function* acotFunc2 = new Acot(x2.clone());
+    double res2 = acotFunc2->evaluate();
+    EXPECT_DOUBLE_EQ(res2, M_PI / 6.0); // Check value Acot(sqrt(3))
+
+    // Derivative: -1 / (1 + (sqrt(3))^2) = -0.25
+    Function* acotDerivative2 = acotFunc2->derivative(&x2);
+    double expected_derivative2 = -1.0 / (1.0 + x_val2 * x_val2);
+    EXPECT_DOUBLE_EQ(acotDerivative2->evaluate(), expected_derivative2); // Check derivative at sqrt(3)
+
+    // Example 3: Acot(0) = pi/2
+    double x_val3 = 0.0;
+    Variable x3(&x_val3);
+    Function* acotFunc3 = new Acot(x3.clone());
+    double res3 = acotFunc3->evaluate();
+    EXPECT_DOUBLE_EQ(res3, M_PI / 2.0); // Check value Acot(0)
+
+    // Derivative: -1 / (1 + 0^2) = -1
+    Function* acotDerivative3 = acotFunc3->derivative(&x3);
+    double expected_derivative3 = -1.0 / (1.0 + x_val3 * x_val3);
+    EXPECT_DOUBLE_EQ(acotDerivative3->evaluate(), expected_derivative3); // Check derivative at 0
+
+    // Clean up
+    delete acotFunc1;
+    delete acotDerivative1;
+    delete acotFunc2;
+    delete acotDerivative2;
+    delete acotFunc3;
+    delete acotDerivative3;
+}
+
 // -------------------- Abs Test Implementation --------------------
 TEST_F(FunctionTest, TestAbs) {
     // Example 1: Abs(x) = 5

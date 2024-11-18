@@ -485,6 +485,44 @@ public:
     Atan& operator=(const Atan&) = delete;
 };
 
+// Class Cot (Cot(x))
+class Cot : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Cot(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Cot(const Cot&) = delete;
+    Cot& operator=(const Cot&) = delete;
+};
+
+// Class Acot (Acot(x))
+class Acot : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Acot(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Acot(const Acot&) = delete;
+    Acot& operator=(const Acot&) = delete;
+};
+
 // Class Max (Max(x, y))
 class Max : public Function {
 private:
