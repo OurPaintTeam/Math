@@ -11,6 +11,9 @@ class LSMTask: public Task{
     Function *c_function;
     std::vector<Function *> m_functions;
     std::vector<Variable *> m_X;
+    std::vector<Function *> m_grad;
+    std::vector<std::vector<Function *>> m_jac;
+    std::vector<std::vector<Function *>> m_hess;
 public:
     LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(std::move(functions)), m_X(std::move(x)) {
         int i = 0;
@@ -24,6 +27,21 @@ public:
             }
             i++;
         }
+        for (int j = 0; j < m_X.size(); j++) {
+            m_grad.push_back(c_function->derivative(m_X[j]));
+        }
+        for (int j = 0;j< m_functions.size(); j++) {
+            m_hess.push_back(std::vector<Function*>());
+            for (int k = 0; k< m_X.size(); k++) {
+                m_hess[j].push_back(c_function->derivative(m_X[j])->derivative(m_X[k]));
+            }
+        }
+        for (int j = 0; j < m_functions.size(); j++) {
+            m_jac.push_back(std::vector<Function *>());
+            for (int k = 0; k < m_X.size(); k++) {
+                m_jac[j].push_back(m_functions[j]->derivative(m_X[k]));
+            }
+        }
     }
     inline double getError() const override{
         return c_function->evaluate();
@@ -35,7 +53,7 @@ public:
         }
         return values;
     }
-    double setError(std::vector<double> x) override{
+    double setError(const std::vector<double> & x) override{
         if (x.size() != m_X.size()) {
             throw std::invalid_argument("not right vector of variables");
         }
@@ -47,7 +65,7 @@ public:
     Matrix<> gradient() const override{
         Matrix<> grad(m_X.size(), 1);
         for (int i = 0; i < m_X.size(); i++) {
-            grad(i, 0) = c_function->derivative(m_X[i])->evaluate();
+            grad(i, 0) = m_grad[i]->evaluate();
         }
         return grad;
     }
@@ -55,7 +73,7 @@ public:
         Matrix<> hessian(m_X.size(), m_X.size());
         for (int i = 0; i < m_X.size(); i++) {
             for (int j = 0; j < m_X.size(); j++) {
-                hessian(i, j) = c_function->derivative(m_X[i])->derivative(m_X[j])->evaluate();
+                hessian(i, j) = m_hess[i][j]->evaluate();
             }
         }
         return hessian;
@@ -64,7 +82,7 @@ public:
         Matrix<> jac(m_functions.size(), m_X.size());
         for (int i = 0; i < m_functions.size(); i++) {
             for (int j = 0; j < m_X.size(); j++) {
-                jac(i, j) = 2 * m_functions[i]->evaluate() * m_functions[i]->derivative(m_X[j])->evaluate();
+                jac(i, j) = m_jac[i][j]->evaluate();
             }
         }
         return jac;
@@ -77,7 +95,7 @@ public:
         for (int i = 0; i < m_functions.size(); ++i) {
             residuals(i, 0) = m_functions[i]->evaluate();
             for (int j = 0; j < m_X.size(); ++j) {
-                jac(i, j) = m_functions[i]->derivative(m_X[j])->evaluate();
+                jac(i, j) = m_jac[i][j]->evaluate();
             }
         }
         return {residuals, jac};
@@ -87,6 +105,19 @@ public:
         delete c_function;
         for (auto func: m_functions) {
             delete func;
+        }
+        for (auto func: m_grad) {
+            delete func;
+        }
+        for (auto func: m_hess) {
+            for (auto f: func) {
+                delete f;
+            }
+        }
+        for (auto func: m_jac) {
+            for (auto f: func) {
+                delete f;
+            }
         }
     }
 };

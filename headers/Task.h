@@ -10,6 +10,6 @@ class Task {
     virtual Matrix<> hessian() const = 0;
     virtual inline double getError() const =  0;
     virtual inline std::vector<double> getValues() const = 0;
-    virtual double setError(std::vector<double> x) = 0;
+    virtual double setError(const std::vector<double> & x) = 0;
 };
 #endif //MINIMIZEROPTIMIZER_TASK_H

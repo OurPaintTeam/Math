@@ -74,9 +74,9 @@ TEST_F(TestFunction, JacobianLSMTask) {
     std::vector<Function*> functions = { powerFunc };
     std::vector<Variable*> variables = { var };
     LSMTask task(functions, variables);
-
+    var->setValue(1.0);
     Matrix<> jac = task.jacobian();
-    EXPECT_DOUBLE_EQ(jac(0, 0), 192.0); // d((x + 2)^3)/dx at x=1
+    EXPECT_DOUBLE_EQ(jac(0, 0), 27.0); // d((x + 2)^3)/dx at x=1
 }
 
 // Тесты для метода linearizeFunction

@@ -10,21 +10,32 @@
 class TaskF: public Task {
     Function* c_function;
     std::vector<Variable*> m_X;
+    std::vector<Function*> m_grad;
+    std::vector<std::vector<Function*>> m_hess; // no constructor from non-Arithmetic(Function*) arguments for matrix
     public:
-    TaskF(Function*c_function, std::vector<Variable*> x): c_function(c_function), m_X(std::move(x)){}
+    TaskF(Function*c_function, std::vector<Variable*> x): c_function(c_function), m_X(std::move(x)){
+        for (int i = 0; i < m_X.size(); i++) {
+            m_grad.push_back(c_function->derivative(m_X[i]));
+        }
+        for (int i = 0; i < m_X.size(); i++) {
+            m_hess.push_back(std::vector<Function*>());
+            for (int j = 0; j < m_X.size(); j++) {
+                m_hess[i].push_back(c_function->derivative(m_X[i])->derivative(m_X[j]));
+            }
+        }
+    }
     Matrix<> gradient() const override {
         Matrix<> gradient(m_X.size(), 1);
         for (int i = 0; i < m_X.size(); i++) {
-            gradient(i, 0) = c_function->derivative(m_X[i])->evaluate();
+            gradient(i, 0) = m_grad[i]->evaluate();
         }
         return gradient;
     }
     Matrix<> hessian() const override{
         Matrix<> hessian(m_X.size(), m_X.size());
         for (int i = 0; i < m_X.size(); i++) {
-            Function* f = c_function->derivative(m_X[i]);
             for (int j = 0; j < m_X.size(); j++) {
-                hessian(i, j) = f->derivative(m_X[j])->evaluate();
+                hessian(i, j) = m_hess[i][j]->evaluate();
             }
         }
         return hessian;
@@ -39,7 +50,7 @@ class TaskF: public Task {
         }
         return values;
     }
-    double setError(std::vector<double> x) override{
+    double setError(const std::vector<double> & x) override{
         for (int i = 0; i < m_X.size(); i++) {
             m_X[i]->setValue(x[i]);
         }
