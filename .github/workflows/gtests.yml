@@ -38,6 +38,9 @@ jobs:
       - name: Run QRTest
         run: ./build/QRTest
 
+      - name: Run QRPerformanceTest
+        run: ./build/QRPerformanceTest
+
       - name: Run FunctionTest
         run: ./build/FunctionTest
 

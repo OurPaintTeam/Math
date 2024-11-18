@@ -119,6 +119,9 @@ public:
     void setCol(const Matrix<T>& A, const iterator_type& colI) const;
     void setRow(const Matrix<T>& A, const iterator_type& rowI) const;
 
+    Matrix getSubmatrix(const size_type& start, const size_type& end, const size_type& num_rows, const size_type& num_cols) const;
+    void setSubmatrix(const size_type& start_row, const size_type& start_col, const Matrix<T>& block);
+
     Matrix transpose() const;
     void setTranspose();
 
@@ -795,6 +798,43 @@ inline void Matrix<T>::setRow(const Matrix<T>& A, const iterator_type& rowI) con
     }
     else {
         throw std::out_of_range("Index out of range");
+    }
+}
+
+template<Arithmetic T>
+Matrix<T> Matrix<T>::getSubmatrix(const size_type& start_row, const size_type& start_col, const size_type& num_rows, const size_type& num_cols) const
+{
+    // Check
+    if (start_row + num_rows > rows || start_col + num_cols > cols) {
+        throw std::out_of_range("getSubmatrix: Index out of range");
+    }
+
+    // Create target matrix
+    Matrix<T> submatrix(num_rows, num_cols);
+
+    for (size_type i = 0; i < num_rows; ++i) {
+        for (size_type j = 0; j < num_cols; ++j) {
+            submatrix(i, j) = matrix[start_row + i][start_col + j];
+        }
+    }
+
+    return submatrix;
+}
+
+template<Arithmetic T>
+void Matrix<T>::setSubmatrix(const size_type& start_row, const size_type& start_col, const Matrix<T>& block) {
+    size_type block_rows = block.rows_size();
+    size_type block_cols = block.cols_size();
+
+    // Check
+    if (start_row + block_rows > rows || start_col + block_cols > cols) {
+        throw std::out_of_range("setSubmatrix: Index out of range");
+    }
+
+    for (size_type i = 0; i < block_rows; ++i) {
+        for (size_type j = 0; j < block_cols; ++j) {
+            matrix[start_row + i][start_col + j] = block(i, j);
+        }
     }
 }
 

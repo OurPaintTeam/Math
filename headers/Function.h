@@ -16,15 +16,21 @@
 //  Division
 //  Power
 //  Negation
+//  Abs
+//  Sign
 //  Modulo
-//  Exponential
-//  Logarithm
+//  Exp
+//  Ln
+//  Log
 //  Sqrt
 //  Sin
 //  Cos
 //  Asin
 //  Acos
-
+//  Tan
+//  Atan
+//  Max
+//  Min
 
 
 
@@ -216,6 +222,48 @@ public:
     Negation& operator=(const Negation&) = delete;
 };
 
+// Class Abs
+class Abs : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Abs(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Abs(const Abs&) = delete;
+    Abs& operator=(const Abs&) = delete;
+};
+
+// Class Sign
+class Sign : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Sign(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Sign(const Sign&) = delete;
+    Sign& operator=(const Sign&) = delete;
+};
+
 // Class Modulo
 class Mod : public Function {
 private:
@@ -239,12 +287,12 @@ public:
 };
 
 // Class Exponential (e^x)
-class Exponential : public Function {
+class Exp : public Function {
 private:
     Function* exponent;
 
 public:
-    explicit Exponential(Function* exponent);
+    explicit Exp(Function* exponent);
 
     double evaluate() const override;
 
@@ -255,17 +303,17 @@ public:
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
-    Exponential(const Exponential&) = delete;
-    Exponential& operator=(const Exponential&) = delete;
+    Exp(const Exp&) = delete;
+    Exp& operator=(const Exp&) = delete;
 };
 
-// Class Logarithm (ln(x))
-class Logarithm : public Function {
+// Class Ln (ln(x))
+class Ln : public Function {
 private:
     Function* argument;
 
 public:
-    explicit Logarithm(Function* argument);
+    explicit Ln(Function* argument);
 
     double evaluate() const override;
 
@@ -276,8 +324,30 @@ public:
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
-    Logarithm(const Logarithm&) = delete;
-    Logarithm& operator=(const Logarithm&) = delete;
+    Ln(const Ln&) = delete;
+    Ln& operator=(const Ln&) = delete;
+};
+
+// Class Log (log(base, x))
+class Log : public Function {
+private:
+    Function* base;
+    Function* argument;
+
+public:
+    explicit Log(Function* base, Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Log(const Ln&) = delete;
+    Log& operator=(const Log&) = delete;
 };
 
 // class sqrt (sqrt(x))
@@ -339,7 +409,7 @@ public:
     Cos& operator=(const Cos&) = delete;
 };
 
-// Class sin (sin(x))
+// Class asin (asin(x))
 class Asin : public Function {
 private:
     Function* argument;
@@ -358,7 +428,7 @@ public:
     Asin& operator=(const Asin&) = delete;
 };
 
-// Class cos (cos(x))
+// Class acos (acos(x))
 class Acos : public Function {
 private:
     Function* argument;
@@ -375,6 +445,122 @@ public:
     // Disable copy constructor and copy assignment to prevent shallow copies
     Acos(const Acos&) = delete;
     Acos& operator=(const Acos&) = delete;
+};
+
+// Class Tan (Tan(x))
+class Tan : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Tan(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Tan(const Tan&) = delete;
+    Tan& operator=(const Tan&) = delete;
+};
+
+// Class Atan (Atan(x))
+class Atan : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Atan(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Atan(const Atan&) = delete;
+    Atan& operator=(const Atan&) = delete;
+};
+
+// Class Cot (Cot(x))
+class Cot : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Cot(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Cot(const Cot&) = delete;
+    Cot& operator=(const Cot&) = delete;
+};
+
+// Class Acot (Acot(x))
+class Acot : public Function {
+private:
+    Function* argument;
+
+public:
+    explicit Acot(Function* argument);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Acot(const Acot&) = delete;
+    Acot& operator=(const Acot&) = delete;
+};
+
+// Class Max (Max(x, y))
+class Max : public Function {
+private:
+    Function* left;
+    Function* right;
+
+public:
+    explicit Max(Function* left, Function* right);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Max(const Max&) = delete;
+    Max& operator=(const Max&) = delete;
+};
+
+// Class Min (Min(x, y))
+class Min : public Function {
+private:
+    Function* left;
+    Function* right;
+
+public:
+    explicit Min(Function* left, Function* right);
+
+    double evaluate() const override;
+
+    Function* derivative(Variable* var) const override;
+
+    Function* clone() const override;
+
+    // Disable copy constructor and copy assignment to prevent shallow copies
+    Min(const Min&) = delete;
+    Min& operator=(const Min&) = delete;
 };
 
 #endif // MINIMIZEROPTIMIZER_FUNCTION_H
