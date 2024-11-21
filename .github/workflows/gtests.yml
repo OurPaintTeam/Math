@@ -64,3 +64,6 @@ jobs:
 
       - name: Run LMTest
         run: ./build/LMTestWithOurMatrix
+
+      - name: Run SimpleGraph
+        run: ./build/SimpleGraph

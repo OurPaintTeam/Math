@@ -39,7 +39,8 @@ if (NOT TARGET gtest)
     set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
     FetchContent_MakeAvailable(googletest)
 endif()
-# Добавляем исполняемые файлы тестов
+
+# Added executable tests files
 add_executable(MatrixTest tests/TestsMatrix.cpp)
 target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
 
@@ -72,7 +73,11 @@ target_link_libraries(LMTest MinimizerOptimizer gtest gtest_main)
 
 add_executable(LMTestWithOurMatrix tests/OurLMTest.cpp)
 target_link_libraries(LMTestWithOurMatrix MinimizerOptimizer gtest gtest_main)
-# Запускаем тесты
+
+add_executable(SimpleGraph tests/graphgtests.cpp)
+target_link_libraries(SimpleGraph gtest gtest_main)
+
+# Run tests
 add_test(NAME FunctionTests COMMAND FunctionTest)
 add_test(NAME OptimizationTaskTest COMMAND OptimizationTaskTest)
 add_test(NAME GradientOptimizerTests COMMAND GradientOptimizerTest)
@@ -82,3 +87,4 @@ add_test(NAME QRTest COMMAND QRTest)
 add_test(NAME ErrorFunctionTest COMMAND ErrorFunctionTest)
 add_test(NAME LMTest COMMAND LMTest)
 add_test(NAME LMTestWithOurMatrix COMMAND LMTestWithOurMatrix)
+add_test(NAME SimpleGraph COMMAND SimpleGraph)
