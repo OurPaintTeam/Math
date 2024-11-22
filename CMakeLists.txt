@@ -23,6 +23,8 @@ include_directories(${eigen_SOURCE_DIR})
 include_directories(headers)
 include_directories(headers/Optimizers)
 include_directories(headers/decomposition)
+include_directories(headers/graph)
+
 
 # Сборка основной библиотеки
 add_library(MinimizerOptimizer src/LevenbergMarquardtSolver.cpp src/QR.cpp src/Function.cpp src/ErrorFunctions.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
