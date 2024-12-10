@@ -1,6 +1,5 @@
-//
 // Created by Eugene Bychkov on 14.11.2024.
-//
+
 #include "LevenbergMarquardtSolver.h"
 
 std::vector<double> LMSolver::getResult() const {
@@ -8,11 +7,11 @@ std::vector<double> LMSolver::getResult() const {
 }
 
 void LMSolver::setTask(Task *task) {
-    if (task == nullptr) {
+    if (!task) {
         throw std::runtime_error("Task is null");
     }
     c_task = dynamic_cast<LSMTask *>(task);
-    if (c_task == nullptr) {
+    if (!c_task) {
         throw std::runtime_error("Task is not LSMTask");
     }
     m_result = c_task->getValues();
@@ -35,25 +34,23 @@ void LMSolver::optimize() {
     while (iteration < maxIterations) {
         auto [residuals, jacobian] = c_task->linearizeFunction();
         gradient = jacobian.transpose() * residuals;
-        double gradientNorm = 0;
-        for (int i = 0; i < gradient.rows_size(); ++i)
-            gradientNorm += gradient(i, 0) * gradient(i, 0);
-        gradientNorm = std::sqrt(gradientNorm);
-        if (gradientNorm < epsilon1) {
+        if (gradient.norm() < epsilon1) {
             converged = true;
             break;
         }
-        hessian = jacobian.transpose() * jacobian;
 
+        hessian = jacobian.transpose() * jacobian;
         Matrix<> dampedHessian = hessian + Matrix<>::identity(hessian.rows_size(), hessian.cols_size()) * lambda;
-        QR dH = QR(dampedHessian);
+        QR dH(dampedHessian);
         dH.qr();
         Matrix<> delta = dH.pseudoInverse() * gradient;
+
         Matrix<> newResult = Matrix<>(m_result).transpose() - delta;
-        std::vector<double> newParams;
+        std::vector<double> newParams(newResult.rows_size());
         for (int i = 0; i < newResult.rows_size(); ++i) {
-            newParams.push_back(newResult(i, 0));
+            newParams[i] = newResult(i, 0);
         }
+
         double newError = c_task->setError(newParams);
         if (newError < currentError) {
             m_result = newParams;
@@ -62,16 +59,9 @@ void LMSolver::optimize() {
         } else {
             lambda *= b_increase;
         }
-        gradientNorm = 0;
-        for (int i = 0; i < gradient.rows_size(); ++i)
-            gradientNorm += gradient(i, 0) * gradient(i, 0);
-        gradientNorm = std::sqrt(gradientNorm);
+
         Matrix<> dParams = newResult - Matrix<>(m_result).transpose();
-        double dParamsNorm = 0;
-        for (int i = 0; i < dParams.rows_size(); ++i)
-            dParamsNorm += dParams(i, 0) * dParams(i, 0);
-        dParamsNorm = std::sqrt(dParamsNorm);
-        if (gradientNorm < epsilon1 && dParamsNorm < epsilon2) {
+        if (gradient.norm() < epsilon1 && dParams.norm() < epsilon2) {
             converged = true;
             break;
         }
@@ -80,4 +70,3 @@ void LMSolver::optimize() {
     }
     std::cout << "Levenberg-Marquardt converged after " << iteration << " iterations." << std::endl;
 }
-

@@ -45,7 +45,7 @@ public:
     explicit Matrix(const size_type& size);
     explicit Matrix(const size_type& rows, const size_type& cols);
     explicit Matrix(const size_type& rows, const size_type& cols, const T& value);
-    
+
     template <VectorVectorType V>
     explicit Matrix(const V& vec);
 
@@ -158,7 +158,9 @@ public:
     static Matrix random(const size_type& size, const T& leftNum = 0.0, const T& rightNum = 1.0);
     static Matrix random(const size_type& rows, const size_type& cols, const T& leftNum = 0.0, const T& rightNum = 1.0);
     void setRandom(const T& leftNum = 0.0, const T& rightNum = 1.0);
+    T norm() const;
 
+    static T norm(const Matrix<T>& mat);
     inline size_type rows_size() const { return rows; }
     inline size_type cols_size() const { return cols; }
 
@@ -169,7 +171,7 @@ private:
 };
 
 template <Arithmetic T>
-inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols) : rows(rows), cols(cols) 
+inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols) : rows(rows), cols(cols)
 {
     matrix = new T *[rows];
     for (iterator_type i = 0; i < rows; i++) {
@@ -181,7 +183,7 @@ inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols) : rows(ro
 }
 
 template<Arithmetic T>
-inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols, const T& value) : rows(rows), cols(cols) 
+inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols, const T& value) : rows(rows), cols(cols)
 {
     matrix = new T * [rows];
     for (iterator_type i = 0; i < rows; i++) {
@@ -190,6 +192,22 @@ inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols, const T& 
             matrix[i][j] = value;
         }
     }
+}
+template<Arithmetic T>
+inline T Matrix<T>::norm() const
+{
+    T sum = 0;
+    for (size_type i = 0; i < rows; i++) {
+        for (size_type j = 0; j < cols; j++) {
+            sum += matrix[i][j] * matrix[i][j];
+        }
+    }
+    return std::sqrt(sum);
+}
+
+template <Arithmetic T>
+T Matrix<T>::norm(const Matrix<T>& mat) {
+    return mat.norm();
 }
 
 template<Arithmetic T>
@@ -599,13 +617,13 @@ inline constexpr Matrix<V>& operator*=(Matrix<V>& A, const std::initializer_list
 template<Arithmetic V>
 inline constexpr bool operator==(const Matrix<V>& A, const Matrix<V>& B)
 {
-    if (A.rows_size() == B.rows_size() && A.cols_size() == B.cols_size()) 
+    if (A.rows_size() == B.rows_size() && A.cols_size() == B.cols_size())
     {
         for (typename Matrix<V>::iterator_type i = 0; i < A.rows_size(); ++i)
         {
             for (typename Matrix<V>::iterator_type j = 0; j < A.cols_size(); ++j)
             {
-                if (A(i, j) != B(i, j)) 
+                if (A(i, j) != B(i, j))
                 {
                     return false;
                 }
@@ -624,10 +642,10 @@ inline constexpr bool operator==(const Matrix<V>& A, const std::initializer_list
         throw std::invalid_argument("Matrices must have the same size");
     }
     auto row_it = values.begin();
-    for (typename Matrix<V>::size_type i = 0; i < A.rows_size(); ++i, ++row_it) 
+    for (typename Matrix<V>::size_type i = 0; i < A.rows_size(); ++i, ++row_it)
     {
         auto col_it = row_it->begin();
-        for (typename Matrix<V>::size_type j = 0; j < A.cols_size(); ++j, ++col_it) 
+        for (typename Matrix<V>::size_type j = 0; j < A.cols_size(); ++j, ++col_it)
         {
             if (A(i, j) != *col_it) {
                 return false;
@@ -732,11 +750,11 @@ inline std::vector<T> Matrix<T>::getRow(const iterator_type& rowI, const size_ty
 template<Arithmetic T>
 inline void Matrix<T>::setCol(const std::vector<T>& colV, const iterator_type& colI) const
 {
-    if (colV.size() > rows || colI >= cols) 
+    if (colV.size() > rows || colI >= cols)
     {
         throw std::out_of_range("Index out of range");
     }
-    for (iterator_type i = 0; i < colV.size(); i++) 
+    for (iterator_type i = 0; i < colV.size(); i++)
     {
         matrix[i][colI] = colV[i];
     }
@@ -745,11 +763,11 @@ inline void Matrix<T>::setCol(const std::vector<T>& colV, const iterator_type& c
 template<Arithmetic T>
 inline void Matrix<T>::setRow(const std::vector<T>& rowV, const iterator_type& rowI) const
 {
-    if (rowV.size() > cols || rowI >= rows) 
+    if (rowV.size() > cols || rowI >= rows)
     {
         throw std::out_of_range("Index out of range");
     }
-    for (iterator_type i = 0; i < rowV.size(); i++) 
+    for (iterator_type i = 0; i < rowV.size(); i++)
     {
         matrix[rowI][i] = rowV[i];
     }
@@ -1033,11 +1051,11 @@ inline T Matrix<T>::minor(const size_type& ix, const size_type& jx) const
         throw std::invalid_argument("Matrix should be square!");
     }
     std::vector<std::vector<T>> subMatrix;
-    for (size_type i = 0; i < rows; ++i) 
+    for (size_type i = 0; i < rows; ++i)
     {
         if (i == ix) continue;
         std::vector<T> subRow;
-        for (size_type j = 0; j < rows; ++j) 
+        for (size_type j = 0; j < rows; ++j)
         {
             if (j == jx) continue;
             subRow.push_back(matrix[i][j]);
@@ -1109,11 +1127,11 @@ inline T Matrix<T>::trace(const Matrix<T>& mat)
 }
 
 template<Arithmetic T>
-inline std::vector<T> Matrix<T>::diag() const 
+inline std::vector<T> Matrix<T>::diag() const
 {
     std::vector<T> result;
     size_type min_dim = std::min(rows, cols);
-    for (size_type i = 0; i < min_dim; i++) 
+    for (size_type i = 0; i < min_dim; i++)
     {
         result.push_back(matrix[i][i]);
     }
@@ -1121,11 +1139,11 @@ inline std::vector<T> Matrix<T>::diag() const
 }
 
 template<Arithmetic T>
-inline std::vector<T> Matrix<T>::diag(const Matrix<T>& mat) 
+inline std::vector<T> Matrix<T>::diag(const Matrix<T>& mat)
 {
     std::vector<T> result;
     size_type min_dim = std::min(mat.rows_size(), mat.cols_size());
-    for (size_type i = 0; i < min_dim; i++) 
+    for (size_type i = 0; i < min_dim; i++)
     {
         result.push_back(mat(i, i));
     }
