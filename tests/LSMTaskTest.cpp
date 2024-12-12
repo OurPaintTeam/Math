@@ -96,7 +96,27 @@ TEST_F(TestFunction, LinearizeFunctionSimple) {
     // Derivative of f(x) = x is 1
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
 }
-
+TEST_F(TestFunction, HessianTest) {
+    Variable* x = new Variable(new double(1.0));
+    Variable* y = new Variable(new double(1.0));
+    Function* x_squared = new Power(x, new Constant(2.0));  // f(x) = x^2
+    Function* y_squared = new Power(y, new Constant(2.0));  // f(x) = y^2
+    Function* sum = new Addition(x_squared,y_squared);
+    std::vector<Function*> functins = { sum };
+    std::vector<Variable*> variables = { x, y };
+    LSMTask task(functins, variables);
+    Matrix<> hessian = task.hessian();
+    for (int i = 0; i < hessian.rows_size(); i++) {
+        for (int j = 0; j < hessian.cols_size(); j++) {
+            std::cout << hessian(i, j) << " ";
+        }
+        std::cout << std::endl;
+    }
+    EXPECT_DOUBLE_EQ(hessian(0, 0), 16.0);
+    EXPECT_DOUBLE_EQ(hessian(0, 1), 8.0);
+    EXPECT_DOUBLE_EQ(hessian(1, 0), 8.0);
+    EXPECT_DOUBLE_EQ(hessian(1, 1), 16.0);
+}
 TEST_F(TestFunction, LinearizeFunctionWithConstant) {
     Variable* x = new Variable(new double(2.0));
     Function* func = new Addition(x, const2);  // f(x) = x + 2

@@ -7,15 +7,17 @@
 
 #include "TaskF.h"
 
-class LSMTask: public Task{
+class LSMTask : public Task {
     Function *c_function;
     std::vector<Function *> m_functions;
     std::vector<Variable *> m_X;
     std::vector<Function *> m_grad;
-    std::vector<std::vector<Function *>> m_jac;
-    std::vector<std::vector<Function *>> m_hess;
+    std::vector<std::vector<Function *> > m_jac;
+    std::vector<std::vector<Function *> > m_hess;
+
 public:
-    LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(std::move(functions)), m_X(std::move(x)) {
+    LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(std::move(functions)),
+                                                                            m_X(std::move(x)) {
         int i = 0;
         for (auto &function: m_functions) {
             Constant *c = new Constant(2);
@@ -30,9 +32,9 @@ public:
         for (int j = 0; j < m_X.size(); j++) {
             m_grad.push_back(c_function->derivative(m_X[j]));
         }
-        for (int j = 0;j< m_functions.size(); j++) {
-            m_hess.push_back(std::vector<Function*>());
-            for (int k = 0; k< m_X.size(); k++) {
+        for (int j = 0; j < m_X.size(); j++) {
+            m_hess.push_back(std::vector<Function *>());
+            for (int k = 0; k < m_X.size(); k++) {
                 m_hess[j].push_back(c_function->derivative(m_X[j])->derivative(m_X[k]));
             }
         }
@@ -43,17 +45,20 @@ public:
             }
         }
     }
-    inline double getError() const override{
+
+    inline double getError() const override {
         return c_function->evaluate();
     }
-    inline std::vector<double> getValues() const override{
+
+    inline std::vector<double> getValues() const override {
         std::vector<double> values;
         for (auto &x: m_X) {
             values.push_back(x->evaluate());
         }
         return values;
     }
-    double setError(const std::vector<double> & x) override{
+
+    double setError(const std::vector<double> &x) override {
         if (x.size() != m_X.size()) {
             throw std::invalid_argument("not right vector of variables");
         }
@@ -62,14 +67,16 @@ public:
         }
         return c_function->evaluate();
     }
-    Matrix<> gradient() const override{
+
+    Matrix<> gradient() const override {
         Matrix<> grad(m_X.size(), 1);
         for (int i = 0; i < m_X.size(); i++) {
             grad(i, 0) = m_grad[i]->evaluate();
         }
         return grad;
     }
-    Matrix<> hessian() const override{
+
+    Matrix<> hessian() const override {
         Matrix<> hessian(m_X.size(), m_X.size());
         for (int i = 0; i < m_X.size(); i++) {
             for (int j = 0; j < m_X.size(); j++) {
@@ -78,7 +85,8 @@ public:
         }
         return hessian;
     }
-    Matrix<> jacobian() const{
+
+    Matrix<> jacobian() const {
         Matrix<> jac(m_functions.size(), m_X.size());
         for (int i = 0; i < m_functions.size(); i++) {
             for (int j = 0; j < m_X.size(); j++) {
