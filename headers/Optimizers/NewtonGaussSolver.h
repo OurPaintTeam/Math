@@ -1,11 +1,13 @@
-//
-// Created by Eugene Bychkov on 03.11.2024.
-//
-
 #ifndef MINIMIZEROPTIMIZER_NEWTONGAUSSESOLVER_H
 #define MINIMIZEROPTIMIZER_NEWTONGAUSSESOLVER_H
+
+#include <stdexcept>
+#include <cmath>
+
 #include "Optimizer.h"
 #include "LSMTask.h"
+#include "QR.h"
+
 class NewtonGaussSolver : public Optimizer {
     LSMTask *task;
     std::vector<double> result;

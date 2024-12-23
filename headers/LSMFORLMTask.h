@@ -4,6 +4,7 @@
 
 #ifndef MINIMIZEROPTIMIZER_LSMFORLMTASK_H
 #define MINIMIZEROPTIMIZER_LSMFORLMTASK_H
+
 #include "TaskF.h"
 #include <Eigen/Dense>
 #include <stdexcept>

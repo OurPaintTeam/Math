@@ -56,6 +56,9 @@ jobs:
       - name: Run GradientOptimizerTest
         run: ./build/GradientOptimizerTest
 
+      - name: Run NewtonGaussSolverTests
+        run: ./build/NewtonGaussSolverTests
+
       - name: Run NewtonOptimizerTests
         run: ./build/NewtonOptimizerTest
 

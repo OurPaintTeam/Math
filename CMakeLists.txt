@@ -27,7 +27,15 @@ include_directories(headers/graph)
 
 
 # Сборка основной библиотеки
-add_library(MinimizerOptimizer src/LevenbergMarquardtSolver.cpp src/QR.cpp src/Function.cpp src/ErrorFunctions.cpp src/GradientOptimizer.cpp src/NewtonOptimizer.cpp)
+add_library(MinimizerOptimizer
+        src/LevenbergMarquardtSolver.cpp
+        src/QR.cpp
+        src/Function.cpp
+        src/ErrorFunctions.cpp
+        src/GradientOptimizer.cpp
+        src/NewtonOptimizer.cpp
+        src/NewtonGaussSolver.cpp
+        )
 
 # Сборка тестов
 enable_testing()
@@ -61,8 +69,11 @@ target_link_libraries(OptimizationTaskTest MinimizerOptimizer gtest gtest_main)
 add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cpp)
 target_link_libraries(GradientOptimizerTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(NewtonOptimizerTest tests/NewtonOptimizerTest.cpp)
+add_executable(NewtonOptimizerTest tests/NewtonGaussSolverTests.cpp)
 target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
+
+add_executable(NewtonGaussSolverTests tests/NewtonGaussSolverTests.cpp)
+target_link_libraries(NewtonGaussSolverTests MinimizerOptimizer gtest gtest_main)
 
 add_executable(LSMTaskTest tests/LSMTaskTest.cpp)
 target_link_libraries(LSMTaskTest MinimizerOptimizer gtest gtest_main)
@@ -84,6 +95,7 @@ add_test(NAME FunctionTests COMMAND FunctionTest)
 add_test(NAME OptimizationTaskTest COMMAND OptimizationTaskTest)
 add_test(NAME GradientOptimizerTests COMMAND GradientOptimizerTest)
 add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)
+add_test(NAME NewtonGaussSolverTests COMMAND NewtonGaussSolverTests)
 add_test(NAME MatrixTest COMMAND MatrixTest)
 add_test(NAME QRTest COMMAND QRTest)
 add_test(NAME ErrorFunctionTest COMMAND ErrorFunctionTest)
