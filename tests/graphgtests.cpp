@@ -1,8 +1,19 @@
 #include <gtest/gtest.h>
-#include "../headers/graph/simpleGraph.h"
+#include "../headers/graph/Graph.h"
+#include "../headers/graph/InheritanceGraph.h"
 
-TEST(GraphTest, AddVerticesAndEdges) {
-    Graph<int, std::string> g;
+// Graph Undirected Unweighted
+TEST(GraphTest, AddVertex) {
+    Graph<int> graph;
+    int vertex = 42;
+    graph.addVertex(vertex);
+
+    const auto& vertices = graph.getVertices();
+    EXPECT_NE(vertices.find(vertex), vertices.end());
+}
+
+TEST(GraphTest, AddEdgeAddEdge2) {
+    Graph<std::string, int> g;
 
     g.addVertex("A");
     g.addVertex("B");
@@ -10,20 +21,20 @@ TEST(GraphTest, AddVerticesAndEdges) {
     g.addVertex("D");
     g.addVertex("E");
 
-    ASSERT_TRUE(g.hasVertex("A"));
-    ASSERT_FALSE(g.hasVertex("F"));
+    EXPECT_TRUE(g.hasVertex("A"));
+    EXPECT_FALSE(g.hasVertex("F"));
 
-    ASSERT_TRUE(g.addEdge(1, "A", "B"));
-    ASSERT_TRUE(g.addEdge(2, "A", "C"));
-    ASSERT_TRUE(g.addEdge(3, "B", "D"));
-    ASSERT_TRUE(g.addEdge(4, "C", "E"));
+    EXPECT_TRUE(g.addEdge("A", "B"));
+    EXPECT_TRUE(g.addEdge("A", "C"));
+    EXPECT_TRUE(g.addEdge("B", "D"));
+    EXPECT_TRUE(g.addEdge("C", "E"));
 
-    ASSERT_TRUE(g.hasEdge("A", "B"));
-    ASSERT_FALSE(g.hasEdge("A", "D"));
+    EXPECT_TRUE(g.hasEdge("A", "B"));
+    EXPECT_FALSE(g.hasEdge("A", "D"));
 }
 
 TEST(GraphTest, FindConnectedComponent) {
-    Graph<int, std::string> g;
+    Graph<std::string, int> g;
 
     g.addVertex("A");
     g.addVertex("B");
@@ -31,21 +42,20 @@ TEST(GraphTest, FindConnectedComponent) {
     g.addVertex("D");
     g.addVertex("E");
 
-    g.addEdge(1, "A", "B");
-    g.addEdge(2, "A", "C");
-    g.addEdge(3, "B", "D");
-    g.addEdge(4, "C", "E");
+    g.addEdge("A", "B");
+    g.addEdge("A", "C");
+    g.addEdge("B", "D");
+    g.addEdge("C", "E");
 
     auto component = g.findConnectedComponent("A");
     std::unordered_set<std::string> expected_component = {"A", "B", "C", "D", "E"};
     std::unordered_set<std::string> actual_component(component.begin(), component.end());
 
-    ASSERT_EQ(actual_component, expected_component);
+    EXPECT_EQ(actual_component, expected_component);
 }
 
-
 TEST(GraphTest, FindConnectedComponentSingleVertex) {
-    Graph<int, std::string> g;
+    Graph<std::string, int> g;
 
     g.addVertex("A");
 
@@ -57,7 +67,7 @@ TEST(GraphTest, FindConnectedComponentSingleVertex) {
 }
 
 TEST(GraphTest, FindConnectedComponentNoEdges) {
-    Graph<int, std::string> g;
+    Graph<std::string, int> g;
 
     g.addVertex("A");
     g.addVertex("B");
@@ -71,7 +81,7 @@ TEST(GraphTest, FindConnectedComponentNoEdges) {
 }
 
 TEST(GraphTest, FindConnectedComponentDisjointSets) {
-    Graph<int, std::string> g;
+    Graph<std::string, int> g;
 
     g.addVertex("A");
     g.addVertex("B");
@@ -80,9 +90,9 @@ TEST(GraphTest, FindConnectedComponentDisjointSets) {
     g.addVertex("E");
     g.addVertex("F");
 
-    g.addEdge(1, "A", "B");
-    g.addEdge(2, "A", "C");
-    g.addEdge(3, "D", "E");
+    g.addEdge("A", "B");
+    g.addEdge("A", "C");
+    g.addEdge("D", "E");
 
     auto componentA = g.findConnectedComponent("A");
     std::unordered_set<std::string> expected_componentA = {"A", "B", "C"};
@@ -96,3 +106,18 @@ TEST(GraphTest, FindConnectedComponentDisjointSets) {
 
     ASSERT_EQ(actual_componentD, expected_componentD);
 }
+
+// DirectedWeightedGraph
+
+
+
+// DirectedUnweightedGraph
+
+
+
+// UndirectedWeightedGraph
+
+
+
+// UndirectedUnweightedGraph
+
