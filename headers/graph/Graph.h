@@ -1,9 +1,11 @@
 #ifndef GRAPH_H
 #define GRAPH_H
 
+#include <iostream>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <stdexcept>
 
 #include "Politicians.h"
 #include "GraphObjects.h"
@@ -19,6 +21,24 @@ class Graph :
         private DirectedPolicyType,
         private WeightedPolicyType {
 
+private:
+    std::unordered_set<VertexType> _vertices;
+
+    std::unordered_map<VertexType, std::vector<Edge<VertexType, WeightType>>> _adjacencyList;
+
+protected:
+    void DFS(const VertexType& v, std::unordered_set<VertexType>& visited, std::vector<VertexType>& component) const {
+        visited.insert(v);
+        component.push_back(v);
+        if (_adjacencyList.find(v) != _adjacencyList.end()) {
+            for (const auto& e : _adjacencyList.at(v)) {
+                if (visited.find(e.to) == visited.end()) {
+                    DFS(e.to, visited, component);
+                }
+            }
+        }
+    }
+
 public:
 
     Graph() = default;
@@ -27,6 +47,27 @@ public:
 
     void addVertex(const VertexType& v) {
         _vertices.insert(v);
+    }
+
+    bool removeVertex(const VertexType& v) {
+        auto it = _vertices.find(v);
+        if (it == _vertices.end()) {
+            return false; // Vertex not found
+        }
+
+        _vertices.erase(it);
+        _adjacencyList.erase(v); // Remove outgoing edges
+
+        // Remove incoming edges
+        for (auto& [vertex, edges] : _adjacencyList) {
+            edges.erase(
+                    std::remove_if(edges.begin(), edges.end(),
+                                   [&](const Edge<VertexType, WeightType>& edge) { return edge.to == v; }),
+                    edges.end()
+            );
+        }
+
+        return true;
     }
 
     bool addEdge(const VertexType& from, const VertexType& to, const WeightType& weight = WeightType()) {
@@ -49,6 +90,89 @@ public:
             return true;
         }
         return false;
+    }
+
+    bool removeEdge(const VertexType& from, const VertexType& to) {
+        if (_vertices.find(from) == _vertices.end() || _vertices.find(to) == _vertices.end()) {
+            return false;
+        }
+
+        bool removed = false;
+
+        // Remove edge from "from" to "to"
+        auto &fromEdges = _adjacencyList[from];
+        size_t originalSize = fromEdges.size();
+        fromEdges.erase(
+                std::remove_if(fromEdges.begin(), fromEdges.end(),
+                               [&](const Edge<VertexType, WeightType>& edge) { return edge.to == to; }),
+                fromEdges.end()
+        );
+        if (fromEdges.size() != originalSize) {
+            removed = true;
+        }
+
+        // If the graph is undirected, also remove the edge from "to" to "from"
+        if constexpr (!DirectedPolicyType::isDirected) {
+            auto& toEdges = _adjacencyList[to];
+            originalSize = toEdges.size();
+            toEdges.erase(
+                    std::remove_if(toEdges.begin(), toEdges.end(),
+                                   [&](const Edge<VertexType, WeightType>& edge) { return edge.to == from; }),
+                    toEdges.end()
+            );
+            if (toEdges.size() != originalSize) {
+                removed = true;
+            }
+        }
+        return removed;
+    }
+
+
+    bool setEdgeWeight(const VertexType& from, const VertexType& to, const WeightType& weight) {
+        if (_vertices.find(from) != _vertices.end() && _vertices.find(to) != _vertices.end()) {
+            if constexpr (!WeightedPolicyType::isWeighted) {
+                throw std::invalid_argument("Cannot set weight on an unweighted graph.");
+            }
+            auto itFrom = _adjacencyList.find(from);
+
+            bool found = false;
+            for (auto& edge : itFrom->second) {
+                if (edge.to == to) {
+                    edge.weight = weight;
+                    found = true;
+                    break;
+                }
+            }
+            if constexpr (!DirectedPolicyType::isDirected) {
+                auto itTo = _adjacencyList.find(to);
+                for (auto& edge : itTo->second) {
+                    if (edge.to == from) {
+                        edge.weight = weight;
+                        break;
+                    }
+                }
+            }
+            return found;
+        }
+        return false;
+    }
+
+    WeightType getEdgeWeight(const VertexType& from, const VertexType& to) const {
+        if (_vertices.find(from) != _vertices.end() && _vertices.find(to) != _vertices.end()) {
+            if constexpr (!WeightedPolicyType::isWeighted) {
+                throw std::invalid_argument("Cannot get weight on an unweighted graph.");
+            }
+            auto it = _adjacencyList.find(from);
+            if (it != _adjacencyList.end()) {
+                for (const auto& edge : it->second) {
+                    if (edge.to == to) {
+                        return edge.weight;
+                    }
+                }
+            }
+            throw std::invalid_argument("Edge does not exist.");
+        }
+        throw std::invalid_argument("One or both vertices do not exist.");
     }
 
     bool hasVertex(const VertexType& v) const {
@@ -90,25 +214,143 @@ public:
         }
         return component;
     }
-
-protected:
-    void DFS(const VertexType& v, std::unordered_set<VertexType>& visited, std::vector<VertexType>& component) const {
-        visited.insert(v);
-        component.push_back(v);
-        if (_adjacencyList.find(v) != _adjacencyList.end()) {
-            for (const auto& e : _adjacencyList.at(v)) {
-                if (visited.find(e.to) == visited.end()) {
-                    DFS(e.to, visited, component);
-                }
-            }
-        }
-    }
-
-
-private:
-    std::unordered_set<VertexType> _vertices;
-
-    std::unordered_map<VertexType, std::vector<Edge<VertexType, WeightType>>> _adjacencyList;
 };
+
+// Возвращает все ребра
+//virtual std::vector<VertexType> getAllEdges() const;
+// ================================================
+
+// Вспомогательный метод для обхода DFS (для рекурсивной реализации)
+//virtual void dfsVisit(const VertexType& v, std::unordered_set<VertexType>& visited, std::vector<VertexType>& order) const;
+
+// Вспомогательный метод для нахождения компонент связности
+//virtual void findConnectedComponent(const VertexType& start, std::unordered_set<VertexType>& visited, std::vector<VertexType>& component) const;
+
+// ================================================
+// true если граф ориентированный
+//virtual bool isDirected() const;
+
+// true если граф взвешенный
+//virtual bool isWeighted() const;
+
+// Возвращает текущее представление (List, Matrix, ...)
+//virtual Representation getRepresentation() const;
+
+// Количество вершин
+//virtual size_t vertexCount() const;
+
+// Количество ребер
+//virtual size_t edgeCount() const;
+// ================================================
+
+
+
+// ================================================
+// обход графа (DFS, BFS и т.д.)
+//virtual std::vector<VertexType> traverse(const VertexType& start, SearchType type) const;
+
+// Является ли граф связным (для ориентированных) и сильно связным (для неориентированных)
+//virtual bool isConnected() const;
+
+// Выделить все компоненты связности (или сильной связности)
+//virtual std::vector<std::vector<VertexType>> connectedComponents() const;
+
+// Проверка графа на ацикличность (для ориентированных - DAG)
+//virtual bool isAcyclic() const;
+
+// Топологическая сортировка (актуально для ориентированного ацикличного графа)
+//virtual std::vector<VertexType> topologicalSort() const;
+// ================================================
+
+
+
+// ================================================
+// Алгоритм Дейкстры
+//virtual PathResult<VertexType, WeightType> dijkstra(const VertexType& start) const;
+
+// Алгоритм Беллмана - Форда
+//virtual PathResult<VertexType, WeightType> bellmanFord(const VertexType& start) const;
+
+// Алгоритм Флойда — Уоршелла: возвращает матрицу кратчайших путей между всеми парами вершин
+//virtual std::unordered_map<VertexType, std::unordered_map<VertexType, WeightType>> floydWarshall() const;
+// ================================================
+
+
+
+// ================================================
+// Алгоритм Краскала
+//virtual std::vector<EdgeType> kruskalMST() const;
+
+
+// Алгоритм Прима
+//virtual std::vector<EdgeType> primMST(const VertexType& start) const;
+// ================================================
+
+
+
+// ================================================
+// Существует ли Эйлеров цикл / путь (неориентированный, ориентированный)
+//virtual bool hasEulerianPath() const;
+
+// Построение Эйлерова пути или цикла, если он существует
+//virtual std::vector<VertexType> eulerianPath() const;
+
+// Поиск гамильтонова пути (или цикла)
+// это NP полная задача
+//virtual std::vector<VertexType> hamiltonianPath() const;
+// ================================================
+
+
+
+// ================================================
+// Алгоритм Форда-Фулкерсона (Edmonds-Karp) для вычисления максимального потока
+//virtual WeightType maxFlow(const VertexType& source, const VertexType& sink);
+
+// Поиск максимального паросочетания в двудольном графе (алгоритм Хопкрофта–Карпа)
+//virtual WeightType bipartiteMatching() const;
+// ================================================
+
+
+
+// ================================================
+// Транспонирования графа (актально для ориентированных графов)
+//virtual Graph transpose() const;
+
+// Построение дополнительного графа (для неориентированного, невзвешенного)
+//virtual Graph complement() const;
+
+// Выделение подграфа по множеству вершин
+//virtual Graph subGraph(std::vector<VertexType>& vertices) const;
+// ================================================
+
+
+
+// ================================================
+// Загрузка графа из файла
+//virtual bool loadFromFile(const std::string& fileName);
+
+// Сохранение графа в файл
+//virtual bool saveToFile(const std::string& fileName) const;
+// ================================================
+
+
+
+// ================================================
+// Можно реализовать собственные итераторы для вершин и рёбер.
+// Например, чтобы можно было писать:
+// for (auto it = graph.beginVertices(); it != graph.endVertices(); ++it) { ... }
+// или
+// for (auto eIt = graph.beginEdges(); eIt != graph.endEdges(); ++eIt) { ... }
+
+// class VertexIterator { ... };
+// class EdgeIterator   { ... };
+
+// VertexIterator beginVertices() const;
+// VertexIterator endVertices() const;
+
+// EdgeIterator beginEdges() const;
+// EdgeIterator endEdges() const;
+// ================================================
+
 
 #endif // ! GRAPH_H
