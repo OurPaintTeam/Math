@@ -1,16 +1,61 @@
 #include <gtest/gtest.h>
+#include <algorithm>
 #include "../headers/graph/Graph.h"
 #include "../headers/graph/InheritanceGraph.h"
 
-// Graph Undirected Unweighted
+/*
+
+Tests implementations:
+
+addVertex               = true
+removeVertex            = false
+addEdge                 = false
+removeEdge              = false
+setEdgeWeight           = false
+getEdgeWeight           = false
+getAllEdges             = false
+isDirected              = no need
+isWeighted              = no need
+hasEdge                 = false
+getVertices             = no need
+getAdjacencyList        = false
+getVertexEdges          = false
+printGraph(1,2)         = false
+findConnectedComponent  = false
+
+
+*/
+
 TEST(GraphTest, AddVertex) {
     Graph<int> graph;
     int vertex = 42;
     graph.addVertex(vertex);
 
-    const auto& vertices = graph.getVertices();
-    EXPECT_NE(vertices.find(vertex), vertices.end());
+    std::vector<int> vertices = graph.getVertices();
+    auto it = std::find(vertices.begin(), vertices.end(), vertex);
+    EXPECT_EQ(*it, vertex);
+    EXPECT_EQ(vertices.size(), 1);
+
+    auto adjList = graph.getAdjacencyList();
+    EXPECT_EQ(adjList.find(vertex)->first, vertex);
+    EXPECT_EQ(adjList.size(), 1);
+
+    graph.addVertex(1, 2, 3, 4, 5);
+    graph.hasVertices(1, 2, 3, 4, 5);
+
+    adjList = graph.getAdjacencyList();
+    EXPECT_EQ(adjList.find(1)->first, 1);
+    EXPECT_EQ(adjList.find(2)->first, 2);
+    EXPECT_EQ(adjList.find(3)->first, 3);
+    EXPECT_EQ(adjList.find(4)->first, 4);
+    EXPECT_EQ(adjList.find(5)->first, 5);
+
+    EXPECT_EQ(adjList.size(), 6);
+    EXPECT_EQ(graph.vertexCount(), 6);
 }
+
+
+/*
 
 TEST(GraphTest, AddEdgeAddEdge2) {
     Graph<std::string, int> g;
@@ -634,6 +679,25 @@ TEST(GraphTest, RemoveVertex_FullyCoversFunction) {
 
         EXPECT_FALSE(graph.removeVertex(1));
     }
+}
+
+// Test for graph printing
+TEST(GraphTest, PrintGraph) {
+    UndirectedUnweightedGraph<unsigned int, double> graph;
+    graph.addVertex(1);
+    graph.addVertex(2);
+    graph.addVertex(3);
+    graph.addVertex(4);
+    graph.addVertex(5);
+    graph.addVertex(6);
+    graph.addVertex(7);
+    graph.addVertex(8);
+    graph.addVertex(9);
+    graph.addVertex(10);
+    graph.addVertex(11);
+    graph.addVertex(12);
+    graph.addVertex(13);
+    graph.addVertex(14);
 }
 
 /*

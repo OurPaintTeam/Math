@@ -8,8 +8,8 @@ template <typename VertexType, typename WeightType = double>
 class DirectedWeightedGraph : public Graph <
         VertexType,
         WeightType,
-        DirectedPolicy<VertexType, WeightType>,
-        WeightedPolicy<VertexType, WeightType>
+        DirectedPolicy,
+        WeightedPolicy
 > {
 public:
     DirectedWeightedGraph() = default;
@@ -23,8 +23,8 @@ template <typename VertexType, typename WeightType = double>
 class DirectedUnweightedGraph : public Graph <
         VertexType,
         WeightType,
-        DirectedPolicy<VertexType, WeightType>,
-        UnweightedPolicy<VertexType, WeightType>
+        DirectedPolicy,
+        UnweightedPolicy
 > {
 public:
     DirectedUnweightedGraph() = default;
@@ -38,8 +38,8 @@ template <typename VertexType, typename WeightType = double>
 class UndirectedWeightedGraph : public Graph <
         VertexType,
         WeightType,
-        UndirectedPolicy<VertexType, WeightType>,
-        WeightedPolicy<VertexType, WeightType>
+        UndirectedPolicy,
+        WeightedPolicy
 > {
 public:
     UndirectedWeightedGraph() = default;
@@ -53,8 +53,8 @@ template <typename VertexType, typename WeightType = double>
 class UndirectedUnweightedGraph : public Graph <
         VertexType,
         WeightType,
-        UndirectedPolicy<VertexType, WeightType>,
-        UnweightedPolicy<VertexType, WeightType>
+        UndirectedPolicy,
+        UnweightedPolicy
 > {
 public:
     UndirectedUnweightedGraph() = default;
