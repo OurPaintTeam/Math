@@ -1,11 +1,18 @@
 cmake_minimum_required(VERSION 3.10)
-project(MinimizerOptimizer)
+# Увеличиваем максимальную длину путей к объектным файлам (меньше будет warnings)
+set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
+
+project(Math-MinimizerOptimizer-Module)
 
 # Укажите стандарт C++
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 # Используем FetchContent для загрузки Eigen
 include(FetchContent)
+
+# Отключаем глобально сборку тестов и примеров (меньше будет warnings)
+set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
 # Загрузка Eigen
 FetchContent_Declare(
@@ -14,6 +21,11 @@ FetchContent_Declare(
         GIT_TAG        3.3  # Выберите версию, которую хотите использовать
 )
 
+
+# Отключаем тестирование и сборку примеров Eigen (меньше будет warnings)
+set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(EIGEN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+
 # Загрузка Eigen, если он не был загружен
 FetchContent_MakeAvailable(eigen)
 
@@ -21,7 +33,7 @@ FetchContent_MakeAvailable(eigen)
 include_directories(${eigen_SOURCE_DIR})
 # Добавьте папки с заголовочными файлами
 include_directories(headers)
-include_directories(headers/Optimizers)
+include_directories(headers/optimizers)
 include_directories(headers/decomposition)
 include_directories(headers/graph)
 include_directories(headers/graph/politicians)
@@ -29,17 +41,14 @@ include_directories(headers/graph/politicians)
 
 # Сборка основной библиотеки
 add_library(MinimizerOptimizer
-        src/LevenbergMarquardtSolver.cpp
-        src/QR.cpp
-        src/Function.cpp
-        src/ErrorFunctions.cpp
-        src/GradientOptimizer.cpp
-        src/NewtonOptimizer.cpp
-        src/NewtonGaussSolver.cpp
+        src/LevenbergMarquardtSolver.cс
+        src/QR.cс
+        src/Function.cс
+        src/ErrorFunctions.cс
+        src/GradientOptimizer.cс
+        src/NewtonOptimizer.cс
+        src/NewtonGaussSolver.cс
         )
-
-# Сборка тестов
-enable_testing()
 
 if (NOT TARGET gtest)
     FetchContent_Declare(
@@ -51,44 +60,48 @@ if (NOT TARGET gtest)
     FetchContent_MakeAvailable(googletest)
 endif()
 
+# Сборка тестов
+enable_testing()
+
+
 # Added executable tests files
-add_executable(MatrixTest tests/TestsMatrix.cpp)
+add_executable(MatrixTest tests/TestsMatrix.cc)
 target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(QRTest tests/TestsQR.cpp)
+add_executable(QRTest tests/TestsQR.cc)
 target_link_libraries(QRTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(QRPerformanceTest tests/QRPerformanceTests.cpp)
+add_executable(QRPerformanceTest tests/QRPerformanceTests.cc)
 target_link_libraries(QRPerformanceTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(FunctionTest tests/FunctionTest.cpp)
+add_executable(FunctionTest tests/FunctionTest.cc)
 target_link_libraries(FunctionTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(OptimizationTaskTest tests/TaskTest.cpp)
+add_executable(OptimizationTaskTest tests/TaskTest.cc)
 target_link_libraries(OptimizationTaskTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cpp)
+add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cc)
 target_link_libraries(GradientOptimizerTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(NewtonOptimizerTest tests/NewtonGaussSolverTests.cpp)
+add_executable(NewtonOptimizerTest tests/NewtonGaussSolverTests.cc)
 target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(NewtonGaussSolverTests tests/NewtonGaussSolverTests.cpp)
+add_executable(NewtonGaussSolverTests tests/NewtonGaussSolverTests.cc)
 target_link_libraries(NewtonGaussSolverTests MinimizerOptimizer gtest gtest_main)
 
-add_executable(LSMTaskTest tests/LSMTaskTest.cpp)
+add_executable(LSMTaskTest tests/LSMTaskTest.cc)
 target_link_libraries(LSMTaskTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(ErrorFunctionTest tests/ErrorFunctionsTests.cpp)
+add_executable(ErrorFunctionTest tests/ErrorFunctionsTests.cc)
 target_link_libraries(ErrorFunctionTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(LMTest tests/LMTest.cpp)
+add_executable(LMTest tests/LMTest.cc)
 target_link_libraries(LMTest MinimizerOptimizer gtest gtest_main)
 
-add_executable(LMTestWithOurMatrix tests/OurLMTest.cpp)
+add_executable(LMTestWithOurMatrix tests/OurLMTest.cc)
 target_link_libraries(LMTestWithOurMatrix MinimizerOptimizer gtest gtest_main)
 
-add_executable(SimpleGraph tests/graphgtests.cpp)
+add_executable(SimpleGraph tests/graphgtests.cc)
 target_link_libraries(SimpleGraph gtest gtest_main)
 
 # Run tests
