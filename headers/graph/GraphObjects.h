@@ -1,5 +1,5 @@
-#ifndef GRAPH_OBJECTS_H
-#define GRAPH_OBJECTS_H
+#ifndef MINIMIZEROPTIMIZER_HEADERS_GRAPH_GRAPHOBJECTS_H_
+#define MINIMIZEROPTIMIZER_HEADERS_GRAPH_GRAPHOBJECTS_H_
 
 #include <unordered_map>
 #include <optional>
@@ -35,4 +35,4 @@ struct Edge {
             : from(f), to(t), weight(w) {}
 };
 
-#endif // GRAPH_OBJECTS_H
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_GRAPH_GRAPHOBJECTS_H_

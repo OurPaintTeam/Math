@@ -1,5 +1,5 @@
-#ifndef QR_H
-#define QR_H
+#ifndef MINIMIZEROPTIMIZER_HEADERS_DECOMPOSITION_QR_H_
+#define MINIMIZEROPTIMIZER_HEADERS_DECOMPOSITION_QR_H_
 
 #include <cmath>
 #include <vector>
@@ -63,4 +63,4 @@ public:
     Matrix<> pseudoInverse() const;
 };
 
-#endif // QR_H
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_DECOMPOSITION_QR_H_

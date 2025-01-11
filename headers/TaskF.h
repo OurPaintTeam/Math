@@ -1,9 +1,5 @@
-//
-// Created by Eugene Bychkov on 20.10.2024.
-//
-
-#ifndef MINIMIZEROPTIMIZER_TASKF_H
-#define MINIMIZEROPTIMIZER_TASKF_H
+#ifndef MINIMIZEROPTIMIZER_TASKF_H_
+#define MINIMIZEROPTIMIZER_TASKF_H_
 
 #include "Function.h"
 #include "Matrix.h"
@@ -65,4 +61,4 @@ public:
         return c_function->evaluate();
     }
 };
-#endif //MINIMIZEROPTIMIZER_TASKF_H
+#endif // ! MINIMIZEROPTIMIZER_TASKF_H_

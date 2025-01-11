@@ -1,5 +1,5 @@
-#ifndef MATRIX_H
-#define MATRIX_H
+#ifndef MINIMIZEROPTIMIZER_HEADERS_MATRIX_H_
+#define MINIMIZEROPTIMIZER_HEADERS_MATRIX_H_
 
 #include <iostream>
 #include <stdexcept>
@@ -1341,4 +1341,4 @@ inline void Matrix<T>::setRandom(const T& min, const T& max)
     }
 }
 
-#endif // MATRIX_H
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_MATRIX_H_

@@ -1,5 +1,5 @@
-#ifndef GRAPH_H_
-#define GRAPH_H_
+#ifndef MINIMIZEROPTIMIZER_HEADERS_GRAPH_GRAPH_H_
+#define MINIMIZEROPTIMIZER_HEADERS_GRAPH_GRAPH_H_
 
 #include <iostream>
 #include <unordered_map>
@@ -338,4 +338,4 @@ public:
     // Maybe next: graph iterators
 };
 
-#endif // ! GRAPH_H_
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_GRAPH_GRAPH_H_

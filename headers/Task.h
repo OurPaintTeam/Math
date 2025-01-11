@@ -1,9 +1,6 @@
-//
-// Created by Eugene Bychkov on 03.11.2024.
-//
+#ifndef MINIMIZEROPTIMIZER_HEADERS_TASK_H_
+#define MINIMIZEROPTIMIZER_HEADERS_TASK_H_
 
-#ifndef MINIMIZEROPTIMIZER_TASK_H
-#define MINIMIZEROPTIMIZER_TASK_H
 class Task {
     public:
     virtual Matrix<> gradient() const = 0;
@@ -12,4 +9,5 @@ class Task {
     virtual inline std::vector<double> getValues() const = 0;
     virtual double setError(const std::vector<double> & x) = 0;
 };
-#endif //MINIMIZEROPTIMIZER_TASK_H
+
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_TASK_H_

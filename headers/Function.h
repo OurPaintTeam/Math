@@ -1,5 +1,5 @@
-#ifndef MINIMIZEROPTIMIZER_FUNCTION_H
-#define MINIMIZEROPTIMIZER_FUNCTION_H
+#ifndef MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_
+#define MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_
 
 #include <cmath>
 #include <stdexcept>
@@ -563,4 +563,4 @@ public:
     Min& operator=(const Min&) = delete;
 };
 
-#endif // MINIMIZEROPTIMIZER_FUNCTION_H
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_

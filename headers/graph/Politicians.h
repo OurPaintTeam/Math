@@ -1,5 +1,5 @@
-#ifndef POLITICIANS_H_
-#define POLITICIANS_H_
+#ifndef MINIMIZEROPTIMIZER_HEADERS_GRAPH_POLITICIANS_H_
+#define MINIMIZEROPTIMIZER_HEADERS_GRAPH_POLITICIANS_H_
 
 struct DirectedPolicy {
     static constexpr bool isDirected = true;
@@ -17,4 +17,4 @@ struct UnweightedPolicy {
     static constexpr bool isWeighted = false;
 };
 
-#endif // ! POLITICIANS_H_
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_GRAPH_POLITICIANS_H_

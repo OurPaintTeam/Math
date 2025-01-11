@@ -1,9 +1,5 @@
-//
-// Created by Eugene Bychkov on 20.10.2024.
-//
-
-#ifndef MINIMIZEROPTIMIZER_OPTIMIZER_H
-#define MINIMIZEROPTIMIZER_OPTIMIZER_H
+#ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_OPTIMIZER_H_
+#define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_OPTIMIZER_H_
 
 #include "TaskF.h"
 #include <vector>
@@ -23,4 +19,4 @@ public:
     virtual double getCurrentError() const = 0;
 };
 
-#endif //MINIMIZEROPTIMIZER_OPTIMIZER_H
+#endif // ! MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_OPTIMIZER_H_
