@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 # Увеличиваем максимальную длину путей к объектным файлам (меньше будет warnings)
 set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
-project(Math-MinimizerOptimizer-Module)
+project(MinimizerOptimizer)
 
 # Укажите стандарт C++
 set(CMAKE_CXX_STANDARD 20)
@@ -41,13 +41,13 @@ include_directories(headers/graph/politicians)
 
 # Сборка основной библиотеки
 add_library(MinimizerOptimizer
-        src/LevenbergMarquardtSolver.cс
-        src/QR.cс
-        src/Function.cс
-        src/ErrorFunctions.cс
-        src/GradientOptimizer.cс
-        src/NewtonOptimizer.cс
-        src/NewtonGaussSolver.cс
+        src/LevenbergMarquardtSolver.cc
+        src/QR.cc
+        src/Function.cc
+        src/ErrorFunctions.cc
+        src/GradientOptimizer.cc
+        src/NewtonOptimizer.cc
+        src/NewtonGaussSolver.cc
         )
 
 if (NOT TARGET gtest)
