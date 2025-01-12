@@ -1,6 +1,3 @@
-//
-// Created by Eugene Bychkov on 14.11.2024.
-//
 #include "gtest/gtest.h"
 #include "LevenbergMarquardtSolver.h"
 #include "ErrorFunctions.h"

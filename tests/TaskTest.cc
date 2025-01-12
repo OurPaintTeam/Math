@@ -1,6 +1,3 @@
-//
-// Created by Eugene Bychkov on 25.10.2024.
-//
 #include <gtest/gtest.h>
 #include "TaskF.h"
 #include "Function.h"

@@ -36,7 +36,6 @@ include_directories(headers)
 include_directories(headers/optimizers)
 include_directories(headers/decomposition)
 include_directories(headers/graph)
-include_directories(headers/graph/politicians)
 
 
 # Сборка основной библиотеки

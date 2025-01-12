@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
-#include "../headers/Matrix.h"
-#include "../headers/decomposition/QR.h"
+#include "Matrix.h"
+#include "QR.h"
 
 TEST(defaultStructureQRClass, matrixConstructor) {
     Matrix<> A = {

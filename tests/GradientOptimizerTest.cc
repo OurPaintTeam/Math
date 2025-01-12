@@ -1,9 +1,6 @@
-//
-// Created by Eugene Bychkov on 25.10.2024.
-//
 #include "gtest/gtest.h"
 
-#include "../Optimizers/GradientOptimizer.h"
+#include "GradientOptimizer.h"
 #include "TaskF.h"
 
 TEST(OptimizerTest, SingleVariableQuadraticFunction) {

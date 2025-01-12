@@ -1,6 +1,3 @@
-//
-// Created by Eugene Bychkov on 12.11.2024.
-//
 #include "gtest/gtest.h"
 #include "ErrorFunctions.h"
 

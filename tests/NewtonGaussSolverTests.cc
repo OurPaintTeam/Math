@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "../Optimizers/NewtonGaussSolver.h"
+#include "NewtonGaussSolver.h"
 #include "TaskF.h"
 
 TEST(OptimizerTest, SingleVariableQuadraticFunction) {

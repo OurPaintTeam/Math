@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include <algorithm>
-#include "../headers/graph/Graph.h"
+#include "Graph.h"
 #include "../headers/graph/InheritanceGraph.h"
 
 /*

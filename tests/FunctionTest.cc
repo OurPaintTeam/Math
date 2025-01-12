@@ -1,6 +1,3 @@
-//
-// Created by Eugene Bychkov on 25.10.2024.
-//
 #include "Function.h"
 #include <gtest/gtest.h>
 #include <cmath>
