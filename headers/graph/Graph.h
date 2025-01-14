@@ -51,8 +51,8 @@ public:
         (void)std::initializer_list<int>{
                 (
                         _vertices.insert(vertex),
-                                _adjacencyList.emplace(vertex, std::vector<EdgeType>{}),
-                                0
+                        _adjacencyList.emplace(vertex, std::vector<EdgeType>{}),
+                        0
                 )...
         };
     }
@@ -79,25 +79,36 @@ public:
         return true;
     }
 
-    // TODO test and Imp
     bool addEdge(const VertexType& from, const VertexType& to, const WeightType& weight = WeightType()) {
-        if (_vertices.find(from) != _vertices.end() && _vertices.find(to) != _vertices.end()) {
-            if constexpr (WeightedPolicyType::isWeighted) {
-                if (weight == WeightType()) {
-                    throw std::invalid_argument("should be use weight arg in weighted graph.");
-                }
-            } else {
-                if (weight != WeightType()) {
-                    throw std::invalid_argument("do not use weight arg in unweighted graph.");
-                }
-            }
-            _adjacencyList[from].emplace_back(from, to, weight);
-            if constexpr (DirectedPolicyType::isDirected == false) {
-                _adjacencyList[to].emplace_back(to, from, weight);
-            }
-            return true;
+        if (_vertices.find(from) == _vertices.end() || _vertices.find(to) == _vertices.end()) {
+            return false;
         }
-        return false;
+
+        if constexpr (WeightedPolicyType::isWeighted) {
+            if (weight == WeightType()) {
+                throw std::invalid_argument("should be use weight arg in weighted graph.");
+            }
+        } else {
+            if (weight != WeightType()) {
+                throw std::invalid_argument("do not use weight arg in unweighted graph.");
+            }
+        }
+
+        if constexpr (DirectedPolicyType::isDirected) {
+            if (hasEdge(from, to)) {
+                return false;
+            }
+        } else {
+            if (hasEdge(from, to) || hasEdge(to, from)) {
+                return false;
+            }
+        }
+
+        _adjacencyList[from].emplace_back(from, to, weight);
+        if constexpr (DirectedPolicyType::isDirected == false) {
+            _adjacencyList[to].emplace_back(to, from, weight);
+        }
+        return true;
     }
 
     // TODO test and Imp
@@ -264,7 +275,6 @@ public:
         return str;
     }
 
-    // TODO test and Imp
     std::vector<VertexType> findConnectedComponent(const VertexType& start) const {
         std::vector<VertexType> component;
         if (hasVertex(start)) {
@@ -274,64 +284,95 @@ public:
         return component;
     }
 
+    // TODO test and Imp
     Representation getRepresentation() const {}
 
     size_t vertexCount() const {
         return _vertices.size();
     }
 
-    size_t edgeCount() const {}
+    size_t edgeCount() const {
+        std::unordered_set<EdgeType> targetEdges;
+        for (const auto& [vertex, edges] : _adjacencyList) {
+            for (const auto& edge : edges) {
+                targetEdges.emplace(edge);
+            }
+        }
+        if constexpr (DirectedPolicyType::isDirected) {
+            return targetEdges.size();
+        } else {
+            return targetEdges.size() / 2;
+        }
+    }
 
+    // TODO test and Imp
     std::vector<VertexType> traverse(const VertexType& start, SearchType type) const {}
 
+    // TODO test and Imp
     // Является ли граф связным (для ориентированных)
     // и
     // сильно связным (для неориентированных)
     bool isConnected() const {}
 
+    // TODO test and Imp
     // Выделить все компоненты связности (или сильной связности)
     std::vector<std::vector<VertexType>> connectedComponents() const {}
 
+    // TODO test and Imp
     // Проверка графа на ацикличность (для ориентированных - DAG)
     bool isAcyclic() const {}
 
+    // TODO test and Imp
     // Топологическая сортировка (актуально для ориентированного ацикличного графа)
     std::vector<VertexType> topologicalSort() const;
 
+    // TODO test and Imp
     // желательно использовать using
     PathResult<VertexType, WeightType> dijkstra(const VertexType& start) const {}
 
+    // TODO test and Imp
     PathResult<VertexType, WeightType> bellmanFord(const VertexType& start) const {}
 
+    // TODO test and Imp
     // Алгоритм Флойда — Уоршелла: возвращает матрицу кратчайших путей между всеми парами вершин
     std::unordered_map<VertexType, std::unordered_map<VertexType, WeightType>> floydWarshall() const {}
 
+    // TODO test and Imp
     std::vector<WeightType> kruskalMST() const {}
 
+    // TODO test and Imp
     std::vector<WeightType> primMST(const VertexType& start) const {}
 
+    // TODO test and Imp
     // Существует ли Эйлеров цикл / путь (неориентированный, ориентированный)
     bool hasEulerianPath() const {}
 
+    // TODO test and Imp
     // Построение Эйлерова пути или цикла, если он существует
     std::vector<VertexType> eulerianPath() const {}
 
+    // TODO test and Imp
     // Поиск гамильтонова пути (или цикла)
     // это NP полная задача
     std::vector<VertexType> hamiltonianPath() const {}
 
+    // TODO test and Imp
     // Алгоритм Форда-Фулкерсона (Edmonds-Karp) для вычисления максимального потока
     WeightType maxFlow(const VertexType& source, const VertexType& sink) {}
 
+    // TODO test and Imp
     // Поиск максимального паросочетания в двудольном графе (алгоритм Хопкрофта–Карпа)
     WeightType bipartiteMatching() const {}
 
+    // TODO test and Imp
     // Транспонирования графа (актально для ориентированных графов)
     Graph transpose() const {}
 
+    // TODO test and Imp
     // Построение дополнительного графа (для неориентированного, невзвешенного)
     Graph complement() const {}
 
+    // TODO test and Imp
     // Выделение подграфа по множеству вершин
     Graph subGraph(std::vector<VertexType>& vertices) const {}
 

@@ -19,10 +19,10 @@ public:
 
 
 // 2
-template <typename VertexType, typename WeightType = double>
+template <typename VertexType>
 class DirectedUnweightedGraph : public Graph <
         VertexType,
-        WeightType,
+        double,
         DirectedPolicy,
         UnweightedPolicy
 > {
@@ -49,10 +49,10 @@ public:
 
 
 // 4
-template <typename VertexType, typename WeightType = double>
+template <typename VertexType>
 class UndirectedUnweightedGraph : public Graph <
         VertexType,
-        WeightType,
+        double,
         UndirectedPolicy,
         UnweightedPolicy
 > {

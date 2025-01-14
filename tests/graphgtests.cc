@@ -9,7 +9,7 @@ Tests implementations:
 
 addVertex               = true
 removeVertex            = false
-addEdge                 = false
+addEdge                 = true
 removeEdge              = false
 setEdgeWeight           = false
 getEdgeWeight           = false
@@ -21,8 +21,28 @@ getVertices             = no need
 getAdjacencyList        = false
 getVertexEdges          = false
 printGraph(1,2)         = false
-findConnectedComponent  = false
-
+findConnectedComponent  = true
+getRepresentation
+vertexCount             = no need
+edgeCount               = true
+traverse
+isConnected
+connectedComponents
+isAcyclic
+topologicalSort
+dijkstra
+bellmanFord
+floydWarshall
+kruskalMST
+primMST
+hasEulerianPath
+eulerianPath
+hamiltonianPath
+maxFlow
+bipartiteMatching
+transpose
+complement
+subGraph
 
 */
 
@@ -54,157 +74,119 @@ TEST(GraphTest, AddVertex) {
     EXPECT_EQ(graph.vertexCount(), 6);
 }
 
-
-/*
-
-TEST(GraphTest, AddEdgeAddEdge2) {
-    Graph<std::string, int> g;
-
-    g.addVertex("A");
-    g.addVertex("B");
-    g.addVertex("C");
-    g.addVertex("D");
-    g.addVertex("E");
-
-    EXPECT_TRUE(g.hasVertex("A"));
-    EXPECT_FALSE(g.hasVertex("F"));
-
-    EXPECT_TRUE(g.addEdge("A", "B"));
-    EXPECT_TRUE(g.addEdge("A", "C"));
-    EXPECT_TRUE(g.addEdge("B", "D"));
-    EXPECT_TRUE(g.addEdge("C", "E"));
-
-    EXPECT_TRUE(g.hasEdge("A", "B"));
-    EXPECT_FALSE(g.hasEdge("A", "D"));
-}
-
-// Test for addEdge with different policy configurations
-TEST(GraphTest, AddEdge_FullyCoversFunction) {
-    // Weighted and Directed Graph
+TEST(GraphTest, AddEdge) {
+    // Directed Weighted graph
     {
-        DirectedWeightedGraph<int, double> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
+      DirectedWeightedGraph<int, double> graph;
 
-        // Add edge with valid weight
-        EXPECT_NO_THROW({
-                            bool result = graph.addEdge(1, 2, 5.0);
-                            EXPECT_TRUE(result);
-                        });
+      graph.addVertex(1);
+      graph.addVertex(2);
 
-        // Verify edge exists
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it = adjacencyList.find(1);
-        ASSERT_NE(it, adjacencyList.end());
-        ASSERT_EQ(it->second.size(), 1);
-        EXPECT_EQ(it->second[0].to, 2);
-        EXPECT_EQ(it->second[0].weight, 5.0);
+      EXPECT_NO_THROW({
+        bool result = graph.addEdge(1, 2, 5.0);
+        EXPECT_TRUE(result);
+      });
 
-        // Attempt to add edge with default weight (should throw)
-        EXPECT_THROW({
-                         graph.addEdge(1, 2);
-                     }, std::invalid_argument);
+      EXPECT_TRUE(graph.hasEdge(1, 2));
+
+      const auto& adjacencyList = graph.getAdjacencyList();
+      auto it = adjacencyList.find(1);
+      ASSERT_NE(it, adjacencyList.end());
+      ASSERT_EQ(it->second.size(), 1);
+      EXPECT_EQ(it->second[0].to, 2);
+      EXPECT_EQ(it->second[0].weight, 5.0);
     }
 
-    // Weighted and Undirected Graph
+    // Directed Unweighted graph
     {
-        UndirectedWeightedGraph<int, double> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
+      DirectedUnweightedGraph<int> graph;
 
-        // Add edge with valid weight
-        EXPECT_NO_THROW({
-                            bool result = graph.addEdge(1, 2, 3.5);
-                            EXPECT_TRUE(result);
-                        });
+      graph.addVertex(1);
+      graph.addVertex(2);
 
-        // Verify edge exists in both directions
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it1 = adjacencyList.find(1);
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it1, adjacencyList.end());
-        ASSERT_NE(it2, adjacencyList.end());
-        ASSERT_EQ(it1->second.size(), 1);
-        ASSERT_EQ(it2->second.size(), 1);
-        EXPECT_EQ(it1->second[0].to, 2);
-        EXPECT_EQ(it1->second[0].weight, 3.5);
-        EXPECT_EQ(it2->second[0].to, 1);
-        EXPECT_EQ(it2->second[0].weight, 3.5);
+      // Add edge with default weight
+      EXPECT_NO_THROW({
+        bool result = graph.addEdge(1, 2);
+        EXPECT_TRUE(result);
+      });
 
-        // Attempt to add edge with default weight (should throw)
-        EXPECT_THROW({
-                         graph.addEdge(1, 2);
-                     }, std::invalid_argument);
+      EXPECT_TRUE(graph.hasEdge(1, 2));
+
+      // Verify edge exists
+      const auto& adjacencyList = graph.getAdjacencyList();
+      auto it = adjacencyList.find(1);
+      ASSERT_NE(it, adjacencyList.end());
+      ASSERT_EQ(it->second.size(), 1);
+      EXPECT_EQ(it->second[0].to, 2);
+      EXPECT_EQ(it->second[0].weight, 0); // Default int
+
+      // Attempt to add edge with non-default weight (should throw)
+      EXPECT_THROW({
+        graph.addEdge(1, 2, 10);
+      }, std::invalid_argument);
     }
 
-    // Unweighted and Directed Graph
+    // Undirected Weighted graph
     {
-        DirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
+      UndirectedWeightedGraph<int, double> graph;
 
-        // Add edge with default weight
-        EXPECT_NO_THROW({
-                            bool result = graph.addEdge(1, 2);
-                            EXPECT_TRUE(result);
-                        });
+      graph.addVertex(1);
+      graph.addVertex(2);
 
-        // Verify edge exists
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it = adjacencyList.find(1);
-        ASSERT_NE(it, adjacencyList.end());
-        ASSERT_EQ(it->second.size(), 1);
-        EXPECT_EQ(it->second[0].to, 2);
-        EXPECT_EQ(it->second[0].weight, 0); // Default int
+      // Add edge with valid weight
+      EXPECT_NO_THROW({
+        bool result = graph.addEdge(1, 2, 3.5);
+        EXPECT_TRUE(result);
+      });
 
-        // Attempt to add edge with non-default weight (should throw)
-        EXPECT_THROW({
-                         graph.addEdge(1, 2, 10);
-                     }, std::invalid_argument);
+      EXPECT_TRUE(graph.hasEdge(1, 2));
+      EXPECT_EQ(graph.getEdgeWeight(1, 2), 3.5);
+
+      const auto& adjacencyList = graph.getAdjacencyList();
+      auto it1 = adjacencyList.find(1);
+      auto it2 = adjacencyList.find(2);
+      ASSERT_NE(it1, adjacencyList.end());
+      ASSERT_NE(it2, adjacencyList.end());
+      ASSERT_EQ(it1->second.size(), 1);
+      ASSERT_EQ(it2->second.size(), 1);
+      EXPECT_EQ(it1->second[0].to, 2);
+      EXPECT_EQ(it1->second[0].weight, 3.5);
+      EXPECT_EQ(it2->second[0].to, 1);
+      EXPECT_EQ(it2->second[0].weight, 3.5);
     }
 
-    // Unweighted and Undirected Graph
+    // Undirected Unweighted graph
     {
-        UndirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
+      UndirectedUnweightedGraph<int> graph;
 
-        // Add edge with default weight
-        EXPECT_NO_THROW({
-                            bool result = graph.addEdge(1, 2);
-                            EXPECT_TRUE(result);
-                        });
+      graph.addVertex(1);
+      graph.addVertex(2);
 
-        // Verify edge exists in both directions
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it1 = adjacencyList.find(1);
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it1, adjacencyList.end());
-        ASSERT_NE(it2, adjacencyList.end());
-        ASSERT_EQ(it1->second.size(), 1);
-        ASSERT_EQ(it2->second.size(), 1);
-        EXPECT_EQ(it1->second[0].to, 2);
-        EXPECT_EQ(it1->second[0].weight, 0); // Default int
-        EXPECT_EQ(it2->second[0].to, 1);
-        EXPECT_EQ(it2->second[0].weight, 0); // Default int
+      // Add edge with default weight
+      EXPECT_NO_THROW({
+        bool result = graph.addEdge(1, 2);
+        EXPECT_TRUE(result);
+      });
 
-        // Attempt to add edge with non-default weight (should throw)
-        EXPECT_THROW({
-                         graph.addEdge(1, 2, 5);
-                     }, std::invalid_argument);
-    }
+      EXPECT_TRUE(graph.hasEdge(1, 2));
 
-    // Attempt to add edge with non-existing vertices
-    {
-        using AnyGraph = Graph<int>;
-        AnyGraph graph;
-        graph.addVertex(1);
+      // Verify edge exists in both directions
+      const auto& adjacencyList = graph.getAdjacencyList();
+      auto it1 = adjacencyList.find(1);
+      auto it2 = adjacencyList.find(2);
+      ASSERT_NE(it1, adjacencyList.end());
+      ASSERT_NE(it2, adjacencyList.end());
+      ASSERT_EQ(it1->second.size(), 1);
+      ASSERT_EQ(it2->second.size(), 1);
+      EXPECT_EQ(it1->second[0].to, 2);
+      EXPECT_EQ(it1->second[0].weight, 0); // Default int
+      EXPECT_EQ(it2->second[0].to, 1);
+      EXPECT_EQ(it2->second[0].weight, 0); // Default int
 
-        // 'to' vertex does not exist
-        EXPECT_FALSE(graph.addEdge(1, 2));
-
-        // Both vertices do not exist
-        EXPECT_FALSE(graph.addEdge(3, 4));
+      // Attempt to add edge with non-default weight (should throw)
+      EXPECT_THROW({
+        graph.addEdge(1, 2, 5);
+      }, std::invalid_argument);
     }
 }
 
@@ -228,6 +210,24 @@ TEST(GraphTest, FindConnectedComponent) {
 
     EXPECT_EQ(actual_component, expected_component);
 }
+
+TEST(GraphTest, EdgeCount) {
+    UndirectedUnweightedGraph<int> graph;
+    graph.addVertex(1, 2, 3, 4, 5);
+
+    graph.addEdge(1, 2);
+    graph.addEdge(2, 3);
+    graph.addEdge(3, 4);
+    graph.addEdge(4, 5);
+    graph.addEdge(5, 1);
+    graph.addEdge(1, 4);
+
+    EXPECT_FALSE(graph.addEdge(1, 4));
+
+    EXPECT_EQ(graph.edgeCount(), 6);
+}
+
+/*
 
 TEST(GraphTest, FindConnectedComponentSingleVertex) {
     Graph<std::string, int> g;
