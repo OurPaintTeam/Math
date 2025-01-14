@@ -65,40 +65,40 @@ enable_testing()
 
 # Added executable tests files
 add_executable(MatrixTest tests/TestsMatrix.cc)
-target_link_libraries(MatrixTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(MatrixTest Math gtest gtest_main)
 
 add_executable(QRTest tests/TestsQR.cc)
-target_link_libraries(QRTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(QRTest Math gtest gtest_main)
 
 add_executable(QRPerformanceTest tests/QRPerformanceTests.cc)
-target_link_libraries(QRPerformanceTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(QRPerformanceTest Math gtest gtest_main)
 
 add_executable(FunctionTest tests/FunctionTest.cc)
-target_link_libraries(FunctionTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(FunctionTest Math gtest gtest_main)
 
 add_executable(OptimizationTaskTest tests/TaskTest.cc)
-target_link_libraries(OptimizationTaskTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(OptimizationTaskTest Math gtest gtest_main)
 
 add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cc)
-target_link_libraries(GradientOptimizerTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(GradientOptimizerTest Math gtest gtest_main)
 
 add_executable(NewtonOptimizerTest tests/NewtonGaussSolverTests.cc)
-target_link_libraries(NewtonOptimizerTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(NewtonOptimizerTest Math gtest gtest_main)
 
 add_executable(NewtonGaussSolverTests tests/NewtonGaussSolverTests.cc)
-target_link_libraries(NewtonGaussSolverTests MinimizerOptimizer gtest gtest_main)
+target_link_libraries(NewtonGaussSolverTests Math gtest gtest_main)
 
 add_executable(LSMTaskTest tests/LSMTaskTest.cc)
-target_link_libraries(LSMTaskTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(LSMTaskTest Math gtest gtest_main)
 
 add_executable(ErrorFunctionTest tests/ErrorFunctionsTests.cc)
-target_link_libraries(ErrorFunctionTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(ErrorFunctionTest Math gtest gtest_main)
 
 add_executable(LMTest tests/LMTest.cc)
-target_link_libraries(LMTest MinimizerOptimizer gtest gtest_main)
+target_link_libraries(LMTest Math gtest gtest_main)
 
 add_executable(LMTestWithOurMatrix tests/OurLMTest.cc)
-target_link_libraries(LMTestWithOurMatrix MinimizerOptimizer gtest gtest_main)
+target_link_libraries(LMTestWithOurMatrix Math gtest gtest_main)
 
 add_executable(SimpleGraph tests/graphgtests.cc)
 target_link_libraries(SimpleGraph gtest gtest_main)
