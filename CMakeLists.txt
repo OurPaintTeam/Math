@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10)
 # Увеличиваем максимальную длину путей к объектным файлам (меньше будет warnings)
 set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
-project(MinimizerOptimizer)
+project(Math)
 
 # Укажите стандарт C++
 set(CMAKE_CXX_STANDARD 20)
@@ -39,7 +39,7 @@ include_directories(headers/graph)
 
 
 # Сборка основной библиотеки
-add_library(MinimizerOptimizer
+add_library(Math
         src/LevenbergMarquardtSolver.cc
         src/QR.cc
         src/Function.cc
