@@ -1,10 +1,7 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_
 #define MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_
-
 #include <cmath>
 #include <stdexcept>
-
-
 
 // Function
 
@@ -53,7 +50,34 @@ public:
     // Clone method
     virtual Function* clone() const = 0;
 };
-
+// Class for unary operation
+class Unary: public Function {
+protected:
+    Function* operand;
+public:
+    Unary(Function* op): operand(op){}
+    ~Unary(){
+        delete operand;
+    }
+    virtual double evaluate() const override = 0;
+    virtual Function* derivative(Variable* var) const override = 0;
+    virtual Function* clone() const = 0;
+};
+// Class for binary operation
+class Binary: public Function {
+protected:
+    Function* left;
+    Function* right;
+public:
+    Binary(Function* l, Function* r): left(l), right(r) {}
+    ~Binary(){
+        delete left;
+        delete right;
+    }
+    virtual double evaluate() const override = 0;
+    virtual Function* derivative(Variable* var) const override = 0;
+    virtual Function* clone() const = 0;
+};
 // Class Constant (constant function)
 class Constant : public Function {
 private:
@@ -94,13 +118,10 @@ public:
 };
 
 // Class Addition
-class Addition : public Function {
-private:
-    Function* left;
-    Function* right;
+class Addition : public Binary {
 
 public:
-    Addition(Function* left, Function* right);
+    Addition(Function* left, Function* right) : Binary(left, right){}
 
     double evaluate() const override;
 
@@ -115,13 +136,10 @@ public:
 };
 
 // Class Subtraction
-class Subtraction : public Function {
-private:
-    Function* left;
-    Function* right;
+class Subtraction : public Binary {
 
 public:
-    Subtraction(Function* left, Function* right);
+    Subtraction(Function* left, Function* right): Binary(left, right) {}
 
     double evaluate() const override;
 
@@ -137,13 +155,9 @@ public:
 };
 
 // Class Multiplication
-class Multiplication : public Function {
-private:
-    Function* left;
-    Function* right;
-
+class Multiplication : public Binary {
 public:
-    Multiplication(Function* left, Function* right);
+    Multiplication(Function* left, Function* right): Binary(left, right){}
 
     double evaluate() const override;
 
@@ -158,13 +172,9 @@ public:
 };
 
 // Class Division
-class Division : public Function {
-private:
-    Function* numerator;
-    Function* denominator;
-
+class Division : public Binary {
 public:
-    Division(Function* numerator, Function* denominator);
+    Division(Function* numerator, Function* denominator): Binary(numerator, denominator){}
 
     double evaluate() const override;
 
@@ -180,13 +190,9 @@ public:
 };
 
 // Class Power
-class Power : public Function {
-private:
-    Function* base;      // Base
-    Function* exponent;  // Exponent
-
+class Power : public Binary {
 public:
-    Power(Function* base, Function* exponent);
+    Power(Function* base, Function* exponent): Binary(base, exponent){}
 
     double evaluate() const override;
 
@@ -202,12 +208,9 @@ public:
 };
 
 // Class Negation
-class Negation : public Function {
-private:
-    Function* argument;
-
+class Negation : public Unary {
 public:
-    explicit Negation(Function* argument);
+    explicit Negation(Function* argument): Unary(argument){}
 
     double evaluate() const override;
 
@@ -223,12 +226,9 @@ public:
 };
 
 // Class Abs
-class Abs : public Function {
-private:
-    Function* argument;
-
+class Abs : public Unary {
 public:
-    explicit Abs(Function* argument);
+    explicit Abs(Function* argument): Unary(argument){}
 
     double evaluate() const override;
 
@@ -244,12 +244,9 @@ public:
 };
 
 // Class Sign
-class Sign : public Function {
-private:
-    Function* argument;
-
+class Sign : public Unary {
 public:
-    explicit Sign(Function* argument);
+    explicit Sign(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -265,13 +262,13 @@ public:
 };
 
 // Class Modulo
-class Mod : public Function {
+class Mod : public Binary {
 private:
     Function* numerator;
     Function* denominator;
 
 public:
-    explicit Mod(Function* numerator, Function* denominator);
+    explicit Mod(Function* numerator, Function* denominator): Binary(numerator, denominator){}
 
     double evaluate() const override;
 
@@ -287,12 +284,9 @@ public:
 };
 
 // Class Exponential (e^x)
-class Exp : public Function {
-private:
-    Function* exponent;
-
+class Exp : public Unary {
 public:
-    explicit Exp(Function* exponent);
+    explicit Exp(Function* exponent):Unary(exponent){}
 
     double evaluate() const override;
 
@@ -308,12 +302,9 @@ public:
 };
 
 // Class Ln (ln(x))
-class Ln : public Function {
-private:
-    Function* argument;
-
+class Ln : public Unary {
 public:
-    explicit Ln(Function* argument);
+    explicit Ln(Function* argument): Unary(argument){}
 
     double evaluate() const override;
 
@@ -329,13 +320,10 @@ public:
 };
 
 // Class Log (log(base, x))
-class Log : public Function {
-private:
-    Function* base;
-    Function* argument;
+class Log : public Binary {
 
 public:
-    explicit Log(Function* base, Function* argument);
+    explicit Log(Function* base, Function* argument): Binary(base, argument){}
 
     double evaluate() const override;
 
@@ -351,12 +339,9 @@ public:
 };
 
 // class sqrt (sqrt(x))
-class Sqrt : public Function {
-private:
-    Function* argument;
-
+class Sqrt : public Unary {
 public:
-    explicit Sqrt(Function* argument);
+    explicit Sqrt(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -372,12 +357,9 @@ public:
 };
 
 // Class sin (sin(x))
-class Sin : public Function {
-private:
-    Function* argument;
-
+class Sin : public Unary {
 public:
-    explicit Sin(Function* argument);
+    explicit Sin(Function* argument): Unary(argument){}
 
     double evaluate() const override;
 
@@ -391,12 +373,9 @@ public:
 };
 
 // Class cos (cos(x))
-class Cos : public Function {
-private:
-    Function* argument;
-
+class Cos : public Unary {
 public:
-    explicit Cos(Function* argument);
+    explicit Cos(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -410,12 +389,9 @@ public:
 };
 
 // Class asin (asin(x))
-class Asin : public Function {
-private:
-    Function* argument;
-
+class Asin : public Unary {
 public:
-    explicit Asin(Function* argument);
+    explicit Asin(Function* argument): Unary(argument){}
 
     double evaluate() const override;
 
@@ -429,12 +405,9 @@ public:
 };
 
 // Class acos (acos(x))
-class Acos : public Function {
-private:
-    Function* argument;
-
+class Acos : public Unary {
 public:
-    explicit Acos(Function* argument);
+    explicit Acos(Function* argument): Unary(argument){}
 
     double evaluate() const override;
 
@@ -448,12 +421,9 @@ public:
 };
 
 // Class Tan (Tan(x))
-class Tan : public Function {
-private:
-    Function* argument;
-
+class Tan : public Unary {
 public:
-    explicit Tan(Function* argument);
+    explicit Tan(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -467,12 +437,9 @@ public:
 };
 
 // Class Atan (Atan(x))
-class Atan : public Function {
-private:
-    Function* argument;
-
+class Atan : public Unary {
 public:
-    explicit Atan(Function* argument);
+    explicit Atan(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -486,12 +453,9 @@ public:
 };
 
 // Class Cot (Cot(x))
-class Cot : public Function {
-private:
-    Function* argument;
-
+class Cot : public Unary {
 public:
-    explicit Cot(Function* argument);
+    explicit Cot(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -505,12 +469,9 @@ public:
 };
 
 // Class Acot (Acot(x))
-class Acot : public Function {
-private:
-    Function* argument;
-
+class Acot : public Unary {
 public:
-    explicit Acot(Function* argument);
+    explicit Acot(Function* argument):Unary(argument){}
 
     double evaluate() const override;
 
@@ -524,13 +485,10 @@ public:
 };
 
 // Class Max (Max(x, y))
-class Max : public Function {
-private:
-    Function* left;
-    Function* right;
+class Max : public Binary {
 
 public:
-    explicit Max(Function* left, Function* right);
+    explicit Max(Function* left, Function* right):Binary(left, right){}
 
     double evaluate() const override;
 
@@ -544,13 +502,9 @@ public:
 };
 
 // Class Min (Min(x, y))
-class Min : public Function {
-private:
-    Function* left;
-    Function* right;
-
+class Min : public Binary {
 public:
-    explicit Min(Function* left, Function* right);
+    explicit Min(Function* left, Function* right):Binary(left, right){}
 
     double evaluate() const override;
 

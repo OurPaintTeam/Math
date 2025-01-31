@@ -23,7 +23,6 @@ TEST_F(FunctionTest, TestSquareFunction) {
     double expected_df_dx = 6.0;
     double computed_df_dx = df_dx->evaluate();
     EXPECT_TRUE(almost_equal(computed_df_dx, expected_df_dx));
-    delete df_dx;
     delete f;
 }
 
@@ -46,10 +45,7 @@ TEST_F(FunctionTest, TestSumOfSquares) {
     double expected_df_dy = 8.0;
     double computed_df_dy = df_dy->evaluate();
     EXPECT_TRUE(almost_equal(computed_df_dy, expected_df_dy));
-    delete df_dy;
-    delete df_dx;
-    delete f;
-}
+ }
 
 TEST_F(FunctionTest, TestExponentialFunction) {
     double x_val = 2.0;
@@ -123,9 +119,6 @@ TEST_F(FunctionTest, TestMultipleVariablesFunction) {
     double expected_df_dz = 2.0 * z_val;
     double computed_df_dz_val = df_dz->evaluate();
     EXPECT_TRUE(almost_equal(computed_df_dz_val, expected_df_dz));
-    delete df_dz;
-    delete df_dy;
-    delete df_dx;
     delete f;
 }
 
@@ -156,7 +149,6 @@ TEST_F(FunctionTest, TestExponentialOfSquareFunction) {
     double expected_df_dx = 2.0 * x_val * expected_f;
     double computed_df_dx = df_dx->evaluate();
     EXPECT_TRUE(almost_equal(computed_df_dx, expected_df_dx));
-    delete df_dx;
     delete f;
 }
 
@@ -187,9 +179,6 @@ TEST_F(FunctionTest, TestComplexFunction) {
                             (std::pow(x_val, 2) + std::pow(y_val, 2)) * x_val * std::exp(x_val * y_val);
     double computed_df_dy = df_dy->evaluate();
     EXPECT_TRUE(almost_equal(computed_df_dy, expected_df_dy));
-
-    delete df_dy;
-    delete df_dx;
     delete f;
 }
 
@@ -295,15 +284,10 @@ TEST_F(FunctionTest, TestLog) {
     EXPECT_NEAR(logDerivative5->evaluate(), expected_derivative5, 1e-9); // Check derivative at x=25
 
     delete logFunc1;
-    delete logDerivative1;
     delete logFunc2;
-    delete logDerivative2;
     delete logFunc3;
-    delete logDerivative3;
     delete logFunc4;
-    delete logDerivative4;
     delete logFunc5;
-    delete logDerivative5;
 }
 
 TEST_F(FunctionTest, TestSqrt) {
@@ -350,12 +334,7 @@ TEST_F(FunctionTest, TestSin) {
     EXPECT_EQ(mu2->evaluate(), 2 * std::sin(5 * y_val));
     Function* mu2D = mu2->derivative(&y);
     EXPECT_EQ(mu2D->evaluate(), 10 * std::cos(5 * y_val));
-
-    delete f;
-    delete mu;
-    delete sinFunc;
     delete mu2;
-    delete mu2D;
 }
 
 TEST_F(FunctionTest, TestCos) {
@@ -374,12 +353,7 @@ TEST_F(FunctionTest, TestCos) {
     EXPECT_EQ(mu2->evaluate(), 2 * std::cos(5 * y_val));
     Function* mu2D = mu2->derivative(&y);
     EXPECT_EQ(mu2D->evaluate(), -10 * std::sin(5 * y_val));
-
-    delete f;
-    delete mu;
-    delete cosFunc;
     delete mu2;
-    delete mu2D;
 }
 
 TEST_F(FunctionTest, TestAsin) {
@@ -401,12 +375,7 @@ TEST_F(FunctionTest, TestAsin) {
     Function* mu2D = mu2->derivative(&y);
     double expected_derivative = 10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
-
-    delete f;
-    delete mu;
-    delete asinFunc;
     delete mu2;
-    delete mu2D;
 }
 
 TEST_F(FunctionTest, TestAcos) {
@@ -428,12 +397,7 @@ TEST_F(FunctionTest, TestAcos) {
     Function* mu2D = mu2->derivative(&y);
     double expected_derivative = -10.0 / std::sqrt(1.0 - std::pow(5 * y_val, 2));
     EXPECT_EQ(mu2D->evaluate(), expected_derivative);
-
-    delete f;
-    delete mu;
-    delete acosFunc;
     delete mu2;
-    delete mu2D;
 }
 
 // -------------------- Negation Test Implementation --------------------
@@ -456,12 +420,7 @@ TEST_F(FunctionTest, TestNegation) {
     Function* mu2D(mu2->derivative(&y));
     double expected_derivative = -10.0;
     EXPECT_EQ(mu2D->evaluate(), expected_derivative); // check derivative value
-
-    delete negFunc;
-    delete mu;
-    delete negMu;
     delete mu2;
-    delete mu2D;
 }
 
 
@@ -510,11 +469,8 @@ TEST_F(FunctionTest, TestMod) {
     EXPECT_EQ(modDerivative3->evaluate(), expected_derivative3);
 
     delete modFunc1;
-    delete modDerivative1;
     delete modFunc2;
-    delete modDerivative2;
     delete modFunc3;
-    delete modDerivative3;
 }
 
 TEST_F(FunctionTest, TestTan) {
@@ -555,11 +511,8 @@ TEST_F(FunctionTest, TestTan) {
     EXPECT_DOUBLE_EQ(tanDerivative3->evaluate(), expected_derivative3); // Check derivative at pi/3
 
     delete tanFunc1;
-    delete tanDerivative1;
     delete tanFunc2;
-    delete tanDerivative2;
     delete tanFunc3;
-    delete tanDerivative3;
 }
 
 TEST_F(FunctionTest, TestAtan) {
@@ -600,11 +553,8 @@ TEST_F(FunctionTest, TestAtan) {
     EXPECT_DOUBLE_EQ(atanDerivative3->evaluate(), expected_derivative3); // Check derivative at sqrt(3))
 
     delete atanFunc1;
-    delete atanDerivative1;
     delete atanFunc2;
-    delete atanDerivative2;
     delete atanFunc3;
-    delete atanDerivative3;
 }
 
 TEST_F(FunctionTest, TestCot) {
@@ -646,11 +596,8 @@ TEST_F(FunctionTest, TestCot) {
 
     // Clean up
     delete cotFunc1;
-    delete cotDerivative1;
     delete cotFunc2;
-    delete cotDerivative2;
     delete cotFunc3;
-    delete cotDerivative3;
 }
 
 TEST_F(FunctionTest, TestAcot) {
@@ -692,11 +639,8 @@ TEST_F(FunctionTest, TestAcot) {
 
     // Clean up
     delete acotFunc1;
-    delete acotDerivative1;
     delete acotFunc2;
-    delete acotDerivative2;
     delete acotFunc3;
-    delete acotDerivative3;
 }
 
 // -------------------- Abs Test Implementation --------------------
@@ -739,11 +683,8 @@ TEST_F(FunctionTest, TestAbs) {
 
 
     delete absFunc1;
-    delete absDerivative1;
     delete absFunc2;
-    delete absDerivative2;
     delete absFunc3;
-    delete absDerivative3;
 }
 
 TEST_F(FunctionTest, TestSign) {
@@ -808,15 +749,10 @@ TEST_F(FunctionTest, TestSign) {
     EXPECT_DOUBLE_EQ(signDerivative5->evaluate(), expected_derivative5); // Check derivative at -0.001
 
     delete signFunc1;
-    delete signDerivative1;
     delete signFunc2;
-    delete signDerivative2;
     delete signFunc3;
-    delete signDerivative3;
     delete signFunc4;
-    delete signDerivative4;
     delete signFunc5;
-    delete signDerivative5;
 }
 
 TEST_F(FunctionTest, TestMax) {
@@ -891,15 +827,10 @@ TEST_F(FunctionTest, TestMax) {
     EXPECT_DOUBLE_EQ(maxDerivative5->evaluate(), expected_derivative5); // Check derivative at x=-10
 
     delete maxFunc1;
-    delete maxDerivative1;
     delete maxFunc2;
-    delete maxDerivative2;
     delete maxFunc3;
-    delete maxDerivative3;
     delete maxFunc4;
-    delete maxDerivative4;
     delete maxFunc5;
-    delete maxDerivative5;
 }
 
 TEST_F(FunctionTest, TestMin) {
@@ -974,15 +905,10 @@ TEST_F(FunctionTest, TestMin) {
     EXPECT_DOUBLE_EQ(minDerivative5->evaluate(), expected_derivative5); // Check derivative at x=-10
 
     delete minFunc1;
-    delete minDerivative1;
     delete minFunc2;
-    delete minDerivative2;
     delete minFunc3;
-    delete minDerivative3;
     delete minFunc4;
-    delete minDerivative4;
     delete minFunc5;
-    delete minDerivative5;
 }
 
 int main(int argc, char **argv) {
