@@ -57,26 +57,54 @@ public:
         };
     }
 
-    // TODO test and Imp
     bool removeVertex(const VertexType& v) {
+        // Find the vertex in the set of vertices
         auto it = _vertices.find(v);
         if (it == _vertices.end()) {
             return false; // Vertex not found
         }
 
+        // Remove the vertex from the set
         _vertices.erase(it);
-        _adjacencyList.erase(v); // Remove outgoing edges
 
-        // Remove incoming edges
-        for (auto& [vertex, edges] : _adjacencyList) {
-            edges.erase(
+        if (DirectedPolicyType::isDirected) {
+            // For a directed graph, remove outgoing edges
+            _adjacencyList.erase(v); // Remove outgoing edges
+
+            // Remove incoming edges by iterating over all vertices
+            for (auto& [vertex, edges] : _adjacencyList) {
+                edges.erase(
                     std::remove_if(edges.begin(), edges.end(),
                                    [&](const EdgeType& edge) { return edge.to == v; }),
                     edges.end()
-            );
+                );
+            }
+        } else {
+            // For an undirected graph, remove both outgoing and incoming edges
+            auto adjIt = _adjacencyList.find(v);
+            if (adjIt != _adjacencyList.end()) {
+                std::vector<EdgeType> vec = adjIt->second;
+
+                // For each vertex that has an edge to 'v', remove the edge to 'v'
+                for (const auto& elem : vec) {
+                    VertexType to = elem.to;
+
+                    auto toIt = _adjacencyList.find(to);
+                    if (toIt != _adjacencyList.end()) {
+                      auto& vec2 = toIt->second;
+                      auto it = std::remove_if(
+                          vec2.begin(), vec2.end(),
+                          [&](const EdgeType& edge) { return edge.to == v; });
+                      vec2.erase(it, vec2.end());
+                    }
+                }
+            }
+
+            // Remove the vertex from the adjacency list
+            _adjacencyList.erase(v);
         }
 
-        return true;
+        return true; // Vertex successfully removed
     }
 
     bool addEdge(const VertexType& from, const VertexType& to, const WeightType& weight = WeightType()) {
@@ -252,11 +280,15 @@ public:
     }
 
     // TODO test and Imp
-    void printGraph(std::ostream& os = std::cout) const {
+    void printGraph(std::ostream& os) const {
         for (const auto& [vertex, edges] : _adjacencyList) {
             os << vertex << " -> ";
             for (const auto& edge : edges) {
-                os << edge.to << " (" << edge.weight << ") ";
+                os << edge.from << edge.to;
+                if (WeightedPolicyType::isWeighted) {
+                    os << "(" << edge.weight << ")";
+                }
+                os << ", ";
             }
             os << std::endl;
         }
@@ -268,7 +300,7 @@ public:
         for (const auto& [vertex, edges] : _adjacencyList) {
             str += vertex + " -> ";
             for (const auto& edge : edges) {
-                str += edge.to + " (" + edge.weight + ") ";
+                str += edge.from + edge.to + " (" + edge.weight + ") ";
             }
             str += '\n';
         }

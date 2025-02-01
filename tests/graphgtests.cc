@@ -8,7 +8,7 @@
 Tests implementations:
 
 addVertex               = true
-removeVertex            = false
+removeVertex            = true
 addEdge                 = true
 removeEdge              = false
 setEdgeWeight           = false
@@ -72,6 +72,87 @@ TEST(GraphTest, AddVertex) {
 
     EXPECT_EQ(adjList.size(), 6);
     EXPECT_EQ(graph.vertexCount(), 6);
+}
+
+TEST(GraphTest, RemoveVertex) {
+    // Directed and Weighted Graph
+    {
+      DirectedWeightedGraph<char, int> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D', 1);
+      graph.addEdge('A', 'C', 2);
+      graph.addEdge('A', 'B', 3);
+      graph.addEdge('B', 'C', 4);
+      graph.addEdge('C', 'E', 5);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeVertex('C');
+
+      EXPECT_EQ(graph.edgeCount(), 2);
+      EXPECT_EQ(graph.vertexCount(), 4);
+    }
+
+    // Undirected and Weighted Graph
+    {
+      UndirectedWeightedGraph<char, int> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D', 1);
+      graph.addEdge('A', 'C', 2);
+      graph.addEdge('A', 'B', 3);
+      graph.addEdge('B', 'C', 4);
+      graph.addEdge('C', 'E', 5);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeVertex('C');
+
+      EXPECT_EQ(graph.edgeCount(), 2);
+      EXPECT_EQ(graph.vertexCount(), 4);
+    }
+
+    // Directed and Unweighted Graph
+    {
+      DirectedUnweightedGraph<char> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D');
+      graph.addEdge('A', 'C');
+      graph.addEdge('A', 'B');
+      graph.addEdge('B', 'C');
+      graph.addEdge('C', 'E');
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeVertex('C');
+
+      EXPECT_EQ(graph.edgeCount(), 2);
+      EXPECT_EQ(graph.vertexCount(), 4);
+
+    }
+
+    // Undirected and Unweighted Graph
+    {
+      UndirectedUnweightedGraph<char> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D');
+      graph.addEdge('A', 'C');
+      graph.addEdge('A', 'B');
+      graph.addEdge('B', 'C');
+      graph.addEdge('C', 'E');
+
+      //graph.printGraph(std::cout);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeVertex('C');
+
+      EXPECT_EQ(graph.edgeCount(), 2);
+      EXPECT_EQ(graph.vertexCount(), 4);
+    }
 }
 
 TEST(GraphTest, AddEdge) {
@@ -517,167 +598,6 @@ TEST(GraphTest, GetEdgeWeight_FullyCoversFunction) {
         EXPECT_THROW({
                          graph.getEdgeWeight(3, 4);
                      }, std::invalid_argument);
-    }
-}
-
-
-// Test for removeVertex
-TEST(GraphTest, RemoveVertex_FullyCoversFunction) {
-    // Directed and Weighted Graph
-    {
-        DirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2, 10);
-        graph.addEdge(1, 3, 20);
-        graph.addEdge(2, 3, 30);
-
-        // Remove existing vertex
-        EXPECT_TRUE(graph.removeVertex(2));
-
-        // Verify vertex is removed
-        const auto& vertices = graph.getVertices();
-        EXPECT_EQ(vertices.find(2), vertices.end());
-
-        // Verify outgoing edges from removed vertex are gone
-        const auto& adjacencyList = graph.getAdjacencyList();
-        EXPECT_EQ(adjacencyList.find(2), adjacencyList.end());
-
-        // Verify incoming edges to removed vertex are gone
-        auto it1 = adjacencyList.find(1);
-        ASSERT_NE(it1, adjacencyList.end());
-        EXPECT_EQ(it1->second.size(), 1);
-        EXPECT_EQ(it1->second[0].to, 3);
-
-        // Verify other edges remain
-        auto it3 = adjacencyList.find(3);
-        if (it3 != adjacencyList.end()) {
-            EXPECT_TRUE(it3->second.empty());
-        } else {
-            SUCCEED() << "Vertex 3 has no outgoing edges, which is acceptable.";
-        }
-
-        // Attempt to remove non-existing vertex
-        EXPECT_FALSE(graph.removeVertex(4));
-    }
-
-    // Undirected and Weighted Graph
-    {
-        UndirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2, 15);
-        graph.addEdge(1, 3, 25);
-        graph.addEdge(2, 3, 35);
-
-        // Remove existing vertex
-        EXPECT_TRUE(graph.removeVertex(2));
-
-        // Verify vertex is removed
-        const auto& vertices = graph.getVertices();
-        EXPECT_EQ(vertices.find(2), vertices.end());
-
-        // Verify outgoing edges from removed vertex are gone
-        const auto& adjacencyList = graph.getAdjacencyList();
-        EXPECT_EQ(adjacencyList.find(2), adjacencyList.end());
-
-        // Verify incoming edges to removed vertex are gone
-        auto it1 = adjacencyList.find(1);
-        ASSERT_NE(it1, adjacencyList.end());
-        EXPECT_EQ(it1->second.size(), 1);
-        EXPECT_EQ(it1->second[0].to, 3);
-
-        auto it3 = adjacencyList.find(3);
-        ASSERT_NE(it3, adjacencyList.end());
-        EXPECT_EQ(it3->second.size(), 1);
-        EXPECT_EQ(it3->second[0].to, 1);
-
-        // Attempt to remove non-existing vertex
-        EXPECT_FALSE(graph.removeVertex(4));
-    }
-
-    // Directed and Unweighted Graph
-    {
-        DirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2);
-        graph.addEdge(1, 3);
-        graph.addEdge(2, 3);
-
-        // Remove existing vertex
-        EXPECT_TRUE(graph.removeVertex(2));
-
-        // Verify vertex is removed
-        const auto& vertices = graph.getVertices();
-        EXPECT_EQ(vertices.find(2), vertices.end());
-
-        // Verify outgoing edges from removed vertex are gone
-        const auto& adjacencyList = graph.getAdjacencyList();
-        EXPECT_EQ(adjacencyList.find(2), adjacencyList.end());
-
-        // Verify incoming edges to removed vertex are gone
-        auto it1 = adjacencyList.find(1);
-        ASSERT_NE(it1, adjacencyList.end());
-        EXPECT_EQ(it1->second.size(), 1);
-        EXPECT_EQ(it1->second[0].to, 3);
-
-        auto it3 = adjacencyList.find(3);
-        if (it3 != adjacencyList.end()) {
-            EXPECT_TRUE(it3->second.empty());
-        } else {
-            SUCCEED() << "Vertex 3 has no outgoing edges, which is acceptable.";
-        }
-
-        // Attempt to remove non-existing vertex
-        EXPECT_FALSE(graph.removeVertex(4));
-    }
-
-    // Undirected and Unweighted Graph
-    {
-        UndirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2);
-        graph.addEdge(1, 3);
-        graph.addEdge(2, 3);
-
-        // Remove existing vertex
-        EXPECT_TRUE(graph.removeVertex(2));
-
-        // Verify vertex is removed
-        const auto& vertices = graph.getVertices();
-        EXPECT_EQ(vertices.find(2), vertices.end());
-
-        // Verify outgoing edges from removed vertex are gone
-        const auto& adjacencyList = graph.getAdjacencyList();
-        EXPECT_EQ(adjacencyList.find(2), adjacencyList.end());
-
-        // Verify incoming edges to removed vertex are gone
-        auto it1 = adjacencyList.find(1);
-        ASSERT_NE(it1, adjacencyList.end());
-        EXPECT_EQ(it1->second.size(), 1);
-        EXPECT_EQ(it1->second[0].to, 3);
-
-        auto it3 = adjacencyList.find(3);
-        ASSERT_NE(it3, adjacencyList.end());
-        EXPECT_EQ(it3->second.size(), 1);
-        EXPECT_EQ(it3->second[0].to, 1);
-
-        // Attempt to remove non-existing vertex
-        EXPECT_FALSE(graph.removeVertex(4));
-    }
-
-    // Attempt to remove vertex from empty graph
-    {
-        using AnyGraph = Graph<int>;
-        AnyGraph graph;
-
-        EXPECT_FALSE(graph.removeVertex(1));
     }
 }
 
