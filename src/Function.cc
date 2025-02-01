@@ -45,9 +45,6 @@ void Variable::setValue(double value) {
 
 // -------------------- Addition Implementations --------------------
 
-Addition::Addition(Function* left, Function* right)
-        : left(left), right(right) {}
-
 double Addition::evaluate() const {
     return left->evaluate() + right->evaluate();
 }
@@ -64,9 +61,6 @@ Function* Addition::clone() const {
 }
 
 // -------------------- Subtraction Implementations --------------------
-
-Subtraction::Subtraction(Function* left, Function* right)
-        : left(left), right(right) {}
 
 
 
@@ -87,9 +81,6 @@ Function* Subtraction::clone() const {
 
 // -------------------- Multiplication Implementations --------------------
 
-Multiplication::Multiplication(Function* left, Function* right)
-        : left(left), right(right) {}
-
 
 double Multiplication::evaluate() const {
     return left->evaluate() * right->evaluate();
@@ -109,110 +100,95 @@ Function* Multiplication::clone() const {
 
 // -------------------- Division Implementations --------------------
 
-Division::Division(Function* numerator, Function* denominator)
-        : numerator(numerator), denominator(denominator) {}
-
 double Division::evaluate() const {
-    double den = denominator->evaluate();
+    double den = right->evaluate();
     if (den == 0.0) {
         throw std::runtime_error("Division by zero");
     }
-    return numerator->evaluate() / den;
+    return left->evaluate() / den;
 }
 
 Function* Division::derivative(Variable* var) const {
     // Quotient rule: (f / g)' = (f' * g - f * g') / g^2
-    Function* f_prime = numerator->derivative(var);
-    Function* g_prime = denominator->derivative(var);
+    Function* f_prime = left->derivative(var);
+    Function* g_prime = right->derivative(var);
 
-    Function* numerator_derivative = new Subtraction(
-            new Multiplication(f_prime, denominator->clone()),
-            new Multiplication(numerator->clone(), g_prime)
+    Function* left_derivative = new Subtraction(
+            new Multiplication(f_prime, right->clone()),
+            new Multiplication(left->clone(), g_prime)
     );
 
-    Function* denominator_squared = new Power(
-            denominator->clone(),
+    Function* right_squared = new Power(
+            right->clone(),
             new Constant(2.0)
     );
 
     return new Division(
-            numerator_derivative,
-            denominator_squared
+            left_derivative,
+            right_squared
     );
 }
 
 Function* Division::clone() const {
-    return new Division(numerator->clone(), denominator->clone());
+    return new Division(left->clone(), right->clone());
 }
 
 // -------------------- Power Implementations --------------------
 
-Power::Power(Function* base, Function* exponent)
-        : base(base), exponent(exponent) {}
-
 double Power::evaluate() const {
-    return std::pow(base->evaluate(), exponent->evaluate());
+    return std::pow(left->evaluate(), right->evaluate());
 }
 
 Function* Power::derivative(Variable* var) const {
-    Function* base_derivative = base->derivative(var);
-    Function* exp = new Constant(exponent->evaluate());
-    Function* new_power = new Power(base, new Constant(exponent->evaluate() - 1));
+    Function* left_derivative = left->derivative(var);
+    Function* exp = new Constant(right->evaluate());
+    Function* new_power = new Power(left, new Constant(right->evaluate() - 1));
     // Собираем производную по правилу цепочки: n * u^(n-1) * u'
-    Function* result = new Multiplication(exp, new Multiplication(new_power, base_derivative));
+    Function* result = new Multiplication(exp, new Multiplication(new_power, left_derivative));
     return result;
 }
 
 Function* Power::clone() const {
-    return new Power(base->clone(), exponent->clone());
+    return new Power(left->clone(), right->clone());
 }
 
 // -------------------- Negation Implementations --------------------
 
-Negation::Negation(Function* argument)
-        : argument(argument) {}
-
 double Negation::evaluate() const {
-    return -1 * argument->evaluate();
+    return -1 * operand->evaluate();
 }
 
 Function* Negation::derivative(Variable* var) const {
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
     return new Multiplication(new Constant(-1), f_prime);
 }
 
 Function* Negation::clone() const {
-    return new Negation(argument->clone());
+    return new Negation(operand->clone());
 }
 
 // -------------------- Abs Implementations --------------------
 
-Abs::Abs(Function* argument)
-        : argument(argument) {}
-
 double Abs::evaluate() const {
-    return std::abs(argument->evaluate());
+    return std::abs(operand->evaluate());
 }
 
 Function* Abs::derivative(Variable* var) const {
     // d/dx |f(x)| = f'(x) * sign(f(x))
-    Function* f_prime = argument->derivative(var);
-    Function* sign_fx = new Sign(argument->clone());
+    Function* f_prime = operand->derivative(var);
+    Function* sign_fx = new Sign(operand->clone());
     Function* derivative = new Multiplication(f_prime, sign_fx);
     return derivative;
 }
 
 Function* Abs::clone() const {
-    return new Abs(argument->clone());
+    return new Abs(operand->clone());
 }
 
 // -------------------- Sign Implementations --------------------
 
-Sign::Sign(Function* argument)
-        : argument(argument) {}
-
 double Sign::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     if (arg_value > 0.0) {
         return 1.0;
     } else if (arg_value < 0.0) {
@@ -227,18 +203,15 @@ Function* Sign::derivative(Variable* var) const {
 }
 
 Function* Sign::clone() const {
-    return new Sign(argument->clone());
+    return new Sign(operand->clone());
 }
 
 
 // -------------------- Modulo Implementations --------------------
 
-Mod::Mod(Function* numerator, Function* denominator)
-        : numerator(numerator), denominator(denominator) {}
-
 double Mod::evaluate() const {
-    double num = numerator->evaluate();
-    double den = denominator->evaluate();
+    double num = left->evaluate();
+    double den = right->evaluate();
 
     if (den == 0.0) {
         throw std::domain_error("Division by zero in Modulo function.");
@@ -252,35 +225,29 @@ Function* Mod::derivative(Variable* var) const {
 }
 
 Function* Mod::clone() const {
-    return new Mod(numerator->clone(), denominator->clone());
+    return new Mod(left->clone(), right->clone());
 }
 
-// -------------------- Exponential Implementations --------------------
-
-Exp::Exp(Function* exponent)
-        : exponent(exponent) {}
+// -------------------- rightial Implementations --------------------
 
 double Exp::evaluate() const {
-    return std::exp(exponent->evaluate());
+    return std::exp(operand->evaluate());
 }
 
 Function* Exp::derivative(Variable* var) const {
     // (e^{f(x)})' = f'(x) * e^{f(x)}
-    Function* f_prime = exponent->derivative(var);
+    Function* f_prime = operand->derivative(var);
     return new Multiplication(f_prime, this->clone());
 }
 
 Function* Exp::clone() const {
-    return new Exp(exponent->clone());
+    return new Exp(operand->clone());
 }
 
 // -------------------- Ln Implementations --------------------
 
-Ln::Ln(Function* argument)
-        : argument(argument) {}
-
 double Ln::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     if (arg_value <= 0.0) {
         throw std::runtime_error("Logarithm of non-positive value");
     }
@@ -289,51 +256,46 @@ double Ln::evaluate() const {
 
 Function* Ln::derivative(Variable* var) const {
     // (ln(f(x)))' = f'(x) / f(x)
-    Function* f_prime = argument->derivative(var);
-    return new Division(f_prime, argument->clone());
+    Function* f_prime = operand->derivative(var);
+    return new Division(f_prime, operand->clone());
 }
 
 Function* Ln::clone() const {
-    return new Ln(argument->clone());
+    return new Ln(operand->clone());
 }
 
 // -------------------- Log Implementations --------------------
 
-Log::Log(Function* base, Function* argument)
-        : base(base), argument(argument) {}
-
 
 double Log::evaluate() const {
-    double base_val = base->evaluate();
-    double arg_val = argument->evaluate();
-    if (base_val <= 0.0 || base_val == 1.0) {
-        throw std::runtime_error("Invalid base for logarithm");
+    double left_val = left->evaluate();
+    double arg_val = right->evaluate();
+    if (left_val <= 0.0 || left_val == 1.0) {
+        throw std::runtime_error("Invalid left for logarithm");
     }
     if (arg_val <= 0.0) {
         throw std::runtime_error("Logarithm of non-positive value");
     }
-    return std::log(arg_val) / std::log(base_val);
+    return std::log(arg_val) / std::log(left_val);
 }
 
 Function* Log::derivative(Variable* var) const {
     // d/dx log_b(f(x)) = f'(x) / (f(x) * ln(b))
-    Function* f_prime = argument->derivative(var);
-    Function* ln_b = new Ln(base->clone());
-    Function* denominator = new Multiplication(argument->clone(), ln_b);
-    return new Division(f_prime, denominator);
+    Function* f_prime = right->derivative(var);
+    Function * right_clone = right->clone();
+    Function* ln_b = new Ln(left->clone());
+    Function* right = new Multiplication(right_clone, ln_b);
+    return new Division(f_prime, right);
 }
 
 Function* Log::clone() const {
-    return new Log(base->clone(), argument->clone());
+    return new Log(left->clone(), right->clone());
 }
 
 // -------------------- Sqrt Implementations --------------------
 
-Sqrt::Sqrt(Function *argument)
-        : argument(argument) {}
-
 double Sqrt::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::sqrt(arg_value);
 }
 
@@ -341,140 +303,127 @@ Function *Sqrt::derivative(Variable* var) const {
     // (sqrt(f(x)))' = f'(x) / (2 * sqrt(f(x)))
 
     // f'(x)
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // 2 * sqrt(f(x))
     Function* two = new Constant(2.0);
     Function* sqrt_f = this->clone(); // sqrt(f(x))
-    Function* denominator = new Multiplication(two, sqrt_f);
+    Function* right = new Multiplication(two, sqrt_f);
 
     // f'(x) / (2 * sqrt(f(x)))
-    return new Division(f_prime, denominator);
+    return new Division(f_prime, right);
 }
 
 Function *Sqrt::clone() const {
-    return new Sqrt(argument->clone());
+    return new Sqrt(operand->clone());
 }
 
 
 // -------------------- Sin Implementations --------------------
 
-Sin::Sin(Function *argument)
-        : argument(argument) {}
-
 double Sin::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::sin(arg_value);
 }
 
 Function *Sin::derivative(Variable* var) const {
     // (sin(f(x))' = f'(x) * cos(f(x)));
-    Function* f_prime = argument->derivative(var);
-    return new Multiplication(f_prime, new Cos(argument));
+    Function* f_prime = operand->derivative(var);
+    return new Multiplication(f_prime, new Cos(operand));
 }
 
 Function *Sin::clone() const {
-    return new Sin(argument->clone());
+    return new Sin(operand->clone());
 }
 
 // -------------------- Cos Implementations --------------------
 
-Cos::Cos(Function *argument)
-        : argument(argument) {}
-
 double Cos::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::cos(arg_value);
 }
 
 Function *Cos::derivative(Variable* var) const {
     // (cos(f(x))' = (-1) * f'(x) * sin(f(x)));
-    Function *f_prime = argument->derivative(var);
-    Function *sin_func = new Sin(argument->clone());
+    Function *f_prime = operand->derivative(var);
+    Function *sin_func = new Sin(operand->clone());
     Function *mul = new Multiplication(f_prime, sin_func);
     return new Multiplication(new Constant(-1), mul);
 }
 
 Function *Cos::clone() const {
-    return new Cos(argument->clone());
+    return new Cos(operand->clone());
 }
 
 // -------------------- Asin Implementations --------------------
 
-Asin::Asin(Function *argument)
-        : argument(argument) {}
 
 double Asin::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::asin(arg_value);
 }
 
 Function *Asin::derivative(Variable* var) const {
     // (acos(f(x)))' = f'(x) / sqrt(1 - f(x)^2)
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // 1 - f(x)^2
-    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+    Function* f_squared = new Multiplication(operand->clone(), operand->clone());
     Function* one_minus_f_squared = new Subtraction(new Constant(1.0), f_squared);
 
     // sqrt(1 - f(x)^2)
-    Function* denominator = new Sqrt(one_minus_f_squared);
+    Function* right = new Sqrt(one_minus_f_squared);
 
     // f'(x) / sqrt(1 - f(x)^2)
-    Function* f = new Division(f_prime, denominator);
+    Function* f = new Division(f_prime, right);
     return f;
 }
 
 Function *Asin::clone() const {
-    return new Asin(argument->clone());
+    return new Asin(operand->clone());
 }
 
 // -------------------- Acos Implementations --------------------
 
-Acos::Acos(Function *argument)
-        : argument(argument) {}
-
 double Acos::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::acos(arg_value);
 }
 
 Function *Acos::derivative(Variable* var) const {
     // (acos(f(x)))' = -f'(x) / sqrt(1 - f(x)^2)
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // 1 - f(x)^2
-    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+    Function* f_squared = new Multiplication(operand->clone(), operand->clone());
     Function* one_minus_f_squared = new Subtraction(new Constant(1.0), f_squared);
 
     // sqrt(1 - f(x)^2)
-    Function* denominator = new Sqrt(one_minus_f_squared);
+    Function* right = new Sqrt(one_minus_f_squared);
     Function* negative_one = new Constant(-1.0);
     // -f'(x) * (1 / sqrt(1 - f(x)^2))
-    Function* f = new Division(new Multiplication(negative_one, f_prime), denominator);
+    Function* f = new Division(new Multiplication(negative_one, f_prime), right);
     return f;
 }
 
 Function *Acos::clone() const {
-    return new Acos(argument->clone());
+    return new Acos(operand->clone());
 }
 
 // -------------------- Tan Implementations --------------------
 
-Tan::Tan(Function *argument)
-        : argument(argument) {}
 
 double Tan::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::tan(arg_value);
 }
 
 Function *Tan::derivative(Variable* var) const {
     // (tan(f(x)))' = f'(x) / cos^2(f(x))
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // cos(f(x))
-    Function* cos_fx = new Cos(argument->clone());
+    Function* cos_fx = new Cos(operand->clone());
 
     // cos(f(x)) * cos(f(x)) = cos^2(f(x))
     Function* cos_fx_squared = new Multiplication(cos_fx->clone(), cos_fx->clone());
@@ -486,16 +435,13 @@ Function *Tan::derivative(Variable* var) const {
 }
 
 Function *Tan::clone() const {
-    return new Tan(argument->clone());
+    return new Tan(operand->clone());
 }
 
 // -------------------- Atan Implementations --------------------
 
-Atan::Atan(Function *argument)
-        : argument(argument) {}
-
 double Atan::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return std::atan(arg_value);
 }
 
@@ -503,10 +449,10 @@ Function *Atan::derivative(Variable* var) const {
     // (atan(f(x)))' = f'(x) / (1 + f(x)^2)
 
     // f'(x)
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // f(x) * f(x) = f(x)^2
-    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+    Function* f_squared = new Multiplication(operand->clone(), operand->clone());
 
     // 1 + f(x)^2
     Function* one_plus_f_squared = new Addition(new Constant(1.0), f_squared);
@@ -518,16 +464,13 @@ Function *Atan::derivative(Variable* var) const {
 }
 
 Function *Atan::clone() const {
-    return new Atan(argument->clone());
+    return new Atan(operand->clone());
 }
 
 // -------------------- Cot Implementations --------------------
 
-Cot::Cot(Function *argument)
-        : argument(argument) {}
-
 double Cot::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     return 1.0 / std::tan(arg_value);
 }
 
@@ -535,10 +478,10 @@ Function *Cot::derivative(Variable* var) const {
     // (cot(f(x)))' = -f'(x) / sin^2(f(x))
 
     // f'(x)
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // sin(f(x))
-    Function* sin_fx = new Sin(argument->clone());
+    Function* sin_fx = new Sin(operand->clone());
 
     // sin(f(x)) * sin(f(x)) = sin^2(f(x))
     Function* sin_fx_squared = new Multiplication(sin_fx->clone(), sin_fx->clone());
@@ -553,16 +496,12 @@ Function *Cot::derivative(Variable* var) const {
 }
 
 Function *Cot::clone() const {
-    return new Cot(argument->clone());
+    return new Cot(operand->clone());
 }
 
 // -------------------- Acot Implementations --------------------
-
-Acot::Acot(Function *argument)
-        : argument(argument) {}
-
 double Acot::evaluate() const {
-    double arg_value = argument->evaluate();
+    double arg_value = operand->evaluate();
     // Acot(x) = π/2 - atan(x)
     return (M_PI / 2.0) - std::atan(arg_value);
 }
@@ -571,10 +510,10 @@ Function *Acot::derivative(Variable* var) const {
     // (acot(f(x)))' = -f'(x) / (1 + f(x)^2)
 
     // f'(x)
-    Function* f_prime = argument->derivative(var);
+    Function* f_prime = operand->derivative(var);
 
     // f(x) * f(x) = f(x)^2
-    Function* f_squared = new Multiplication(argument->clone(), argument->clone());
+    Function* f_squared = new Multiplication(operand->clone(), operand->clone());
 
     // 1 + f(x)^2
     Function* one_plus_f_squared = new Addition(new Constant(1.0), f_squared);
@@ -589,13 +528,11 @@ Function *Acot::derivative(Variable* var) const {
 }
 
 Function *Acot::clone() const {
-    return new Acot(argument->clone());
+    return new Acot(operand->clone());
 }
 
 // -------------------- Max Implementations --------------------
 
-Max::Max(Function *left, Function *right)
-: left(left), right(right) {}
 
 double Max::evaluate() const {
     double left_val = left->evaluate();
@@ -624,8 +561,6 @@ Function *Max::clone() const {
 
 // -------------------- Max Implementations --------------------
 
-Min::Min(Function *left, Function *right)
-        : left(left), right(right) {}
 
 double Min::evaluate() const {
     double left_val = left->evaluate();
