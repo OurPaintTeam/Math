@@ -248,7 +248,17 @@ inline Matrix<T>::Matrix(const V& vec) : rows(vec.size()), cols(vec[0].size())
 
 template <Arithmetic T>
 inline Matrix<T>::Matrix(const Matrix<T>& other) : rows(other.rows), cols(other.cols) {
-    matrix = new T * [rows];
+    // check matrix and free memory if needed
+    if (matrix != NULL){
+        for (iterator_type i = 0; i < rows; i++)
+        {
+            delete[] matrix[i];
+        }
+        if (rows != 0) delete[] matrix;
+    }
+    // is rows == 0 or cols == 0 we dont need create matrix
+    if (rows != 0 && cols != 0) matrix = new T * [rows];
+
     for (typename Matrix<T>::iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
         for (typename Matrix<T>::iterator_type j = 0; j < cols; j++) {
