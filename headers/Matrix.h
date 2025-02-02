@@ -265,6 +265,7 @@ inline Matrix<T>::Matrix(const Matrix<T>& other) : rows(other.rows), cols(other.
             matrix[i][j] = other.matrix[i][j];
         }
     }
+
 }
 
 template <Arithmetic T>
@@ -279,11 +280,14 @@ inline Matrix<T>::Matrix(const std::initializer_list<std::initializer_list<T>>& 
 {
     rows = values.size();
     cols = values.begin()->size();
-    matrix = new T * [rows];
-
+    if (rows != 0) matrix = new T*[rows];
     iterator_type i = 0;
     for (const auto& row_values : values) {
         if (row_values.size() != cols) {
+            for (typename Matrix<T>::iterator_type j = 0; j < i; j++) {
+                delete[] matrix[j];
+            }
+            if (rows != 0) delete[] matrix;
             throw std::invalid_argument("All rows must have the same number of columns.");
         }
         matrix[i] = new T[cols];
@@ -352,7 +356,6 @@ inline Matrix<T>& Matrix<T>::operator=(const std::initializer_list<std::initiali
         delete[] matrix[i];
     }
     delete[] matrix;
-
     rows = values.size();
     cols = values.begin()->size();
     matrix = new T * [rows];
@@ -886,6 +889,9 @@ inline T Matrix<T>::determinant() const
         throw std::runtime_error("rows != cols: matrix is cannot be to find determinant");
     }
     size_type s = rows;
+    if (rows == 0 || cols == 0){
+        throw std::runtime_error("rows or cols cannot be equel to zero");
+    }
     T** tempMatrix = new T*[s];
     for (size_type i = 0; i < s; ++i) {
         tempMatrix[i] = new T[s];
@@ -909,6 +915,11 @@ inline T Matrix<T>::determinant() const
             }
         }
         if (std::abs(tempMatrix[i][i]) < eps) {
+            for (typename Matrix<T>::iterator_type i = 0; i < s; i++)
+            {
+                delete[] tempMatrix[i];
+            }
+            if (rows != 0) delete[] tempMatrix;
             return 0;
         }
         for (size_t k = i + 1; k < s; ++k) {
