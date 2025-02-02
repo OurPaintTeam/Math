@@ -10,39 +10,40 @@ Tests implementations:
 addVertex               = true
 removeVertex            = true
 addEdge                 = true
-removeEdge              = false
+removeEdge              = true
 setEdgeWeight           = false
 getEdgeWeight           = false
 getAllEdges             = false
 isDirected              = no need
 isWeighted              = no need
-hasEdge                 = false
+hasEdge                 = no need
+hasVertex               = no need
 getVertices             = no need
 getAdjacencyList        = false
 getVertexEdges          = false
 printGraph(1,2)         = false
 findConnectedComponent  = true
-getRepresentation
+getRepresentation       = false
 vertexCount             = no need
 edgeCount               = true
-traverse
-isConnected
-connectedComponents
-isAcyclic
-topologicalSort
-dijkstra
-bellmanFord
-floydWarshall
-kruskalMST
-primMST
-hasEulerianPath
-eulerianPath
-hamiltonianPath
-maxFlow
-bipartiteMatching
-transpose
-complement
-subGraph
+traverse                = false
+isConnected             = false
+connectedComponents     = false
+isAcyclic               = false
+topologicalSort         = false
+dijkstra                = false
+bellmanFord             = false
+floydWarshall           = false
+kruskalMST              = false
+primMST                 = false
+hasEulerianPath         = false
+eulerianPath            = false
+hamiltonianPath         = false
+maxFlow                 = false
+bipartiteMatching       = false
+transpose               = false
+complement              = false
+subGraph                = false
 
 */
 
@@ -268,6 +269,87 @@ TEST(GraphTest, AddEdge) {
       EXPECT_THROW({
         graph.addEdge(1, 2, 5);
       }, std::invalid_argument);
+    }
+}
+
+TEST(GraphTest, RemoveEdge) {
+    // Directed and Weighted Graph
+    {
+      DirectedWeightedGraph<char, int> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D', 1);
+      graph.addEdge('A', 'C', 2);
+      graph.addEdge('A', 'B', 3);
+      graph.addEdge('B', 'C', 4);
+      graph.addEdge('C', 'E', 5);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeEdge('A', 'C');
+
+      EXPECT_EQ(graph.edgeCount(), 4);
+      EXPECT_EQ(graph.vertexCount(), 5);
+    }
+
+    // Undirected and Weighted Graph
+    {
+      UndirectedWeightedGraph<char, int> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D', 1);
+      graph.addEdge('A', 'C', 2);
+      graph.addEdge('A', 'B', 3);
+      graph.addEdge('B', 'C', 4);
+      graph.addEdge('C', 'E', 5);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeEdge('A', 'C');
+
+      EXPECT_EQ(graph.edgeCount(), 4);
+      EXPECT_EQ(graph.vertexCount(), 5);
+    }
+
+    // Directed and Unweighted Graph
+    {
+      DirectedUnweightedGraph<char> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D');
+      graph.addEdge('A', 'C');
+      graph.addEdge('A', 'B');
+      graph.addEdge('B', 'C');
+      graph.addEdge('C', 'E');
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeEdge('A', 'C');
+
+      EXPECT_EQ(graph.edgeCount(), 4);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+    }
+
+    // Undirected and Unweighted Graph
+    {
+      UndirectedUnweightedGraph<char> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D');
+      graph.addEdge('A', 'C');
+      graph.addEdge('A', 'B');
+      graph.addEdge('B', 'C');
+      graph.addEdge('C', 'E');
+
+      //graph.printGraph(std::cout);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+      graph.removeEdge('A', 'C');
+
+      EXPECT_EQ(graph.edgeCount(), 4);
+      EXPECT_EQ(graph.vertexCount(), 5);
     }
 }
 
@@ -622,267 +704,4 @@ TEST(GraphTest, PrintGraph) {
 
 /*
 
-// Test for removeEdge
-TEST(GraphTest, RemoveEdge_FullyCoversFunction) {
-    // Directed and Weighted Graph
-    {
-        DirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2, 10);
-        graph.addEdge(1, 3, 20);
-        graph.addEdge(2, 3, 30);
-
-        // Remove existing edge
-        EXPECT_TRUE(graph.removeEdge(1, 2));
-
-        // Verify edge is removed
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it = adjacencyList.find(1);
-        ASSERT_NE(it, adjacencyList.end());
-        bool edgeFound = false;
-        for (const auto& edge : it->second) {
-            if (edge.to == 2) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove the same edge again
-        EXPECT_FALSE(graph.removeEdge(1, 2));
-
-        // Attempt to remove non-existing edge
-        EXPECT_FALSE(graph.removeEdge(2, 1));
-
-        // Remove another existing edge
-        EXPECT_TRUE(graph.removeEdge(2, 3));
-
-        // Verify edge is removed
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it2, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it2->second) {
-            if (edge.to == 3) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove edge with non-existing vertices
-        EXPECT_FALSE(graph.removeEdge(4, 5));
-    }
-
-    // Undirected and Weighted Graph
-    {
-        UndirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2, 15);
-        graph.addEdge(1, 3, 25);
-        graph.addEdge(2, 3, 35);
-
-        // Remove existing edge
-        EXPECT_TRUE(graph.removeEdge(1, 2));
-
-        // Verify edge is removed from both directions
-        const auto& adjacencyList = graph.getAdjacencyList();
-
-        // Check from 1 to 2
-        auto it1 = adjacencyList.find(1);
-        ASSERT_NE(it1, adjacencyList.end());
-        bool edgeFound = false;
-        for (const auto& edge : it1->second) {
-            if (edge.to == 2) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Check from 2 to 1
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it2, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it2->second) {
-            if (edge.to == 1) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove the same edge again
-        EXPECT_FALSE(graph.removeEdge(1, 2));
-
-        // Attempt to remove non-existing edge
-        EXPECT_FALSE(graph.removeEdge(2, 1));
-
-        // Remove another existing edge
-        EXPECT_TRUE(graph.removeEdge(2, 3));
-
-        // Verify edge is removed from both directions
-        auto it3 = adjacencyList.find(2);
-        ASSERT_NE(it3, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it3->second) {
-            if (edge.to == 3) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        auto it4 = adjacencyList.find(3);
-        ASSERT_NE(it4, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it4->second) {
-            if (edge.to == 2) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove edge with non-existing vertices
-        EXPECT_FALSE(graph.removeEdge(4, 5));
-    }
-
-    // Directed and Unweighted Graph
-    {
-        DirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2);
-        graph.addEdge(1, 3);
-        graph.addEdge(2, 3);
-
-        // Remove existing edge
-        EXPECT_TRUE(graph.removeEdge(1, 2));
-
-        // Verify edge is removed
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it = adjacencyList.find(1);
-        ASSERT_NE(it, adjacencyList.end());
-        bool edgeFound = false;
-        for (const auto& edge : it->second) {
-            if (edge.to == 2) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove the same edge again
-        EXPECT_FALSE(graph.removeEdge(1, 2));
-
-        // Attempt to remove non-existing edge
-        EXPECT_FALSE(graph.removeEdge(2, 1));
-
-        // Remove another existing edge
-        EXPECT_TRUE(graph.removeEdge(2, 3));
-
-        // Verify edge is removed
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it2, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it2->second) {
-            if (edge.to == 3) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove edge with non-existing vertices
-        EXPECT_FALSE(graph.removeEdge(4, 5));
-    }
-
-    // Undirected and Unweighted Graph
-    {
-        UndirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addVertex(3);
-        graph.addEdge(1, 2);
-        graph.addEdge(1, 3);
-        graph.addEdge(2, 3);
-
-        // Remove existing edge
-        EXPECT_TRUE(graph.removeEdge(1, 2));
-
-        // Verify edge is removed from both directions
-        const auto& adjacencyList = graph.getAdjacencyList();
-
-        // Check from 1 to 2
-        auto it1 = adjacencyList.find(1);
-        ASSERT_NE(it1, adjacencyList.end());
-        bool edgeFound = false;
-        for (const auto& edge : it1->second) {
-            if (edge.to == 2) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Check from 2 to 1
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it2, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it2->second) {
-            if (edge.to == 1) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove the same edge again
-        EXPECT_FALSE(graph.removeEdge(1, 2));
-
-        // Attempt to remove non-existing edge
-        EXPECT_FALSE(graph.removeEdge(2, 1));
-
-        // Remove another existing edge
-        EXPECT_TRUE(graph.removeEdge(2, 3));
-
-        // Verify edge is removed from both directions
-        auto it3 = adjacencyList.find(2);
-        ASSERT_NE(it3, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it3->second) {
-            if (edge.to == 3) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        auto it4 = adjacencyList.find(3);
-        ASSERT_NE(it4, adjacencyList.end());
-        edgeFound = false;
-        for (const auto& edge : it4->second) {
-            if (edge.to == 2) {
-                edgeFound = true;
-                break;
-            }
-        }
-        EXPECT_FALSE(edgeFound);
-
-        // Attempt to remove edge with non-existing vertices
-        EXPECT_FALSE(graph.removeEdge(4, 5));
-    }
-
-    // Attempt to remove edge from empty graph
-    {
-        using AnyGraph = Graph<int>;
-        AnyGraph graph;
-
-        EXPECT_FALSE(graph.removeEdge(1, 2));
-    }
-}*/
+*/
