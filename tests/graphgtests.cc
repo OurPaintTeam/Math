@@ -11,8 +11,8 @@ addVertex               = true
 removeVertex            = true
 addEdge                 = true
 removeEdge              = true
-setEdgeWeight           = false
-getEdgeWeight           = false
+setEdgeWeight           = true
+getEdgeWeight           = true
 getAllEdges             = false
 isDirected              = no need
 isWeighted              = no need
@@ -21,9 +21,8 @@ hasVertex               = no need
 getVertices             = no need
 getAdjacencyList        = false
 getVertexEdges          = false
-printGraph(1,2)         = false
+printGraph(1,2)         = no need
 findConnectedComponent  = true
-getRepresentation       = false
 vertexCount             = no need
 edgeCount               = true
 traverse                = false
@@ -89,10 +88,10 @@ TEST(GraphTest, RemoveVertex) {
       EXPECT_EQ(graph.edgeCount(), 5);
       EXPECT_EQ(graph.vertexCount(), 5);
 
-      graph.removeVertex('C');
+      graph.removeVertex('C', 'E');
 
       EXPECT_EQ(graph.edgeCount(), 2);
-      EXPECT_EQ(graph.vertexCount(), 4);
+      EXPECT_EQ(graph.vertexCount(), 3);
     }
 
     // Undirected and Weighted Graph
@@ -390,6 +389,212 @@ TEST(GraphTest, EdgeCount) {
     EXPECT_EQ(graph.edgeCount(), 6);
 }
 
+TEST(GraphTest, GetEdgeWeight) {
+    // Weighted and Directed Graph
+    {
+      DirectedWeightedGraph<int, int> graph;
+      graph.addVertex(1);
+      graph.addVertex(2);
+      graph.addEdge(1, 2, 10);
+
+      // Get existing edge weight
+      EXPECT_NO_THROW({
+        int weight = graph.getEdgeWeight(1, 2);
+        EXPECT_EQ(weight, 10);
+      });
+
+      // Attempt to get weight of non-existing edge
+      EXPECT_THROW({
+        graph.getEdgeWeight(1, 3);
+      }, std::invalid_argument);
+
+      // Attempt to get weight on unweighted graph
+      DirectedUnweightedGraph<int> unweightedGraph;
+      unweightedGraph.addVertex(1);
+      unweightedGraph.addVertex(2);
+      unweightedGraph.addEdge(1, 2);
+
+      EXPECT_THROW({
+        unweightedGraph.getEdgeWeight(1, 2);
+      }, std::invalid_argument);
+
+      // Attempt to get weight with non-existing vertices
+      EXPECT_THROW({
+        graph.getEdgeWeight(3, 4);
+      }, std::invalid_argument);
+    }
+
+    // Weighted and Undirected Graph
+    {
+      UndirectedWeightedGraph<int, int> graph;
+      graph.addVertex(1);
+      graph.addVertex(2);
+      graph.addEdge(1, 2, 15);
+
+      // Get existing edge weight
+      EXPECT_NO_THROW({
+        int weight = graph.getEdgeWeight(1, 2);
+        EXPECT_EQ(weight, 15);
+      });
+
+      // Get weight from the opposite direction
+      EXPECT_NO_THROW({
+        int weight = graph.getEdgeWeight(2, 1);
+        EXPECT_EQ(weight, 15);
+      });
+
+      // Attempt to get weight of non-existing edge
+      EXPECT_THROW({
+        graph.getEdgeWeight(1, 3);
+      }, std::invalid_argument);
+
+      // Attempt to get weight on unweighted graph
+      UndirectedUnweightedGraph<int> unweightedGraph;
+      unweightedGraph.addVertex(1);
+      unweightedGraph.addVertex(2);
+      unweightedGraph.addEdge(1, 2);
+
+      EXPECT_THROW({
+        unweightedGraph.getEdgeWeight(1, 2);
+      }, std::invalid_argument);
+
+      // Attempt to get weight with non-existing vertices
+      EXPECT_THROW({
+        graph.getEdgeWeight(3, 4);
+      }, std::invalid_argument);
+    }
+
+    // Unweighted and Directed Graph
+    {
+      DirectedUnweightedGraph<int> graph;
+      graph.addVertex(1);
+      graph.addVertex(2);
+      graph.addEdge(1, 2);
+
+      // Attempt to get weight on unweighted graph
+      EXPECT_THROW({
+        graph.getEdgeWeight(1, 2);
+      }, std::invalid_argument);
+
+      // Attempt to get weight with non-existing edge
+      EXPECT_THROW({
+        graph.getEdgeWeight(1, 3);
+      }, std::invalid_argument);
+
+      // Attempt to get weight with non-existing vertices
+      EXPECT_THROW({
+        graph.getEdgeWeight(3, 4);
+      }, std::invalid_argument);
+    }
+
+    // Unweighted and Undirected Graph
+    {
+      UndirectedUnweightedGraph<int> graph;
+      graph.addVertex(1);
+      graph.addVertex(2);
+      graph.addEdge(1, 2);
+
+      // Attempt to get weight on unweighted graph
+      EXPECT_THROW({
+        graph.getEdgeWeight(1, 2);
+      }, std::invalid_argument);
+
+      // Attempt to get weight with non-existing edge
+      EXPECT_THROW({
+        graph.getEdgeWeight(1, 3);
+      }, std::invalid_argument);
+
+      // Attempt to get weight with non-existing vertices
+      EXPECT_THROW({
+        graph.getEdgeWeight(3, 4);
+      }, std::invalid_argument);
+    }
+}
+
+TEST(GraphTest, SetEdgeWeight) {
+    // Directed and Weighted Graph
+    {
+      DirectedWeightedGraph<char, int> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D', 1);
+      graph.addEdge('A', 'C', 2);
+      graph.addEdge('A', 'B', 3);
+      graph.addEdge('B', 'C', 4);
+      graph.addEdge('C', 'E', 5);
+
+      EXPECT_EQ(graph.getEdgeWeight('A', 'D'), 1);
+      EXPECT_EQ(graph.getEdgeWeight('A', 'C'), 2);
+      EXPECT_EQ(graph.getEdgeWeight('A', 'B'), 3);
+      EXPECT_EQ(graph.getEdgeWeight('B', 'C'), 4);
+      EXPECT_EQ(graph.getEdgeWeight('C', 'E'), 5);
+
+      graph.setEdgeWeight('A', 'D', 777);
+
+      EXPECT_EQ(graph.getEdgeWeight('A', 'D'), 777);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+    }
+
+    // Undirected and Weighted Graph
+    {
+      UndirectedWeightedGraph<char, int> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D', 1);
+      graph.addEdge('A', 'C', 2);
+      graph.addEdge('A', 'B', 3);
+      graph.addEdge('B', 'C', 4);
+      graph.addEdge('C', 'E', 5);
+
+      EXPECT_EQ(graph.getEdgeWeight('A', 'D'), 1);
+      EXPECT_EQ(graph.getEdgeWeight('A', 'C'), 2);
+      EXPECT_EQ(graph.getEdgeWeight('A', 'B'), 3);
+      EXPECT_EQ(graph.getEdgeWeight('B', 'C'), 4);
+      EXPECT_EQ(graph.getEdgeWeight('C', 'E'), 5);
+
+      graph.setEdgeWeight('A', 'D', 777);
+
+      EXPECT_EQ(graph.getEdgeWeight('A', 'D'), 777);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+    }
+
+    // Directed and Unweighted Graph
+    {
+      DirectedUnweightedGraph<char> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D');
+      graph.addEdge('A', 'C');
+      graph.addEdge('A', 'B');
+      graph.addEdge('B', 'C');
+      graph.addEdge('C', 'E');
+
+      EXPECT_THROW(graph.setEdgeWeight('A', 'D', 777), std::invalid_argument);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+
+    }
+
+    // Undirected and Unweighted Graph
+    {
+      UndirectedUnweightedGraph<char> graph;
+      graph.addVertex('A', 'B', 'C', 'D', 'E');
+      graph.addEdge('A', 'D');
+      graph.addEdge('A', 'C');
+      graph.addEdge('A', 'B');
+      graph.addEdge('B', 'C');
+      graph.addEdge('C', 'E');
+
+      EXPECT_THROW(graph.setEdgeWeight('A', 'D', 777), std::invalid_argument);
+
+      EXPECT_EQ(graph.edgeCount(), 5);
+      EXPECT_EQ(graph.vertexCount(), 5);
+    }
+}
+
+
 /*
 
 TEST(GraphTest, FindConnectedComponentSingleVertex) {
@@ -445,243 +650,8 @@ TEST(GraphTest, FindConnectedComponentDisjointSets) {
     ASSERT_EQ(actual_componentD, expected_componentD);
 }
 
-// Test for setEdgeWeight
-TEST(GraphTest, SetEdgeWeight_FullyCoversFunction) {
-    // Weighted and Directed Graph
-    {
-        DirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2, 10);
 
-        // Set existing edge weight
-        EXPECT_NO_THROW({
-                            bool result = graph.setEdgeWeight(1, 2, 20);
-                            EXPECT_TRUE(result);
-                        });
 
-        // Verify weight is updated
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it = adjacencyList.find(1);
-        ASSERT_NE(it, adjacencyList.end());
-        ASSERT_EQ(it->second.size(), 1);
-        EXPECT_EQ(it->second[0].weight, 20);
-
-        // Attempt to set weight on non-existing edge
-        EXPECT_NO_THROW({
-                            bool result = graph.setEdgeWeight(1, 3, 30);
-                            EXPECT_FALSE(result);
-                        });
-
-        // Attempt to set weight on unweighted graph
-        DirectedUnweightedGraph<int, int> unweightedGraph;
-        unweightedGraph.addVertex(1);
-        unweightedGraph.addVertex(2);
-        unweightedGraph.addEdge(1, 2);
-
-        EXPECT_THROW({
-                         unweightedGraph.setEdgeWeight(1, 2, 5);
-                     }, std::invalid_argument);
-    }
-
-    // Weighted and Undirected Graph
-    {
-        UndirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2, 15);
-
-        // Set existing edge weight
-        EXPECT_NO_THROW({
-                            bool result = graph.setEdgeWeight(1, 2, 25);
-                            EXPECT_TRUE(result);
-                        });
-
-        // Verify weight is updated in both directions
-        const auto& adjacencyList = graph.getAdjacencyList();
-        auto it1 = adjacencyList.find(1);
-        auto it2 = adjacencyList.find(2);
-        ASSERT_NE(it1, adjacencyList.end());
-        ASSERT_NE(it2, adjacencyList.end());
-        ASSERT_EQ(it1->second.size(), 1);
-        ASSERT_EQ(it2->second.size(), 1);
-        EXPECT_EQ(it1->second[0].weight, 25);
-        EXPECT_EQ(it2->second[0].weight, 25);
-
-        // Attempt to set weight on non-existing edge
-        EXPECT_NO_THROW({
-                            bool result = graph.setEdgeWeight(1, 3, 35);
-                            EXPECT_FALSE(result);
-                        });
-
-        // Attempt to set weight on unweighted graph
-        UndirectedUnweightedGraph<int, int> unweightedGraph;
-        unweightedGraph.addVertex(1);
-        unweightedGraph.addVertex(2);
-        unweightedGraph.addEdge(1, 2);
-
-        EXPECT_THROW({
-                         unweightedGraph.setEdgeWeight(1, 2, 5);
-                     }, std::invalid_argument);
-    }
-
-    // Unweighted and Directed Graph
-    {
-        DirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2);
-
-        // Attempt to set weight on unweighted graph
-        EXPECT_THROW({
-                         graph.setEdgeWeight(1, 2, 10);
-                     }, std::invalid_argument);
-
-        // Attempt to set weight on non-existing vertices
-        EXPECT_FALSE(graph.setEdgeWeight(1, 3, 20));
-        EXPECT_FALSE(graph.setEdgeWeight(3, 4, 30));
-    }
-
-    // Unweighted and Undirected Graph
-    {
-        UndirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2);
-
-        // Attempt to set weight on unweighted graph
-        EXPECT_THROW({
-                         graph.setEdgeWeight(1, 2, 10);
-                     }, std::invalid_argument);
-
-        // Attempt to set weight on non-existing vertices
-        EXPECT_FALSE(graph.setEdgeWeight(1, 3, 20));
-        EXPECT_FALSE(graph.setEdgeWeight(3, 4, 30));
-    }
-}
-
-// Test for getEdgeWeight
-TEST(GraphTest, GetEdgeWeight_FullyCoversFunction) {
-    // Weighted and Directed Graph
-    {
-        DirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2, 10);
-
-        // Get existing edge weight
-        EXPECT_NO_THROW({
-                            int weight = graph.getEdgeWeight(1, 2);
-                            EXPECT_EQ(weight, 10);
-                        });
-
-        // Attempt to get weight of non-existing edge
-        EXPECT_THROW({
-                         graph.getEdgeWeight(1, 3);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight on unweighted graph
-        DirectedUnweightedGraph<int, int> unweightedGraph;
-        unweightedGraph.addVertex(1);
-        unweightedGraph.addVertex(2);
-        unweightedGraph.addEdge(1, 2);
-
-        EXPECT_THROW({
-                         unweightedGraph.getEdgeWeight(1, 2);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight with non-existing vertices
-        EXPECT_THROW({
-                         graph.getEdgeWeight(3, 4);
-                     }, std::invalid_argument);
-    }
-
-    // Weighted and Undirected Graph
-    {
-        UndirectedWeightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2, 15);
-
-        // Get existing edge weight
-        EXPECT_NO_THROW({
-                            int weight = graph.getEdgeWeight(1, 2);
-                            EXPECT_EQ(weight, 15);
-                        });
-
-        // Get weight from the opposite direction
-        EXPECT_NO_THROW({
-                            int weight = graph.getEdgeWeight(2, 1);
-                            EXPECT_EQ(weight, 15);
-                        });
-
-        // Attempt to get weight of non-existing edge
-        EXPECT_THROW({
-                         graph.getEdgeWeight(1, 3);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight on unweighted graph
-        UndirectedUnweightedGraph<int, int> unweightedGraph;
-        unweightedGraph.addVertex(1);
-        unweightedGraph.addVertex(2);
-        unweightedGraph.addEdge(1, 2);
-
-        EXPECT_THROW({
-                         unweightedGraph.getEdgeWeight(1, 2);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight with non-existing vertices
-        EXPECT_THROW({
-                         graph.getEdgeWeight(3, 4);
-                     }, std::invalid_argument);
-    }
-
-    // Unweighted and Directed Graph
-    {
-        DirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2);
-
-        // Attempt to get weight on unweighted graph
-        EXPECT_THROW({
-                         graph.getEdgeWeight(1, 2);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight with non-existing edge
-        EXPECT_THROW({
-                         graph.getEdgeWeight(1, 3);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight with non-existing vertices
-        EXPECT_THROW({
-                         graph.getEdgeWeight(3, 4);
-                     }, std::invalid_argument);
-    }
-
-    // Unweighted and Undirected Graph
-    {
-        UndirectedUnweightedGraph<int, int> graph;
-        graph.addVertex(1);
-        graph.addVertex(2);
-        graph.addEdge(1, 2);
-
-        // Attempt to get weight on unweighted graph
-        EXPECT_THROW({
-                         graph.getEdgeWeight(1, 2);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight with non-existing edge
-        EXPECT_THROW({
-                         graph.getEdgeWeight(1, 3);
-                     }, std::invalid_argument);
-
-        // Attempt to get weight with non-existing vertices
-        EXPECT_THROW({
-                         graph.getEdgeWeight(3, 4);
-                     }, std::invalid_argument);
-    }
-}
 
 // Test for graph printing
 TEST(GraphTest, PrintGraph) {

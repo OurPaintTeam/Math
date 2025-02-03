@@ -4,11 +4,6 @@
 #include <unordered_map>
 #include <optional>
 
-enum class Representation {
-    LIST,
-    MATRIX
-};
-
 // Type of search algorithm
 enum class SearchType {
     BFS,
