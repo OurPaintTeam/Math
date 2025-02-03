@@ -15,6 +15,9 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install -y cmake g++
 
+      - name: Install Valgrind
+        run: sudo apt-get install -y valgrind
+
       - name: Download and Install Google Test
         run: |
           git clone https://github.com/google/googletest.git
@@ -65,8 +68,30 @@ jobs:
       - name: Run LMTest
         run: ./build/LMTest
 
-      - name: Run LMTest
+      - name: Run LMTestWithOurMatrix
         run: ./build/LMTestWithOurMatrix
 
       - name: Run SimpleGraph
         run: ./build/SimpleGraph
+
+      - name: Run All Tests with Valgrind
+        run: |
+          tests=(
+            MatrixTest
+            QRTest
+            QRPerformanceTest
+            FunctionTest
+            ErrorFunctionTest
+            OptimizationTaskTest
+            LSMTaskTest
+            GradientOptimizerTest
+            NewtonGaussSolverTests
+            NewtonOptimizerTest
+            LMTest
+            LMTestWithOurMatrix
+            SimpleGraph
+          )
+          for test in "${tests[@]}"; do
+            echo "Running $test with Valgrind"
+            valgrind --leak-check=full --error-exitcode=1 ./build/"$test"
+          done
