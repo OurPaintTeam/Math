@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "ErrorFunctions.h"
-/*
+
 //------------------------- POINTSECDIST TESTS -------------------------
 TEST(PointSectionDistanceErrorTest, CorrectErrorValue) {
     double p1[] = {0.0}; double p2[] = {0.0};  // Point (1,1)
@@ -164,7 +164,7 @@ TEST(SectionOnCircleErrorTest, IncorrectVariableCount) {
     };
 
     EXPECT_THROW(SectionOnCircleError errorFunc(variables), std::invalid_argument);
-}*/
+}
 //------------------------- SECTIONSECTIONANGLE TESTS -------------------------
 TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
     double x1s[] = {0.0}; double y1s[] = {0.0};
@@ -183,7 +183,7 @@ TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-2);
 	delete errorFunc;
 }
-/*
+
 TEST(SectionSectionAngleErrorTest, IncorrectVariableCount) {
     double x1s[] = {0.0}; double y1s[] = {0.0};
     double x1e[] = {1.0}; double y1e[] = {0.0};
@@ -196,4 +196,4 @@ TEST(SectionSectionAngleErrorTest, IncorrectVariableCount) {
     };
 
     EXPECT_THROW(SectionSectionAngleError errorFunc(variables, 90.0), std::invalid_argument);
-}*/
+}
