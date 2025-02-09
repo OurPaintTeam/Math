@@ -142,10 +142,9 @@ double Power::evaluate() const {
 Function* Power::derivative(Variable* var) const {
     Function* left_derivative = left->derivative(var);
     Function* exp = new Constant(right->evaluate());
-    Function* new_power = new Power(left, new Constant(right->evaluate() - 1));
-    // Собираем производную по правилу цепочки: n * u^(n-1) * u'
-    Function* result = new Multiplication(exp, new Multiplication(new_power, left_derivative));
-    return result;
+    Function* new_power = new Power(left->clone(), new Constant(right->evaluate() - 1));
+    // n * u^(n-1) * u'
+    return new Multiplication(exp, new Multiplication(new_power, left_derivative));
 }
 
 Function* Power::clone() const {
@@ -329,7 +328,7 @@ double Sin::evaluate() const {
 Function *Sin::derivative(Variable* var) const {
     // (sin(f(x))' = f'(x) * cos(f(x)));
     Function* f_prime = operand->derivative(var);
-    return new Multiplication(f_prime, new Cos(operand));
+    return new Multiplication(f_prime, new Cos(operand->clone()));
 }
 
 Function *Sin::clone() const {
@@ -426,7 +425,7 @@ Function *Tan::derivative(Variable* var) const {
     Function* cos_fx = new Cos(operand->clone());
 
     // cos(f(x)) * cos(f(x)) = cos^2(f(x))
-    Function* cos_fx_squared = new Multiplication(cos_fx->clone(), cos_fx->clone());
+    Function* cos_fx_squared = new Multiplication(cos_fx, cos_fx->clone());
 
     // f'(x) / cos^2(f(x))
     Function* derivative = new Division(f_prime, cos_fx_squared);
@@ -484,7 +483,7 @@ Function *Cot::derivative(Variable* var) const {
     Function* sin_fx = new Sin(operand->clone());
 
     // sin(f(x)) * sin(f(x)) = sin^2(f(x))
-    Function* sin_fx_squared = new Multiplication(sin_fx->clone(), sin_fx->clone());
+    Function* sin_fx_squared = new Multiplication(sin_fx, sin_fx->clone());
 
     // -f'(x)
     Function* negative_f_prime = new Negation(f_prime);
