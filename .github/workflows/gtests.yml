@@ -15,6 +15,9 @@ jobs:
       - name: Install dependencies
         run: sudo apt-get install -y cmake g++
 
+      - name: Install Valgrind
+        run: sudo apt-get install -y valgrind
+
       - name: Download and Install Google Test
         run: |
           git clone https://github.com/google/googletest.git
@@ -32,41 +35,93 @@ jobs:
       - name: Build Project
         run: cmake --build build
 
-      - name: Run MatrixTest
+      # MatrixTest
+      - name: Run MatrixTest normally
         run: ./build/MatrixTest
 
-      - name: Run QRTest
+      - name: Run MatrixTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/MatrixTest
+
+      # QRTest
+      - name: Run QRTest normally
         run: ./build/QRTest
 
-      - name: Run QRPerformanceTest
+      - name: Run QRTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/QRTest
+
+      # QRPerformanceTest
+      - name: Run QRPerformanceTest normally
         run: ./build/QRPerformanceTest
 
-      - name: Run FunctionTest
+      - name: Run QRPerformanceTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/QRPerformanceTest
+
+      # FunctionTest
+      - name: Run FunctionTest normally
         run: ./build/FunctionTest
 
-      - name: Run ErrorFunctionsTest
+      - name: Run FunctionTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/FunctionTest
+
+      # ErrorFunctionTest
+      - name: Run ErrorFunctionTest normally
         run: ./build/ErrorFunctionTest
 
-      - name: Run OptimizationTaskTest
+      - name: Run ErrorFunctionTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/ErrorFunctionTest
+
+      # OptimizationTaskTest
+      - name: Run OptimizationTaskTest normally
         run: ./build/OptimizationTaskTest
 
-      - name: Run LSMTaskTest
+      - name: Run OptimizationTaskTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/OptimizationTaskTest
+
+      # LSMTaskTest
+      - name: Run LSMTaskTest normally
         run: ./build/LSMTaskTest
 
-      - name: Run GradientOptimizerTest
+      - name: Run LSMTaskTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/LSMTaskTest
+
+      # GradientOptimizerTest
+      - name: Run GradientOptimizerTest normally
         run: ./build/GradientOptimizerTest
 
-      - name: Run NewtonGaussSolverTests
+      - name: Run GradientOptimizerTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/GradientOptimizerTest
+
+      # NewtonGaussSolverTests
+      - name: Run NewtonGaussSolverTests normally
         run: ./build/NewtonGaussSolverTests
 
-      - name: Run NewtonOptimizerTests
+      - name: Run NewtonGaussSolverTests with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/NewtonGaussSolverTests
+
+      # NewtonOptimizerTest
+      - name: Run NewtonOptimizerTest normally
         run: ./build/NewtonOptimizerTest
 
-      - name: Run LMTest
+      - name: Run NewtonOptimizerTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/NewtonOptimizerTest
+
+      # LMTest
+      - name: Run LMTest normally
         run: ./build/LMTest
 
-      - name: Run LMTest
+      - name: Run LMTest with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/LMTest
+
+      # LMTestWithOurMatrix
+      - name: Run LMTestWithOurMatrix normally
         run: ./build/LMTestWithOurMatrix
 
-      - name: Run SimpleGraph
+      - name: Run LMTestWithOurMatrix with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/LMTestWithOurMatrix
+
+      # SimpleGraph
+      - name: Run SimpleGraph normally
         run: ./build/SimpleGraph
+
+      - name: Run SimpleGraph with Valgrind
+        run: valgrind --leak-check=full --error-exitcode=1 ./build/SimpleGraph
