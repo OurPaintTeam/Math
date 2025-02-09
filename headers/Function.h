@@ -5,6 +5,8 @@
 
 // Function
 
+//  Unary
+//  Binary
 //  Constant
 //  Variable
 //  Addition
@@ -57,7 +59,7 @@ protected:
 public:
     Unary(Function* op): operand(op){}
     ~Unary(){
-        //delete operand;
+        delete operand;
     }
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;
@@ -71,8 +73,8 @@ protected:
 public:
     Binary(Function* l, Function* r): left(l), right(r) {}
     ~Binary(){
-        //delete left;
-        //delete right;
+        delete left;
+        delete right;
     }
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;

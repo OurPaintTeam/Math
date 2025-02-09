@@ -28,6 +28,12 @@ protected:
 public:
     ErrorFunctions(std::vector<Variable *> x, double error=0) : m_X(x), c_f(nullptr), v_error(error) {}
 
+	~ErrorFunctions() {
+		if (c_f != nullptr) {
+			delete c_f;
+		}
+	}
+
     std::vector<Variable*> getVariables() {
         return m_X;
     }
@@ -39,7 +45,7 @@ public:
     Function *derivative(Variable *var) const override{
         return c_f->derivative(var);
     }
-    Function* clone() const {
+    Function* clone() const override {
         throw std::runtime_error("Not implemented");
     }
 };
