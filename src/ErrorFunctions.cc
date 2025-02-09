@@ -1,7 +1,7 @@
 #include "ErrorFunctions.h"
 
 //------------------------- POINTSECDIST IMPLEMENTATION -------------------------
-PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable *> x, double error) : ErrorFunctions(x) {
+PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, double error) : ErrorFunctions(x) {
     v_error = error;
     if (x.size() != 6) {
         throw std::invalid_argument("PointSectionDistanceError: wrong number of x");
@@ -22,14 +22,14 @@ Function *PointSectionDistanceError::clone() const {
 }
 
 // ------------------------- POINTONSECTION IMPLEMENTATION -------------------------
-PointOnSectionError::PointOnSectionError(std::vector<Variable *> x) : PointSectionDistanceError(x, 0){}
+PointOnSectionError::PointOnSectionError(std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
 Function *PointOnSectionError::clone() const {
     return new PointOnSectionError(m_X);
 }
 
 // ------------------------- POINTPOINTDIST IMPLEMENTATION -------------------------
 
-PointPointDistanceError::PointPointDistanceError(std::vector<Variable *> x, double error) : ErrorFunctions(x) {
+PointPointDistanceError::PointPointDistanceError(std::vector<Variable* > x, double error) : ErrorFunctions(x) {
     if (x.size() != 4) {
         throw std::invalid_argument("PointPointDistanceError: wrong number of x");
     }
@@ -54,7 +54,7 @@ Function *PointOnPointError::clone() const {
 }
 
 // ------------------------- SECSECPARALLEL IMPLEMENTATION -------------------------
-SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable *> x): ErrorFunctions(x) {
+SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable* > x): ErrorFunctions(x) {
     if (x.size() != 8) {
         throw std::invalid_argument("SectionSectionParallelError: wrong number of x");
     }
@@ -70,7 +70,7 @@ Function *SectionSectionParallelError::clone() const {
 }
 
 //------------------------- SECSECPERPENDICULAR IMPLEMENTATION -------------------------
-SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<Variable *> x): ErrorFunctions(x) {
+SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<Variable* > x): ErrorFunctions(x) {
     if (x.size() != 8) {
         throw std::invalid_argument("SectionSectionPerpendicularError: wrong number of x");
     }
@@ -87,7 +87,7 @@ Function *SectionSectionPerpendicularError::clone() const {
 }
 
 //------------------------- SECTIONCIRCLEDISTANCE IMPLEMENTATION -------------------------
-SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable *> x, double error):ErrorFunctions(x) {
+SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable* > x, double error):ErrorFunctions(x) {
     if (x.size() != 7) {
         throw std::invalid_argument("SectionCircleDistanceError: wrong number of x");
     }
