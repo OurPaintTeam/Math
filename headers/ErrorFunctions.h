@@ -29,8 +29,9 @@ public:
     ErrorFunctions(std::vector<Variable *> x, double error=0) : m_X(x), c_f(nullptr), v_error(error) {}
 
 	~ErrorFunctions() {
-		if (c_f != nullptr) {
-			delete c_f;
+		delete c_f;
+		for (Variable* var : m_X) {
+			delete var;
 		}
 	}
 
@@ -54,70 +55,70 @@ public:
 class PointSectionDistanceError : public ErrorFunctions {
 public:
     PointSectionDistanceError(std::vector<Variable *> x, double error);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //2
 class PointOnSectionError : public PointSectionDistanceError {
 public:
     PointOnSectionError(std::vector<Variable *> x);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //3
 class PointPointDistanceError : public ErrorFunctions {
 public:
     PointPointDistanceError(std::vector<Variable *> x, double error);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //4
 class PointOnPointError : public PointPointDistanceError {
 public:
     PointOnPointError(std::vector<Variable *> x);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //5
 class SectionCircleDistanceError : public ErrorFunctions {
 public:
     SectionCircleDistanceError(std::vector<Variable *> x, double error);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //6
 class SectionOnCircleError : public SectionCircleDistanceError {
 public:
     SectionOnCircleError(std::vector<Variable *> x);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //7
 class SectionInCircleError : public ErrorFunctions {
 public:
     SectionInCircleError(std::vector<Variable *> x);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //8
 class SectionSectionParallelError : public ErrorFunctions {
 public:
     SectionSectionParallelError(std::vector<Variable *> x);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //9
 class SectionSectionPerpendicularError : public ErrorFunctions {
 public:
     SectionSectionPerpendicularError(std::vector<Variable *> x);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 //10
 class SectionSectionAngleError : public ErrorFunctions {
 public:
     SectionSectionAngleError(std::vector<Variable *> x, double error);
-    Function *clone() const override;
+    Function* clone() const override;
 };
 
 #endif // ! MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_
