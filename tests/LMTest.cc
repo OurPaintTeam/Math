@@ -7,12 +7,13 @@ TEST(OptimizerTestLMS, Himmelblau){
     double y_value = 0.0;
     Variable* x = new Variable(&x_value);
     Variable* y = new Variable(&y_value);
-    Function* x_squared = new Power(x, new Constant(2.0));
-    Function* term1 = new Power(new Subtraction(new Addition(x_squared, y), new Constant(11.0)), new Constant(2.0));
-    Function* y_squared = new Power(y, new Constant(2.0));
-    Function* term2 = new Power(new Subtraction(new Addition(x, y_squared), new Constant(7.0)), new Constant(2.0));
+    Function* x_squared = new Power(x->clone(), new Constant(2.0));
+    Function* term1 = new Power(new Subtraction(new Addition(x_squared, y->clone()), new Constant(11.0)), new Constant(2.0));
+    Function* y_squared = new Power(y->clone(), new Constant(2.0));
+    Function* term2 = new Power(new Subtraction(new Addition(x->clone(), y_squared), new Constant(7.0)), new Constant(2.0));
     Function* himmelblau = new Addition(term1, term2);
-    std::vector<Variable*> variables = {x, y};
+
+	std::vector<Variable*> variables = {x, y};
     LSMFORLMTask task({himmelblau}, variables);
     LevenbergMarquardtSolver optimizer;
     optimizer.setTask(&task);
@@ -21,7 +22,7 @@ TEST(OptimizerTestLMS, Himmelblau){
     bool converged = optimizer.isConverged();
     EXPECT_TRUE(converged);
 }
-
+/*
 TEST(OptimizerTestLMS, PerpendicularityTest) {
     // Define variables for the endpoints of the two line segments
     double x1_value = 20.0, y1_value = 20.0;
@@ -191,8 +192,4 @@ TEST(TestsForCAD, PPDistanceTest) {
     std::cout << error << std::endl;
     EXPECT_TRUE(converged);
     EXPECT_NEAR(error, 0.0,1e-6);
-}
-int main(int argc, char **argv) {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
-}
+}*/

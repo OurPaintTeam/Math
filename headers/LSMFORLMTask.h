@@ -12,12 +12,11 @@ class LSMFORLMTask {
     std::vector<Variable*> m_X;
 
 public:
-    LSMFORLMTask(std::vector<Function*> functions, std::vector<Variable*> x)
-            : m_functions(std::move(functions)), m_X(std::move(x)) {
+    LSMFORLMTask(std::vector<Function*> functions, std::vector<Variable*> x) : m_functions(functions), m_X(x) {
         c_function = nullptr;
         for (size_t i = 0; i < m_functions.size(); ++i) {
             Constant* two = new Constant(2.0);
-            Power* squaredFunction = new Power(m_functions[i], two);
+            Power* squaredFunction = new Power(m_functions[i]->clone(), two);
             if (i == 0) {
                 c_function = squaredFunction;
             } else {
@@ -25,6 +24,16 @@ public:
             }
         }
     }
+
+	~LSMFORLMTask() {
+		delete c_function;
+		for (Function* func : m_functions) {
+			delete func;
+		}
+		for (Variable* var : m_X) {
+			delete var;
+		}
+	}
 
     inline double getError() const {
         return c_function->evaluate();
@@ -100,13 +109,6 @@ public:
 
     std::vector<Function*> getFunctions() const {
         return m_functions;
-    }
-
-    ~LSMFORLMTask() {
-        delete c_function;
-        for (auto func : m_functions) {
-            delete func;
-        }
     }
 };
 
