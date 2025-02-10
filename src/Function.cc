@@ -31,7 +31,7 @@ Function* Variable::derivative(Variable* var) const {
     return new Constant(0.0);
 }
 
-Function* Variable::clone() const {
+Variable* Variable::clone() const {
     return new Variable(value);
 }
 

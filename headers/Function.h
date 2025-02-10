@@ -110,7 +110,7 @@ public:
 
     Function* derivative(Variable* var) const override;
 
-    Function* clone() const override;
+    Variable* clone() const override;
 
     void setValue(double value);
 

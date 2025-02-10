@@ -42,17 +42,21 @@ TEST_F(TestFunction, EvaluatePower) {
 
 // Тесты для производных
 TEST_F(TestFunction, DerivativeVariable) {
-    EXPECT_DOUBLE_EQ(var->derivative(var)->evaluate(), 1.0); // d(x)/dx = 1
+	Function* d = var->derivative(var);
+    EXPECT_DOUBLE_EQ(d->evaluate(), 1.0); // d(x)/dx = 1
+	delete d;
 }
 
 TEST_F(TestFunction, DerivativeAddition) {
-    EXPECT_DOUBLE_EQ(addFunc->derivative(var)->evaluate(), 1.0); // d(x + 2)/dx = 1
+	Function* d = addFunc->derivative(var);
+    EXPECT_DOUBLE_EQ(d->evaluate(), 1.0); // d(x + 2)/dx = 1
+	delete d;
 }
 
 // Тесты для LSMTask
 TEST_F(TestFunction, GradientLSMTask) {
     std::vector<Function*> functions = { powerFunc };
-    std::vector<Variable*> variables = { var };
+    std::vector<Variable*> variables = { var->clone() };
     LSMTask task(functions, variables);
 
     var->setValue(1.0);
@@ -62,7 +66,7 @@ TEST_F(TestFunction, GradientLSMTask) {
 
 TEST_F(TestFunction, HessianLSMTask) {
     std::vector<Function*> functions = { powerFunc };
-    std::vector<Variable*> variables = { var };
+    std::vector<Variable*> variables = { var->clone() };
     LSMTask task(functions, variables);
 
     var->setValue(1.0);
@@ -72,7 +76,7 @@ TEST_F(TestFunction, HessianLSMTask) {
 
 TEST_F(TestFunction, JacobianLSMTask) {
     std::vector<Function*> functions = { powerFunc };
-    std::vector<Variable*> variables = { var };
+    std::vector<Variable*> variables = { var->clone() };
     LSMTask task(functions, variables);
     var->setValue(1.0);
     Matrix<> jac = task.jacobian();
@@ -82,7 +86,7 @@ TEST_F(TestFunction, JacobianLSMTask) {
 // Тесты для метода linearizeFunction
 TEST_F(TestFunction, LinearizeFunctionSimple) {
     Variable* x = new Variable(new double(1.0));
-    Function* linearFunc = x;  // f(x) = x
+    Function* linearFunc = x->clone();  // f(x) = x
 
     std::vector<Function*> functions = { linearFunc };
     std::vector<Variable*> variables = { x };
@@ -99,8 +103,8 @@ TEST_F(TestFunction, LinearizeFunctionSimple) {
 TEST_F(TestFunction, HessianTest) {
     Variable* x = new Variable(new double(1.0));
     Variable* y = new Variable(new double(1.0));
-    Function* x_squared = new Power(x, new Constant(2.0));  // f(x) = x^2
-    Function* y_squared = new Power(y, new Constant(2.0));  // f(x) = y^2
+    Function* x_squared = new Power(x->clone(), new Constant(2.0));  // f(x) = x^2
+    Function* y_squared = new Power(y->clone(), new Constant(2.0));  // f(x) = y^2
     Function* sum = new Addition(x_squared,y_squared);
     std::vector<Function*> functins = { sum };
     std::vector<Variable*> variables = { x, y };
@@ -119,7 +123,7 @@ TEST_F(TestFunction, HessianTest) {
 }
 TEST_F(TestFunction, LinearizeFunctionWithConstant) {
     Variable* x = new Variable(new double(2.0));
-    Function* func = new Addition(x, const2);  // f(x) = x + 2
+    Function* func = new Addition(x->clone(), const2);  // f(x) = x + 2
 
     std::vector<Function*> functions = { func };
     std::vector<Variable*> variables = { x };
@@ -136,7 +140,7 @@ TEST_F(TestFunction, LinearizeFunctionWithConstant) {
 
 TEST_F(TestFunction, LinearizeFunctionNonLinear) {
     Variable* x = new Variable(new double(2.0));
-    Function* func = new Power(new Addition(x, const2), const3);  // f(x) = (x + 2)^3
+    Function* func = new Power(new Addition(x->clone(), const2), const3);  // f(x) = (x + 2)^3
 
     std::vector<Function*> functions = { func };
     std::vector<Variable*> variables = { x };
@@ -157,8 +161,8 @@ TEST_F(TestFunction, LinearizeMultipleFunctions) {
     Variable* x = new Variable(&x_val);
     Variable* y = new Variable(&y_val);
 
-    Function* func1 = new Addition(x, y);  // f1(x, y) = x + y
-    Function* func2 = new Multiplication(x, y);  // f2(x, y) = x * y
+    Function* func1 = new Addition(x->clone(), y->clone());  // f1(x, y) = x + y
+    Function* func2 = new Multiplication(x->clone(), y->clone());  // f2(x, y) = x * y
 
     std::vector<Function*> functions = { func1, func2 };
     std::vector<Variable*> variables = { x, y };
@@ -183,7 +187,7 @@ TEST_F(TestFunction, LinearizeMultipleFunctions) {
 
 TEST_F(TestFunction, LinearizeFunctionZeroValues) {
     Variable* x = new Variable(new double(0.0));
-    Function* func = new Power(new Addition(x, const2), const3);  // f(x) = (x + 2)^3
+    Function* func = new Power(new Addition(x->clone(), const2), const3);  // f(x) = (x + 2)^3
 
     std::vector<Function*> functions = { func };
     std::vector<Variable*> variables = { x };

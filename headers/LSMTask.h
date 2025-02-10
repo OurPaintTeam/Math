@@ -1,23 +1,24 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_LSMTASK_H_
 #define MINIMIZEROPTIMIZER_HEADERS_LSMTASK_H_
 
-#include "TaskF.h"
+#include "Task.h"
+#include "Matrix.h"
+#include <vector>
 
 class LSMTask : public Task {
-    Function *c_function;
-    std::vector<Function *> m_functions;
-    std::vector<Variable *> m_X;
-    std::vector<Function *> m_grad;
-    std::vector<std::vector<Function *> > m_jac;
-    std::vector<std::vector<Function *> > m_hess;
+    Function* c_function;
+    std::vector<Function*> m_functions;
+    std::vector<Variable*> m_X;
+    std::vector<Function*> m_grad;
+    std::vector<std::vector<Function*>> m_jac;
+    std::vector<std::vector<Function*>> m_hess;
 
 public:
-    LSMTask(std::vector<Function *> functions, std::vector<Variable *> x) : m_functions(std::move(functions)),
-                                                                            m_X(std::move(x)) {
+    LSMTask(std::vector<Function*> functions, std::vector<Variable*> x) : m_functions(functions), m_X(x) {
         int i = 0;
-        for (auto &function: m_functions) {
-            Constant *c = new Constant(2);
-            Power *p = new Power(function, c);
+        for (Function* func : m_functions) {
+            Constant* c = new Constant(2);
+            Power* p = new Power(func->clone(), c);
             if (i == 0) {
                 c_function = p;
             } else {
@@ -29,13 +30,13 @@ public:
             m_grad.push_back(c_function->derivative(m_X[j]));
         }
         for (int j = 0; j < m_X.size(); j++) {
-            m_hess.push_back(std::vector<Function *>());
+            m_hess.push_back(std::vector<Function*>());
             for (int k = 0; k < m_X.size(); k++) {
-                m_hess[j].push_back(c_function->derivative(m_X[j])->derivative(m_X[k]));
+                m_hess[j].push_back(m_grad[j]->derivative(m_X[k]));
             }
         }
         for (int j = 0; j < m_functions.size(); j++) {
-            m_jac.push_back(std::vector<Function *>());
+            m_jac.push_back(std::vector<Function*>());
             for (int k = 0; k < m_X.size(); k++) {
                 m_jac[j].push_back(m_functions[j]->derivative(m_X[k]));
             }
@@ -92,7 +93,7 @@ public:
         return jac;
     }
 
-    std::pair<Matrix<>, Matrix<> > linearizeFunction() const {
+    std::pair<Matrix<>, Matrix<>> linearizeFunction() const {
         Matrix<> residuals(m_functions.size(), 1);
         Matrix<> jac(m_functions.size(), m_X.size());
 
