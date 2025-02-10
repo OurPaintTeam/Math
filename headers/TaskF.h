@@ -12,17 +12,32 @@ class TaskF: public Task {
     std::vector<std::vector<Function*>> m_hess; // no constructor from non-Arithmetic(Function*) arguments for matrix
 
 public:
-    TaskF(Function*c_function, std::vector<Variable*> x): c_function(c_function), m_X(std::move(x)){
+    TaskF(Function* c_function, std::vector<Variable* > x): c_function(c_function), m_X(x){
         for (int i = 0; i < m_X.size(); i++) {
             m_grad.push_back(c_function->derivative(m_X[i]));
         }
         for (int i = 0; i < m_X.size(); i++) {
             m_hess.push_back(std::vector<Function*>());
             for (int j = 0; j < m_X.size(); j++) {
-                m_hess[i].push_back(c_function->derivative(m_X[i])->derivative(m_X[j]));
+                m_hess[i].push_back(m_grad[i]->derivative(m_X[j]));
             }
         }
     }
+
+	~TaskF() {
+		delete c_function;
+		for (Variable* var : m_X) {
+			delete var;
+		}
+		for (Function* f : m_grad) {
+			delete f;
+		}
+		for (auto& row : m_hess) {
+			for (auto& func : row) {
+				delete func;
+			}
+		}
+	}
 
     Matrix<> gradient() const override {
         Matrix<> gradient(m_X.size(), 1);

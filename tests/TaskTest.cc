@@ -4,11 +4,11 @@
 
 TEST(TaskFTest, SingleVariableQuadratic) {
     double x_value = 3.0;
-    Variable x(&x_value);
-    std::vector<Variable*> variables = {&x};
+    Variable* x = new Variable(&x_value);
+    std::vector<Variable*> variables = {x};
 
     Constant* exponent = new Constant(2.0);
-    Power* function = new Power(&x, exponent);
+    Power* function = new Power(x->clone(), exponent);
 
     TaskF task(function, variables);
 
@@ -25,15 +25,16 @@ TEST(TaskFTest, SingleVariableQuadratic) {
     EXPECT_EQ(hessian.cols_size(), 1);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 2.0);
 }
+
 TEST(TaskFFTest, TwoVariableQuadratic) {
     double x_value = 3.0;
     double y_value = 4.0;
-    Variable x(&x_value);
-    Variable y(&y_value);
-    std::vector<Variable*> variables = {&x, &y};
+    Variable* x = new Variable(&x_value);
+    Variable* y = new Variable(&y_value);
+    std::vector<Variable*> variables = {x, y};
 
-    Power* x_squared = new Power(&x, new Constant(2.0));
-    Power* y_squared = new Power(&y, new Constant(2.0));
+    Power* x_squared = new Power(x->clone(), new Constant(2.0));
+    Power* y_squared = new Power(y->clone(), new Constant(2.0));
     Addition* function = new Addition(x_squared, y_squared);
 
     TaskF task(function, variables);
@@ -59,11 +60,11 @@ TEST(TaskFFTest, TwoVariableQuadratic) {
 TEST(TaskFTest, TwoVariableMultiplication) {
     double x_value = 2.0;
     double y_value = 5.0;
-    Variable x(&x_value);
-    Variable y(&y_value);
-    std::vector<Variable*> variables = {&x, &y};
+    Variable* x = new Variable(&x_value);
+    Variable* y = new Variable(&y_value);
+    std::vector<Variable*> variables = {x, y};
 
-    Multiplication* function = new Multiplication(&x, &y);
+    Multiplication* function = new Multiplication(x->clone(), y->clone());
 
     TaskF task(function, variables);
 
