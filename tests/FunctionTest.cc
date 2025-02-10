@@ -5,7 +5,7 @@
 bool almost_equal(double a, double b, double epsilon = 1e-6) {
 	return std::fabs(a - b) < epsilon;
 }
-/*
+
 TEST(FunctionTest, TestSquareFunction) {
 	double x_val = 3.0;
 	Variable x(&x_val);
@@ -550,7 +550,7 @@ TEST(FunctionTest, TestTan) {
 	delete tanDerivative2;
 	delete tanDerivative3;
 }
-*/
+
 TEST(FunctionTest, TestAtan) {
 	// Example 1: Atan(0) = 0
 	double x_val1 = 0.0;
