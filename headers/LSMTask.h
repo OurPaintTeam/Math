@@ -111,6 +111,9 @@ public:
         for (auto func: m_functions) {
             delete func;
         }
+		for (Variable* v : m_X) {
+			delete v;
+		}
         for (auto func: m_grad) {
             delete func;
         }

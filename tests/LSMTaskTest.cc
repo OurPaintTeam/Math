@@ -23,21 +23,25 @@ protected:
 // Тесты для функции evaluate
 TEST_F(TestFunction, EvaluateConstant) {
     EXPECT_DOUBLE_EQ(const2->evaluate(), 2.0);
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, EvaluateVariable) {
     var->setValue(5.0);
     EXPECT_DOUBLE_EQ(var->evaluate(), 5.0);
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, EvaluateAddition) {
     var->setValue(5.0);
     EXPECT_DOUBLE_EQ(addFunc->evaluate(), 7.0); // 5 + 2 = 7
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, EvaluatePower) {
     var->setValue(2.0);
     EXPECT_DOUBLE_EQ(powerFunc->evaluate(), 64.0); // (2 + 2)^3 = 4^3 = 64
+	delete powerFunc;
 }
 
 // Тесты для производных
@@ -45,12 +49,14 @@ TEST_F(TestFunction, DerivativeVariable) {
 	Function* d = var->derivative(var);
     EXPECT_DOUBLE_EQ(d->evaluate(), 1.0); // d(x)/dx = 1
 	delete d;
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, DerivativeAddition) {
 	Function* d = addFunc->derivative(var);
     EXPECT_DOUBLE_EQ(d->evaluate(), 1.0); // d(x + 2)/dx = 1
 	delete d;
+	delete powerFunc;
 }
 
 // Тесты для LSMTask
@@ -85,7 +91,8 @@ TEST_F(TestFunction, JacobianLSMTask) {
 
 // Тесты для метода linearizeFunction
 TEST_F(TestFunction, LinearizeFunctionSimple) {
-    Variable* x = new Variable(new double(1.0));
+	double val = 1.0;
+    Variable* x = new Variable(&val);
     Function* linearFunc = x->clone();  // f(x) = x
 
     std::vector<Function*> functions = { linearFunc };
@@ -99,10 +106,13 @@ TEST_F(TestFunction, LinearizeFunctionSimple) {
 
     // Derivative of f(x) = x is 1
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
+	delete powerFunc;
 }
 TEST_F(TestFunction, HessianTest) {
-    Variable* x = new Variable(new double(1.0));
-    Variable* y = new Variable(new double(1.0));
+	double valx = 1.0;
+	double valy = 1.0;
+    Variable* x = new Variable(&valx);
+    Variable* y = new Variable(&valy);
     Function* x_squared = new Power(x->clone(), new Constant(2.0));  // f(x) = x^2
     Function* y_squared = new Power(y->clone(), new Constant(2.0));  // f(x) = y^2
     Function* sum = new Addition(x_squared,y_squared);
@@ -120,10 +130,12 @@ TEST_F(TestFunction, HessianTest) {
     EXPECT_DOUBLE_EQ(hessian(0, 1), 8.0);
     EXPECT_DOUBLE_EQ(hessian(1, 0), 8.0);
     EXPECT_DOUBLE_EQ(hessian(1, 1), 16.0);
+	delete powerFunc;
 }
 TEST_F(TestFunction, LinearizeFunctionWithConstant) {
-    Variable* x = new Variable(new double(2.0));
-    Function* func = new Addition(x->clone(), const2);  // f(x) = x + 2
+	double valx = 2.0;
+    Variable* x = new Variable(&valx);
+    Function* func = new Addition(x->clone(), const2->clone());  // f(x) = x + 2
 
     std::vector<Function*> functions = { func };
     std::vector<Variable*> variables = { x };
@@ -136,11 +148,13 @@ TEST_F(TestFunction, LinearizeFunctionWithConstant) {
 
     // Derivative of f(x) = x + 2 is 1
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, LinearizeFunctionNonLinear) {
-    Variable* x = new Variable(new double(2.0));
-    Function* func = new Power(new Addition(x->clone(), const2), const3);  // f(x) = (x + 2)^3
+	double valx = 2.0;
+    Variable* x = new Variable(&valx);
+    Function* func = new Power(new Addition(x->clone(), const2->clone()), const3->clone());  // f(x) = (x + 2)^3
 
     std::vector<Function*> functions = { func };
     std::vector<Variable*> variables = { x };
@@ -153,7 +167,7 @@ TEST_F(TestFunction, LinearizeFunctionNonLinear) {
 
     // Derivative of f(x) = (x + 2)^3 is 3 * (x + 2)^2, at x = 2 it is 72
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 48.0);
-
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, LinearizeMultipleFunctions) {
@@ -183,11 +197,13 @@ TEST_F(TestFunction, LinearizeMultipleFunctions) {
     // Jacobian for f2(x, y) = x * y is [2, 1]
     EXPECT_DOUBLE_EQ(jacobian(1, 0), 2.0);
     EXPECT_DOUBLE_EQ(jacobian(1, 1), 1.0);
+	delete powerFunc;
 }
 
 TEST_F(TestFunction, LinearizeFunctionZeroValues) {
-    Variable* x = new Variable(new double(0.0));
-    Function* func = new Power(new Addition(x->clone(), const2), const3);  // f(x) = (x + 2)^3
+	double val = 0.;
+    Variable* x = new Variable(&val);
+    Function* func = new Power(new Addition(x->clone(), const2->clone()), const3->clone());  // f(x) = (x + 2)^3
 
     std::vector<Function*> functions = { func };
     std::vector<Variable*> variables = { x };
@@ -200,4 +216,5 @@ TEST_F(TestFunction, LinearizeFunctionZeroValues) {
 
     // Derivative of f(x) = (x + 2)^3 is 3 * (x + 2)^2, at x = 0 it is 12
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 12.0);
+	delete powerFunc;
 }
