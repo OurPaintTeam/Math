@@ -9,10 +9,10 @@ PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, 
     Function* err = new Constant(error);
     Function* sq = new Constant(0.5);
     Function* pow2 = new Constant(2);
-    Function* A = new Subtraction(x[5]->clone(), x[3]->clone());
-    Function* B = new Subtraction(x[4]->clone(), x[2]->clone());
-    Function* C = new Subtraction(new Multiplication(x[4]->clone(), x[3]->clone()), new Multiplication(x[5]->clone(), x[2]->clone()));
-    Function* E = new Addition(new Subtraction(new Multiplication(A, x[0]->clone()), new Multiplication(B, x[1]->clone())), C);
+    Function* A = new Subtraction(x[5], x[3]);
+    Function* B = new Subtraction(x[4], x[2]);
+    Function* C = new Subtraction(new Multiplication(x[4], x[3]), new Multiplication(x[5], x[2]));
+    Function* E = new Addition(new Subtraction(new Multiplication(A, x[0]), new Multiplication(B, x[1])), C);
     Function* F = new Division(E, new Power(new Addition(new Power(A->clone(), pow2), new Power(B->clone(), pow2->clone())),sq));
     Function* G = new Subtraction(F, err);
     c_f = G;
@@ -37,8 +37,8 @@ PointPointDistanceError::PointPointDistanceError(std::vector<Variable* > x, doub
     Function *err = new Constant(error);
     Function *sq = new Constant(0.5);
     Function *pow2 = new Constant(2);
-    Function *A = new Subtraction(x[2]->clone(), x[0]->clone());
-    Function *B = new Subtraction(x[3]->clone(), x[1]->clone());
+    Function *A = new Subtraction(x[2], x[0]);
+    Function *B = new Subtraction(x[3], x[1]);
     Function *E = new Power(new Addition(new Power(A, pow2), new Power(B,pow2->clone())),sq);
     Function *F = new Subtraction(E, err);
     c_f = F;
@@ -58,10 +58,10 @@ SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable* >
     if (x.size() != 8) {
         throw std::invalid_argument("SectionSectionParallelError: wrong number of x");
     }
-    Function *v1 = new Subtraction(x[2]->clone(), x[0]->clone());
-    Function *v2 = new Subtraction(x[3]->clone(), x[1]->clone());
-    Function *w1 = new Subtraction(x[6]->clone(), x[4]->clone());
-    Function *w2 = new Subtraction(x[7]->clone(), x[5]->clone());
+    Function *v1 = new Subtraction(x[2], x[0]);
+    Function *v2 = new Subtraction(x[3], x[1]);
+    Function *w1 = new Subtraction(x[6], x[4]);
+    Function *w2 = new Subtraction(x[7], x[5]);
     Function* F = new Subtraction(new Multiplication(v1, w2), new Multiplication(v2, w1));
     c_f = F;
 }
@@ -75,10 +75,10 @@ SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<V
         throw std::invalid_argument("SectionSectionPerpendicularError: wrong number of x");
     }
 
-    Function *v1 = new Subtraction(x[2]->clone(), x[0]->clone());
-    Function *v2 = new Subtraction(x[3]->clone(), x[1]->clone());
-    Function *w1 = new Subtraction(x[6]->clone(), x[4]->clone());
-    Function *w2 = new Subtraction(x[7]->clone(), x[5]->clone());
+    Function *v1 = new Subtraction(x[2], x[0]);
+    Function *v2 = new Subtraction(x[3], x[1]);
+    Function *w1 = new Subtraction(x[6], x[4]);
+    Function *w2 = new Subtraction(x[7], x[5]);
     Function* F = new Addition(new Multiplication(v1, w1), new Multiplication(v2, w2));
     c_f = F;
 }
@@ -94,9 +94,9 @@ SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable* > x
     // xs ys xe ye xc yc r
     v_error = error;
     Function *dist = new Addition(new Constant(error), new Constant(x[6]->evaluate()));
-    Function *A = new Subtraction(x[3]->clone(), x[1]->clone());
-    Function *B = new Subtraction(x[2]->clone(), x[0]->clone());
-    Function *C = new Subtraction(new Multiplication(x[2]->clone(), x[1]->clone()), new Multiplication(x[0]->clone(), x[3]->clone()));
+    Function *A = new Subtraction(x[3], x[1]);
+    Function *B = new Subtraction(x[2], x[0]);
+    Function *C = new Subtraction(new Multiplication(x[2], x[1]), new Multiplication(x[0], x[3]));
     Function *e = new Division(new Addition(new Subtraction(A, B), C), new Sqrt(new Addition(new Power(A->clone(),A->clone()), new Power(B->clone(), B->clone()))));
     Function *F = new Subtraction(e, dist);
     c_f = F;
@@ -130,10 +130,10 @@ SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, do
     Constant *PI = new Constant(M_PI);
     Constant *PI_2deg = new Constant(180);
     Function *pow2 = new Constant(2);
-    Function *v1 =  new Subtraction(x[2]->clone(), x[0]->clone());
-    Function *v2 =  new Subtraction(x[3]->clone(), x[1]->clone());
-    Function *w1 =  new Subtraction(x[6]->clone(), x[4]->clone());
-    Function *w2 =  new Subtraction(x[7]->clone(), x[5]->clone());
+    Function *v1 =  new Subtraction(x[2], x[0]);
+    Function *v2 =  new Subtraction(x[3], x[1]);
+    Function *w1 =  new Subtraction(x[6], x[4]);
+    Function *w2 =  new Subtraction(x[7], x[5]);
     Function *dot_product = new Addition(new Multiplication(v1, w1), new Multiplication(v2, w2));
     Function* mag_v = new Sqrt(new Addition(new Power(v1->clone(), pow2), new Power(v2->clone(), pow2->clone())));
     Function* mag_w = new Sqrt(new Addition(new Power(w1->clone(), pow2->clone()), new Power(w2->clone(), pow2->clone())));

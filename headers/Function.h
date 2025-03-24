@@ -3,33 +3,13 @@
 #include <cmath>
 #include <stdexcept>
 
-// Function
-
-//  Unary
-//  Binary
-//  Constant
-//  Variable
-//  Addition
-//  Subtraction
-//  Multiplication
-//  Division
-//  Power
-//  Negation
-//  Abs
-//  Sign
-//  Modulo
-//  Exp
-//  Ln
-//  Log
-//  Sqrt
-//  Sin
-//  Cos
-//  Asin
-//  Acos
-//  Tan
-//  Atan
-//  Max
-//  Min
+enum FunctionType {
+    CONSTANT,
+    VARIABLE,
+    UNARY,
+    BINARY,
+    OTHER
+};
 
 
 
@@ -51,6 +31,7 @@ public:
 
     // Clone method
     virtual Function* clone() const = 0;
+    virtual FunctionType getType() const {return OTHER;}
 };
 // Class for unary operation
 class Unary: public Function {
@@ -59,11 +40,12 @@ protected:
 public:
     Unary(Function* op): operand(op){}
     ~Unary(){
-		delete operand;
+        delete operand;
     }
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;
     virtual Function* clone() const override = 0;
+    virtual FunctionType getType() const override {return UNARY;}
 };
 // Class for binary operation
 class Binary: public Function {
@@ -73,12 +55,17 @@ protected:
 public:
     Binary(Function* l, Function* r): left(l), right(r) {}
     ~Binary(){
-		delete left;
-		delete right;
+        if (left->getType() != VARIABLE) {
+            delete left;
+        }
+        if (right->getType() != VARIABLE) {
+            delete right;
+        }
     }
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;
     virtual Function* clone() const override = 0;
+    virtual FunctionType getType() const override {return BINARY;}
 };
 // Class Constant (constant function)
 class Constant : public Function {
@@ -96,6 +83,7 @@ public:
 
     // Destructor (default is sufficient as there are no dynamic members)
     ~Constant() override = default;
+    FunctionType getType() const override {return CONSTANT;}
 };
 
 // Class Variable
@@ -116,7 +104,9 @@ public:
 
     // Comparison operator to check if two Variables refer to the same double
     bool operator==(Variable* other) const;
+    ~Variable() = default;
 
+    FunctionType getType() const override{ return VARIABLE;}
 };
 
 // Class Addition

@@ -27,12 +27,6 @@ public:
 
 	~LSMFORLMTask() {
 		delete c_function;
-		for (Function* func : m_functions) {
-			delete func;
-		}
-		for (Variable* var : m_X) {
-			delete var;
-		}
 	}
 
     inline double getError() const {

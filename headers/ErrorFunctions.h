@@ -30,9 +30,6 @@ public:
 
 	~ErrorFunctions() {
 		delete c_f;
-		for (Variable* var : m_X) {
-			delete var;
-		}
 	}
 
     std::vector<Variable*> getVariables() {
