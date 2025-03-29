@@ -9,7 +9,7 @@ bool almost_equal(double a, double b, double epsilon = 1e-6) {
 TEST(FunctionTest, TestSquareFunction) {
 	double x_val = 3.0;
 	Variable x(&x_val);
-	Function* f = new Power(x.clone(), new Constant(2.0));
+	Function* f = new Power(&x, new Constant(2.0));
 	double expected_f = 9.0;
 	double computed_f = f->evaluate();
 	EXPECT_TRUE(almost_equal(computed_f, expected_f));
@@ -27,8 +27,8 @@ TEST(FunctionTest, TestSumOfSquares) {
 	double y_val = 4.0;
 	Variable x(&x_val);
 	Variable y(&y_val);
-	Function* x_squared = new Power(x.clone(), new Constant(2.0));
-	Function* y_squared = new Power(y.clone(), new Constant(2.0));
+	Function* x_squared = new Power(&x, new Constant(2.0));
+	Function* y_squared = new Power(&y, new Constant(2.0));
 	Function* f = new Addition(x_squared, y_squared);
 	double expected_f = 25.0;
 	double computed_f = f->evaluate();
@@ -52,7 +52,7 @@ TEST(FunctionTest, TestExponentialFunction) {
 	double y_val = 3.0;
 	Variable x(&x_val);
 	Variable y(&y_val);
-	Function* xy = new Multiplication(x.clone(), y.clone());
+	Function* xy = new Multiplication(&x, &y);
 	Function* f = new Exp(xy);
 	double expected_f = std::exp(6.0);
 	double computed_f = f->evaluate();
@@ -76,8 +76,8 @@ TEST(FunctionTest, TestDivisionFunction) {
 	double y_val = 2.0;
 	Variable x(&x_val);
 	Variable y(&y_val);
-	Function* numerator = new Addition(x.clone(), y.clone());
-	Function* denominator = new Subtraction(x.clone(), y.clone());
+	Function* numerator = new Addition(&x, &y);
+	Function* denominator = new Subtraction(&x, &y);
 	Function* f = new Division(numerator, denominator);
 	double expected_f = 7.0 / 3.0;
 	double computed_f = f->evaluate();
@@ -103,8 +103,8 @@ TEST(FunctionTest, TestMultipleVariablesFunction) {
 	Variable x(&x_val);
 	Variable y(&y_val);
 	Variable z(&z_val);
-	Function* xy = new Multiplication(x.clone(), y.clone());
-	Function* z_squared = new Power(z.clone(), new Constant(2.0));
+	Function* xy = new Multiplication(&x, &y);
+	Function* z_squared = new Power(&z, new Constant(2.0));
 	Function* f = new Addition(xy, z_squared);
 	double expected_f = 22.0;
 	double computed_f = f->evaluate();
@@ -131,7 +131,7 @@ TEST(FunctionTest, TestMultipleVariablesFunction) {
 TEST(FunctionTest, TestLnFunction) {
 	double x_val = std::exp(1.0);
 	Variable x(&x_val);
-	Function* f = new Ln(x.clone());
+	Function* f = new Ln(&x);
 	double expected_f = 1.0;
 	double computed_f = f->evaluate();
 	EXPECT_TRUE(almost_equal(computed_f, expected_f));
@@ -147,7 +147,7 @@ TEST(FunctionTest, TestLnFunction) {
 TEST(FunctionTest, TestExponentialOfSquareFunction) {
 	double x_val = 1.0;
 	Variable x(&x_val);
-	Function* x_squared = new Power(x.clone(), new Constant(2.0));
+	Function* x_squared = new Power(&x, new Constant(2.0));
 	Function* f = new Exp(x_squared);
 	double expected_f = std::exp(1.0);
 	double computed_f = f->evaluate();
@@ -167,10 +167,10 @@ TEST(FunctionTest, TestComplexFunction) {
 	double y_val = 2.0;
 	Variable x(&x_val);
 	Variable y(&y_val);
-	Function* x_squared = new Power(x.clone(), new Constant(2.0));
-	Function* y_squared = new Power(y.clone(), new Constant(2.0));
+	Function* x_squared = new Power(&x, new Constant(2.0));
+	Function* y_squared = new Power(&y, new Constant(2.0));
 	Function* sum = new Addition(x_squared, y_squared);
-	Function* xy = new Multiplication(x.clone(), y.clone());
+	Function* xy = new Multiplication(&x, &y);
 	Function* exponential = new Exp(xy);
 	Function* f = new Multiplication(sum, exponential);
 	double expected_f = (std::pow(x_val, 2) + std::pow(y_val, 2)) * std::exp(x_val * y_val);
@@ -201,7 +201,7 @@ TEST(FunctionTest, TestDivisionByZero) {
 	Variable y(&y_val);
 
 	Function* numerator = new Constant(1.0);
-	Function* denominator = new Subtraction(x.clone(), y.clone());
+	Function* denominator = new Subtraction(&x, &y);
 	Function* f = new Division(numerator, denominator);
 
 	EXPECT_THROW({
@@ -215,7 +215,7 @@ TEST(FunctionTest, TestLnOfNonPositive) {
 	double x_val = -1.0;
 	Variable x(&x_val);
 
-	Function* f = new Ln(x.clone());
+	Function* f = new Ln(&x);
 
 	EXPECT_THROW({
 					 f->evaluate();
@@ -230,7 +230,7 @@ TEST(FunctionTest, TestLog) {
 	double arg_val1 = 8.0;
 	Variable base1(&base_val1);
 	Variable arg1(&arg_val1);
-	Function* logFunc1 = new Log(base1.clone(), arg1.clone());
+	Function* logFunc1 = new Log(&base1, &arg1);
 	double res1 = logFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, 3.0); // Check value Log2(8)
 
@@ -244,7 +244,7 @@ TEST(FunctionTest, TestLog) {
 	double arg_val2 = 1000.0;
 	Variable base2(&base_val2);
 	Variable arg2(&arg_val2);
-	Function* logFunc2 = new Log(base2.clone(), arg2.clone());
+	Function* logFunc2 = new Log(&base2, &arg2);
 	double res2 = logFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, 3.0); // Check value Log10(1000)
 
@@ -258,7 +258,7 @@ TEST(FunctionTest, TestLog) {
 	double arg_val3 = std::exp(1.0);
 	Variable base3(&base_val3);
 	Variable arg3(&arg_val3);
-	Function* logFunc3 = new Log(base3.clone(), arg3.clone());
+	Function* logFunc3 = new Log(&base3, &arg3);
 	double res3 = logFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, 1.0); // Check value Log_e(e)
 
@@ -272,7 +272,7 @@ TEST(FunctionTest, TestLog) {
 	double arg_val4 = 1.0;
 	Variable base4(&base_val4);
 	Variable arg4(&arg_val4);
-	Function* logFunc4 = new Log(base4.clone(), arg4.clone());
+	Function* logFunc4 = new Log(&base4, &arg4);
 	double res4 = logFunc4->evaluate();
 	EXPECT_DOUBLE_EQ(res4, 0.0); // Check value Log3(1)
 
@@ -286,7 +286,7 @@ TEST(FunctionTest, TestLog) {
 	double arg_val5 = 25.0;
 	Variable base5(&base_val5);
 	Variable arg5(&arg_val5);
-	Function* logFunc5 = new Log(base5.clone(), arg5.clone());
+	Function* logFunc5 = new Log(&base5, &arg5);
 	double res5 = logFunc5->evaluate();
 	EXPECT_DOUBLE_EQ(res5, 2.0); // Check value Log5(25)
 
@@ -311,14 +311,14 @@ TEST(FunctionTest, TestLog) {
 TEST(FunctionTest, TestSqrt) {
 	double x_val = 4.0;
 	Variable x(&x_val);
-	Function* f = new Sqrt(x.clone());
+	Function* f = new Sqrt(&x);
 	double res = f->evaluate();
 	EXPECT_EQ(res, std::sqrt(x_val)); // Sqrt(x)
 
 	// 2 * Sqrt(5y)
 	double y_val = 2.0;
 	Variable y(&y_val);
-	Function* mu = new Multiplication(new Constant(5.0), y.clone());
+	Function* mu = new Multiplication(new Constant(5.0), &y);
 	Function* sqrtFunc = new Sqrt(mu);
 	Function* mu2 = new Multiplication(new Constant(2.0), sqrtFunc);
 	EXPECT_EQ(mu2->evaluate(), 2 * std::sqrt(5 * y_val)); // 2 * Sqrt(5y)
@@ -336,14 +336,14 @@ TEST(FunctionTest, TestSqrt) {
 TEST(FunctionTest, TestSin) {
 	double x_val = 1;
 	Variable x(&x_val);
-	Function* f = new Sin(x.clone());
+	Function* f = new Sin(&x);
 	double res = f->evaluate();
 	EXPECT_EQ(res, std::sin(x_val));
 
 	// Creating func:  2 * sin(5y)
 	double y_val = 7;
 	Variable y(&y_val);
-	Function* mu = new Multiplication(new Constant(5.0), y.clone());
+	Function* mu = new Multiplication(new Constant(5.0), &y);
 	Function* sinFunc = new Sin(mu);
 	Function* mu2 = new Multiplication(new Constant(2.0), sinFunc);
 	EXPECT_EQ(mu2->evaluate(), 2 * std::sin(5 * y_val));
@@ -358,14 +358,14 @@ TEST(FunctionTest, TestSin) {
 TEST(FunctionTest, TestCos) {
 	double x_val = 1;
 	Variable x(&x_val);
-	Function* f = new Cos(x.clone());
+	Function* f = new Cos(&x);
 	double res = f->evaluate();
 	EXPECT_EQ(res, std::cos(x_val));
 
 	// Creating func:  2 * cos(5y)
 	double y_val = 7;
 	Variable y(&y_val);
-	Function* mu = new Multiplication(new Constant(5.0), y.clone());
+	Function* mu = new Multiplication(new Constant(5.0), &y);
 	Function* cosFunc = new Cos(mu);
 	Function* mu2 = new Multiplication(new Constant(2.0), cosFunc);
 	EXPECT_EQ(mu2->evaluate(), 2 * std::cos(5 * y_val));
@@ -380,14 +380,14 @@ TEST(FunctionTest, TestCos) {
 TEST(FunctionTest, TestAsin) {
 	double x_val = 0.5;
 	Variable x(&x_val);
-	Function* f = new Asin(x.clone());
+	Function* f = new Asin(&x);
 	double res = f->evaluate();
 	EXPECT_EQ(res, std::asin(x_val)); // Asin(x)
 
 	// 2 * Asin(5y)
 	double y_val = 0.1;
 	Variable y(&y_val);
-	Function* mu = new Multiplication(new Constant(5.0), y.clone());
+	Function* mu = new Multiplication(new Constant(5.0), &y);
 	Function* asinFunc = new Asin(mu);
 	Function* mu2 = new Multiplication(new Constant(2.0), asinFunc);
 	EXPECT_EQ(mu2->evaluate(), 2 * std::asin(5 * y_val)); // 2 * Asin(5y)
@@ -405,14 +405,14 @@ TEST(FunctionTest, TestAsin) {
 TEST(FunctionTest, TestAcos) {
 	double x_val = 0.5;
 	Variable x(&x_val);
-	Function* f = new Acos(x.clone());
+	Function* f = new Acos(&x);
 	double res = f->evaluate();
 	EXPECT_EQ(res, std::acos(x_val)); // Acos(x)
 
 	// 2 * Acos(5y)
 	double y_val = 0.1;
 	Variable y(&y_val);
-	Function* mu = new Multiplication(new Constant(5.0), y.clone());
+	Function* mu = new Multiplication(new Constant(5.0), &y);
 	Function* acosFunc = new Acos(mu);
 	Function* mu2 = new Multiplication(new Constant(2.0), acosFunc);
 	EXPECT_EQ(mu2->evaluate(), 2 * std::acos(5 * y_val)); // 2 * Acos(5y)
@@ -431,14 +431,14 @@ TEST(FunctionTest, TestAcos) {
 TEST(FunctionTest, TestNegation) {
 	double x_val = 3.0;
 	Variable x(&x_val);
-	Function* negFunc(new Negation(x.clone()));
+	Function* negFunc(new Negation(&x));
 	double res = negFunc->evaluate();
 	EXPECT_EQ(res, -x_val); // Check value Negation(x)
 
 	// Check derivative: 2 * Negation(5y)
 	double y_val = 2.0;
 	Variable y(&y_val);
-	Function* mu(new Multiplication(new Constant(5.0), y.clone()));
+	Function* mu(new Multiplication(new Constant(5.0), &y));
 	Function* negMu(new Negation(mu));
 	Function* mu2(new Multiplication(new Constant(2.0), negMu));
 	EXPECT_EQ(mu2->evaluate(), 2 * (-5.0 * y_val)); // check value 2 * Negation(5y)
@@ -460,7 +460,7 @@ TEST(FunctionTest, TestMod) {
 	double den_val1 = 3.0;
 	Variable num1(&num_val1);
 	Variable den1(&den_val1);
-	Function* modFunc1 = new Mod(num1.clone(), den1.clone());
+	Function* modFunc1 = new Mod(&num1, &den1);
 	double res1 = modFunc1->evaluate();
 	EXPECT_EQ(res1, std::fmod(num_val1, den_val1)); // should be 1.0
 
@@ -475,7 +475,7 @@ TEST(FunctionTest, TestMod) {
 	double den_val2 = 2.5;
 	Variable num2(&num_val2);
 	Variable den2(&den_val2);
-	Function* modFunc2 = new Mod(num2.clone(), den2.clone());
+	Function* modFunc2 = new Mod(&num2, &den2);
 	double res2 = modFunc2->evaluate();
 	EXPECT_EQ(res2, std::fmod(num_val2, den_val2)); // Should be 0.0
 
@@ -489,7 +489,7 @@ TEST(FunctionTest, TestMod) {
 	double den_val3 = 3.0;
 	Variable num3(&num_val3);
 	Variable den3(&den_val3);
-	Function* modFunc3 = new Mod(num3.clone(), den3.clone());
+	Function* modFunc3 = new Mod(&num3, &den3);
 	double res3 = modFunc3->evaluate();
 	EXPECT_EQ(res3, std::fmod(num_val3, den_val3)); // Should be -2.0 in C++ fmod.
 
@@ -510,7 +510,7 @@ TEST(FunctionTest, TestTan) {
 	// Example 1: Tan(0) = 0
 	double x_val1 = 0.0;
 	Variable x1(&x_val1);
-	Function* tanFunc1 = new Tan(x1.clone());
+	Function* tanFunc1 = new Tan(&x1);
 	double res1 = tanFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, std::tan(x_val1)); // Check value Tan(0)
 
@@ -522,7 +522,7 @@ TEST(FunctionTest, TestTan) {
 	// Example 2: Tan(pi/4) = 1
 	double x_val2 = M_PI / 4;
 	Variable x2(&x_val2);
-	Function* tanFunc2 = new Tan(x2.clone());
+	Function* tanFunc2 = new Tan(&x2);
 	double res2 = tanFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, std::tan(x_val2)); // Check value Tan(pi/4)
 
@@ -534,7 +534,7 @@ TEST(FunctionTest, TestTan) {
 	// Example 3: Tan(pi/3) = sqrt(3)
 	double x_val3 = M_PI / 3;
 	Variable x3(&x_val3);
-	Function* tanFunc3 = new Tan(x3.clone());
+	Function* tanFunc3 = new Tan(&x3);
 	double res3 = tanFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, std::tan(x_val3)); // Check value Tan(pi/3)
 
@@ -555,7 +555,7 @@ TEST(FunctionTest, TestAtan) {
 	// Example 1: Atan(0) = 0
 	double x_val1 = 0.0;
 	Variable x1(&x_val1);
-	Function* atanFunc1 = new Atan(x1.clone());
+	Function* atanFunc1 = new Atan(&x1);
 	double res1 = atanFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, std::atan(x_val1)); // Check value Atan(0)
 
@@ -567,7 +567,7 @@ TEST(FunctionTest, TestAtan) {
 	// Example 2: Atan(1) = pi/4
 	double x_val2 = 1.0;
 	Variable x2(&x_val2);
-	Function* atanFunc2 = new Atan(x2.clone());
+	Function* atanFunc2 = new Atan(&x2);
 	double res2 = atanFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, std::atan(x_val2)); // Check value Atan(1)
 
@@ -579,7 +579,7 @@ TEST(FunctionTest, TestAtan) {
 	// Example 3: Atan(sqrt(3)) = pi/3
 	double x_val3 = std::sqrt(3.0);
 	Variable x3(&x_val3);
-	Function* atanFunc3 = new Atan(x3.clone());
+	Function* atanFunc3 = new Atan(&x3);
 	double res3 = atanFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, std::atan(x_val3)); // Check value Atan(sqrt(3))
 
@@ -600,7 +600,7 @@ TEST(FunctionTest, TestCot) {
 	// Example 1: Cot(pi/4) = 1
 	double x_val1 = M_PI / 4;
 	Variable x1(&x_val1);
-	Function* cotFunc1 = new Cot(x1.clone());
+	Function* cotFunc1 = new Cot(&x1);
 	double res1 = cotFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, 1.0); // Check value Cot(pi/4)
 
@@ -612,7 +612,7 @@ TEST(FunctionTest, TestCot) {
 	// Example 2: Cot(pi/3) = 1/sqrt(3)
 	double x_val2 = M_PI / 3;
 	Variable x2(&x_val2);
-	Function* cotFunc2 = new Cot(x2.clone());
+	Function* cotFunc2 = new Cot(&x2);
 	double res2 = cotFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, 1.0 / std::sqrt(3.0)); // Check value Cot(pi/3)
 
@@ -624,7 +624,7 @@ TEST(FunctionTest, TestCot) {
 	// Example 3: Cot(pi/6) = sqrt(3)
 	double x_val3 = M_PI / 6;
 	Variable x3(&x_val3);
-	Function* cotFunc3 = new Cot(x3.clone());
+	Function* cotFunc3 = new Cot(&x3);
 	double res3 = cotFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, std::sqrt(3.0)); // Check value Cot(pi/6)
 
@@ -646,7 +646,7 @@ TEST(FunctionTest, TestAcot) {
 	// Example 1: Acot(1) = pi/4
 	double x_val1 = 1.0;
 	Variable x1(&x_val1);
-	Function* acotFunc1 = new Acot(x1.clone());
+	Function* acotFunc1 = new Acot(&x1);
 	double res1 = acotFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, M_PI / 4.0); // Check value Acot(1)
 
@@ -658,7 +658,7 @@ TEST(FunctionTest, TestAcot) {
 	// Example 2: Acot(sqrt(3)) = pi/6
 	double x_val2 = std::sqrt(3.0);
 	Variable x2(&x_val2);
-	Function* acotFunc2 = new Acot(x2.clone());
+	Function* acotFunc2 = new Acot(&x2);
 	double res2 = acotFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, M_PI / 6.0); // Check value Acot(sqrt(3))
 
@@ -670,7 +670,7 @@ TEST(FunctionTest, TestAcot) {
 	// Example 3: Acot(0) = pi/2
 	double x_val3 = 0.0;
 	Variable x3(&x_val3);
-	Function* acotFunc3 = new Acot(x3.clone());
+	Function* acotFunc3 = new Acot(&x3);
 	double res3 = acotFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, M_PI / 2.0); // Check value Acot(0)
 
@@ -693,7 +693,7 @@ TEST(FunctionTest, TestAbs) {
 	// Example 1: Abs(x) = 5
 	double x_val1 = 5.0;
 	Variable x1(&x_val1);
-	Function* absFunc1 = new Abs(x1.clone());
+	Function* absFunc1 = new Abs(&x1);
 	double res1 = absFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, std::abs(x_val1)); // Check value Abs(5)
 
@@ -705,7 +705,7 @@ TEST(FunctionTest, TestAbs) {
 	// Example 2: Abs(-3) = 3
 	double x_val2 = -3.0;
 	Variable x2(&x_val2);
-	Function* absFunc2 = new Abs(x2.clone());
+	Function* absFunc2 = new Abs(&x2);
 	double res2 = absFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, std::abs(x_val2)); // Check value Abs(-3)
 
@@ -717,7 +717,7 @@ TEST(FunctionTest, TestAbs) {
 	// Example 3: Abs(0) = 0
 	double x_val3 = 0.0;
 	Variable x3(&x_val3);
-	Function* absFunc3 = new Abs(x3.clone());
+	Function* absFunc3 = new Abs(&x3);
 	double res3 = absFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, std::abs(x_val3)); // Check value Abs(0)
 
@@ -739,7 +739,7 @@ TEST(FunctionTest, TestSign) {
 	// Example 1: Sign(5) = 1
 	double x_val1 = 5.0;
 	Variable x1(&x_val1);
-	Function* signFunc1 = new Sign(x1.clone());
+	Function* signFunc1 = new Sign(&x1);
 	double res1 = signFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, 1.0); // Check value Sign(5)
 
@@ -751,7 +751,7 @@ TEST(FunctionTest, TestSign) {
 	// Example 2: Sign(-3) = -1
 	double x_val2 = -3.0;
 	Variable x2(&x_val2);
-	Function* signFunc2 = new Sign(x2.clone());
+	Function* signFunc2 = new Sign(&x2);
 	double res2 = signFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, -1.0); // Check value Sign(-3)
 
@@ -763,7 +763,7 @@ TEST(FunctionTest, TestSign) {
 	// Example 3: Sign(0) = 0
 	double x_val3 = 0.0;
 	Variable x3(&x_val3);
-	Function* signFunc3 = new Sign(x3.clone());
+	Function* signFunc3 = new Sign(&x3);
 	double res3 = signFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, 0.0); // Check value Sign(0)
 
@@ -775,7 +775,7 @@ TEST(FunctionTest, TestSign) {
 	// Example 4: Sign(2.718) ≈ 1
 	double x_val4 = 2.718;
 	Variable x4(&x_val4);
-	Function* signFunc4 = new Sign(x4.clone());
+	Function* signFunc4 = new Sign(&x4);
 	double res4 = signFunc4->evaluate();
 	EXPECT_DOUBLE_EQ(res4, 1.0); // Check value Sign(2.718)
 
@@ -787,7 +787,7 @@ TEST(FunctionTest, TestSign) {
 	// Example 5: Sign(-0.001) = -1
 	double x_val5 = -0.001;
 	Variable x5(&x_val5);
-	Function* signFunc5 = new Sign(x5.clone());
+	Function* signFunc5 = new Sign(&x5);
 	double res5 = signFunc5->evaluate();
 	EXPECT_DOUBLE_EQ(res5, -1.0); // Check value Sign(-0.001)
 
@@ -814,7 +814,7 @@ TEST(FunctionTest, TestMax) {
 	double b_val1 = 5.0;
 	Variable a1(&a_val1);
 	Variable b1(&b_val1);
-	Function* maxFunc1 = new Max(a1.clone(), b1.clone());
+	Function* maxFunc1 = new Max(&a1, &b1);
 	double res1 = maxFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, 5.0); // Check value Max(3, 5)
 
@@ -828,7 +828,7 @@ TEST(FunctionTest, TestMax) {
 	double b_val2 = 2.0;
 	Variable a2(&a_val2);
 	Variable b2(&b_val2);
-	Function* maxFunc2 = new Max(a2.clone(), b2.clone());
+	Function* maxFunc2 = new Max(&a2, &b2);
 	double res2 = maxFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, 7.0); // Check value Max(7, 2)
 
@@ -842,7 +842,7 @@ TEST(FunctionTest, TestMax) {
 	double b_val3 = 4.0;
 	Variable a3(&a_val3);
 	Variable b3(&b_val3);
-	Function* maxFunc3 = new Max(a3.clone(), b3.clone());
+	Function* maxFunc3 = new Max(&a3, &b3);
 	double res3 = maxFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, 4.0); // Check value Max(4, 4)
 
@@ -856,7 +856,7 @@ TEST(FunctionTest, TestMax) {
 	double b_val4 = 10.0;
 	Variable a4(&a_val4);
 	Variable b4(&b_val4);
-	Function* maxFunc4 = new Max(a4.clone(), b4.clone());
+	Function* maxFunc4 = new Max(&a4, &b4);
 	double res4 = maxFunc4->evaluate();
 	EXPECT_DOUBLE_EQ(res4, 15.0); // Check value Max(15, 10)
 
@@ -870,7 +870,7 @@ TEST(FunctionTest, TestMax) {
 	double b_val5 = -5.0;
 	Variable a5(&a_val5);
 	Variable b5(&b_val5);
-	Function* maxFunc5 = new Max(a5.clone(), b5.clone());
+	Function* maxFunc5 = new Max(&a5, &b5);
 	double res5 = maxFunc5->evaluate();
 	EXPECT_DOUBLE_EQ(res5, -5.0); // Check value Max(-10, -5)
 
@@ -897,7 +897,7 @@ TEST(FunctionTest, TestMin) {
 	double b_val1 = 5.0;
 	Variable a1(&a_val1);
 	Variable b1(&b_val1);
-	Function* minFunc1 = new Min(a1.clone(), b1.clone());
+	Function* minFunc1 = new Min(&a1, &b1);
 	double res1 = minFunc1->evaluate();
 	EXPECT_DOUBLE_EQ(res1, 3.0); // Check value Min(3, 5)
 
@@ -911,7 +911,7 @@ TEST(FunctionTest, TestMin) {
 	double b_val2 = 2.0;
 	Variable a2(&a_val2);
 	Variable b2(&b_val2);
-	Function* minFunc2 = new Min(a2.clone(), b2.clone());
+	Function* minFunc2 = new Min(&a2, &b2);
 	double res2 = minFunc2->evaluate();
 	EXPECT_DOUBLE_EQ(res2, 2.0); // Check value Min(7, 2)
 
@@ -925,7 +925,7 @@ TEST(FunctionTest, TestMin) {
 	double b_val3 = 4.0;
 	Variable a3(&a_val3);
 	Variable b3(&b_val3);
-	Function* minFunc3 = new Min(a3.clone(), b3.clone());
+	Function* minFunc3 = new Min(&a3, &b3);
 	double res3 = minFunc3->evaluate();
 	EXPECT_DOUBLE_EQ(res3, 4.0); // Check value Min(4, 4)
 
@@ -939,7 +939,7 @@ TEST(FunctionTest, TestMin) {
 	double b_val4 = 10.0;
 	Variable a4(&a_val4);
 	Variable b4(&b_val4);
-	Function* minFunc4 = new Min(a4.clone(), b4.clone());
+	Function* minFunc4 = new Min(&a4, &b4);
 	double res4 = minFunc4->evaluate();
 	EXPECT_DOUBLE_EQ(res4, 10.0); // Check value Min(15, 10)
 
@@ -953,7 +953,7 @@ TEST(FunctionTest, TestMin) {
 	double b_val5 = -5.0;
 	Variable a5(&a_val5);
 	Variable b5(&b_val5);
-	Function* minFunc5 = new Min(a5.clone(), b5.clone());
+	Function* minFunc5 = new Min(&a5, &b5);
 	double res5 = minFunc5->evaluate();
 	EXPECT_DOUBLE_EQ(res5, -10.0); // Check value Min(-10, -5)
 

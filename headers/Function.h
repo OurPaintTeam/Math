@@ -40,7 +40,9 @@ protected:
 public:
     Unary(Function* op): operand(op){}
     ~Unary(){
-        delete operand;
+        if (operand->getType() != VARIABLE) {
+            delete operand;
+        }
     }
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;
