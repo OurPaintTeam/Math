@@ -10,20 +10,23 @@ TEST(TaskFTest, SingleVariableQuadratic) {
     Constant* exponent = new Constant(2.0);
     Power* function = new Power(x->clone(), exponent);
 
-    TaskF task(function, variables);
+    TaskF* task = new TaskF(function, variables);
 
-    double error = task.getError();
+    double error = task->getError();
     EXPECT_DOUBLE_EQ(error, x_value * x_value);
 
-    Matrix<> grad = task.gradient();
+    Matrix<> grad = task->gradient();
     EXPECT_EQ(grad.rows_size(), 1);
     EXPECT_EQ(grad.cols_size(), 1);
     EXPECT_DOUBLE_EQ(grad(0, 0), 2 * x_value);
 
-    Matrix<> hessian = task.hessian();
+    Matrix<> hessian = task->hessian();
     EXPECT_EQ(hessian.rows_size(), 1);
     EXPECT_EQ(hessian.cols_size(), 1);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 2.0);
+
+    delete task;
+    delete x;
 }
 
 TEST(TaskFFTest, TwoVariableQuadratic) {
@@ -37,24 +40,28 @@ TEST(TaskFFTest, TwoVariableQuadratic) {
     Power* y_squared = new Power(y->clone(), new Constant(2.0));
     Addition* function = new Addition(x_squared, y_squared);
 
-    TaskF task(function, variables);
+    TaskF* task = new TaskF(function, variables);
 
-    double error = task.getError();
+    double error = task->getError();
     EXPECT_DOUBLE_EQ(error, x_value * x_value + y_value * y_value);
 
-    Matrix<> grad = task.gradient();
+    Matrix<> grad = task->gradient();
     EXPECT_EQ(grad.rows_size(), 2);
     EXPECT_EQ(grad.cols_size(), 1);
     EXPECT_DOUBLE_EQ(grad(0, 0), 2 * x_value);
     EXPECT_DOUBLE_EQ(grad(1, 0), 2 * y_value);
 
-    Matrix<> hessian = task.hessian();
+    Matrix<> hessian = task->hessian();
     EXPECT_EQ(hessian.rows_size(), 2);
     EXPECT_EQ(hessian.cols_size(), 2);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 2.0); // d^2f/dx^2
     EXPECT_DOUBLE_EQ(hessian(0, 1), 0.0); // d^2f/dxdy
     EXPECT_DOUBLE_EQ(hessian(1, 0), 0.0); // d^2f/dydx
     EXPECT_DOUBLE_EQ(hessian(1, 1), 2.0); // d^2f/dy^2
+
+    delete task;
+    delete x;
+    delete y;
 }
 
 TEST(TaskFTest, TwoVariableMultiplication) {
@@ -66,22 +73,26 @@ TEST(TaskFTest, TwoVariableMultiplication) {
 
     Multiplication* function = new Multiplication(x->clone(), y->clone());
 
-    TaskF task(function, variables);
+    TaskF* task = new TaskF(function, variables);
 
-    double error = task.getError();
+    double error = task->getError();
     EXPECT_DOUBLE_EQ(error, x_value * y_value);
 
-    Matrix<> grad = task.gradient();
+    Matrix<> grad = task->gradient();
     EXPECT_EQ(grad.rows_size(), 2);
     EXPECT_EQ(grad.cols_size(), 1);
     EXPECT_DOUBLE_EQ(grad(0, 0), y_value); // df/dx = y
     EXPECT_DOUBLE_EQ(grad(1, 0), x_value); // df/dy = x
 
-    Matrix<> hessian = task.hessian();
+    Matrix<> hessian = task->hessian();
     EXPECT_EQ(hessian.rows_size(), 2);
     EXPECT_EQ(hessian.cols_size(), 2);
     EXPECT_DOUBLE_EQ(hessian(0, 0), 0.0); // d^2f/dx^2
     EXPECT_DOUBLE_EQ(hessian(0, 1), 1.0); // d^2f/dxdy
     EXPECT_DOUBLE_EQ(hessian(1, 0), 1.0); // d^2f/dydx
     EXPECT_DOUBLE_EQ(hessian(1, 1), 0.0); // d^2f/dy^2
+
+    delete task;
+    delete x;
+    delete y;
 }

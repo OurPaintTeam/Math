@@ -24,20 +24,17 @@ public:
         }
     }
 
-	~TaskF() {
-		delete c_function;
-		for (Variable* var : m_X) {
-			delete var;
-		}
-		for (Function* f : m_grad) {
-			delete f;
-		}
-		for (auto& row : m_hess) {
-			for (auto& func : row) {
-				delete func;
-			}
-		}
-	}
+    ~TaskF() {
+	    delete c_function;
+	    for (Function* f : m_grad) {
+		    delete f;
+	    }
+	    for (auto& row : m_hess) {
+		    for (auto& func : row) {
+			    delete func;
+		    }
+	    }
+    }
 
     Matrix<> gradient() const override {
         Matrix<> gradient(m_X.size(), 1);
