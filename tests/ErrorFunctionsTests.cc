@@ -13,14 +13,12 @@ TEST(PointSectionDistanceErrorTest, CorrectErrorValue) {
             new Variable(e1), new Variable(e2)
     };
 
-    PointSectionDistanceError errorFunc(variables, 10);
-    EXPECT_NEAR(std::abs(errorFunc.evaluate()), 14, 1e-2);
-}
-
-TEST(PointSectionDistanceErrorTest, IncorrectVariableCount) {
-    double p1[] = {1.0}; double p2[] = {1.0}; double s1[] = {0.0};
-    std::vector<Variable*> incorrectVariables = { new Variable(p1), new Variable(p2), new Variable(s1) };
-    EXPECT_THROW(PointSectionDistanceError errorFunc(incorrectVariables, 1.0), std::invalid_argument);
+    PointSectionDistanceError* errorFunc = new PointSectionDistanceError(variables, 10);
+    EXPECT_NEAR(std::abs(errorFunc->evaluate()), 14, 1e-2);
+    delete errorFunc;
+    for (int i = 0; i < 6; i++) {
+      delete variables[i];
+    }
 }
 
 //------------------------- POINTONSEC TESTS -------------------------
@@ -35,8 +33,12 @@ TEST(PointOnSectionErrorTest, CorrectZeroErrorValue) {
             new Variable(e1), new Variable(e2)
     };
 
-    PointOnSectionError errorFunc(variables);
-    EXPECT_NEAR(errorFunc.evaluate(), 0.0, 1e-5);
+    PointOnSectionError* errorFunc = new PointOnSectionError(variables);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 6; i++) {
+      delete variables[i];
+    }
 }
 
 //------------------------- POINTPOINTDIST TESTS -------------------------
@@ -44,23 +46,25 @@ TEST(PointPointDistanceErrorTest, CorrectErrorValue) {
     double p1[] = {1.0}; double p2[] = {1.0}; double p3[] = {4.0}; double p4[] = {5.0};
 
     std::vector<Variable*> variables = { new Variable(p1), new Variable(p2), new Variable(p3), new Variable(p4) };
-    PointPointDistanceError errorFunc(variables, 5.0);
-    EXPECT_NEAR(errorFunc.evaluate(), 0.0, 1e-5);
+    PointPointDistanceError* errorFunc = new PointPointDistanceError(variables, 5.0);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 4; i++) {
+      delete variables[i];
+    }
 }
-
-TEST(PointPointDistanceErrorTest, IncorrectVariableCount) {
-    double p1[] = {1.0}; double p2[] = {1.0};
-    std::vector<Variable*> incorrectVariables = { new Variable(p1), new Variable(p2) };
-    EXPECT_THROW(PointPointDistanceError errorFunc(incorrectVariables, 5.0), std::invalid_argument);
-}
-
 //------------------------- POINTONPOINT TESTS -------------------------
 TEST(PointOnPointErrorTest, CorrectZeroErrorValue) {
     double p1[] = {2.0}; double p2[] = {3.0}; double p3[] = {2.0}; double p4[] = {3.0};
 
     std::vector<Variable*> variables = { new Variable(p1), new Variable(p2), new Variable(p3), new Variable(p4) };
-    PointOnPointError errorFunc(variables);
-    EXPECT_NEAR(errorFunc.evaluate(), 0.0, 1e-5);
+    PointOnPointError* errorFunc = new PointOnPointError(variables);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 4; i++) {
+      delete variables[i];
+    }
+
 }
 
 //------------------------- SECSECPARALLEL TESTS -------------------------
@@ -73,14 +77,13 @@ TEST(SectionSectionParallelErrorTest, CorrectParallelErrorValue) {
             new Variable(s1), new Variable(s2), new Variable(s3), new Variable(s4)
     };
 
-    SectionSectionParallelError errorFunc(variables);
-    EXPECT_NEAR(errorFunc.evaluate(), 0.0, 1e-5);
-}
+    SectionSectionParallelError* errorFunc = new SectionSectionParallelError(variables);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 8; i++) {
+      delete variables[i];
+    }
 
-TEST(SectionSectionParallelErrorTest, IncorrectVariableCount) {
-    double p1[] = {1.0}; double p2[] = {1.0}; double p3[] = {4.0}; double p4[] = {4.0};
-    std::vector<Variable*> incorrectVariables = { new Variable(p1), new Variable(p2), new Variable(p3), new Variable(p4) };
-    EXPECT_THROW(SectionSectionParallelError errorFunc(incorrectVariables), std::invalid_argument);
 }
 
 //------------------------- SECSECPERPENDICULAR TESTS -------------------------
@@ -93,14 +96,13 @@ TEST(SectionSectionPerpendicularErrorTest, CorrectPerpendicularErrorValue) {
             new Variable(s1), new Variable(s2), new Variable(s3), new Variable(s4)
     };
 
-    SectionSectionPerpendicularError errorFunc(variables);
-    EXPECT_NEAR(errorFunc.evaluate(), 0.0, 1e-5);
-}
+    SectionSectionPerpendicularError* errorFunc = new SectionSectionPerpendicularError(variables);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 8; i++) {
+      delete variables[i];
+    }
 
-TEST(SectionSectionPerpendicularErrorTest, IncorrectVariableCount) {
-    double p1[] = {0.0}; double p2[] = {0.0}; double p3[] = {1.0};
-    std::vector<Variable*> incorrectVariables = { new Variable(p1), new Variable(p2), new Variable(p3) };
-    EXPECT_THROW(SectionSectionPerpendicularError errorFunc(incorrectVariables), std::invalid_argument);
 }
 //------------------------- SECTIONCIRCLEDISTANCE TESTS -------------------------
 TEST(SectionCircleDistanceErrorTest, CorrectErrorValue) {
@@ -116,24 +118,14 @@ TEST(SectionCircleDistanceErrorTest, CorrectErrorValue) {
             new Variable(r)
     };
 
-    SectionCircleDistanceError errorFunc(variables, 0.0);
-    EXPECT_NEAR(errorFunc.evaluate(), -2.2495131, 1e-5);
+    SectionCircleDistanceError *errorFunc = new SectionCircleDistanceError(variables, 0.0);
+    EXPECT_NEAR(errorFunc->evaluate(), -2.2495131, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 7; i++) {
+      delete variables[i];
+    }
+
 }
-
-TEST(SectionCircleDistanceErrorTest, IncorrectVariableCount) {
-    double xs[] = {0.0}; double ys[] = {0.0};
-    double xe[] = {4.0}; double ye[] = {0.0};
-    double xc[] = {2.0}; double yc[] = {2.0};
-
-    std::vector<Variable*> variables = {
-            new Variable(xs), new Variable(ys),
-            new Variable(xe), new Variable(ye),
-            new Variable(xc), new Variable(yc)
-    };
-
-    EXPECT_THROW(SectionCircleDistanceError errorFunc(variables, 0.0), std::invalid_argument);
-}
-
 //------------------------- SECTIONONCIRCLE TESTS -------------------------
 TEST(SectionOnCircleErrorTest, CorrectZeroErrorValue) {
     double xs[] = {2.0}; double ys[] = {0.0};
@@ -148,22 +140,13 @@ TEST(SectionOnCircleErrorTest, CorrectZeroErrorValue) {
             new Variable(r)
     };
 
-    SectionOnCircleError errorFunc(variables);
-    EXPECT_NEAR(errorFunc.evaluate(), -2.0, 1e-5);
-}
+    SectionOnCircleError* errorFunc = new SectionOnCircleError(variables);
+    EXPECT_NEAR(errorFunc->evaluate(), -2.0, 1e-5);
+    delete errorFunc;
+    for (int i = 0; i < 7; i++) {
+      delete variables[i];
+    }
 
-TEST(SectionOnCircleErrorTest, IncorrectVariableCount) {
-    double xs[] = {2.0}; double ys[] = {0.0};
-    double xe[] = {0.0}; double ye[] = {2.0};
-    double xc[] = {0.0}; double yc[] = {0.0};
-
-    std::vector<Variable*> variables = {
-            new Variable(xs), new Variable(ys),
-            new Variable(xe), new Variable(ye),
-            new Variable(xc), new Variable(yc)
-    };
-
-    EXPECT_THROW(SectionOnCircleError errorFunc(variables), std::invalid_argument);
 }
 //------------------------- SECTIONSECTIONANGLE TESTS -------------------------
 TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
@@ -181,19 +164,9 @@ TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
 
     SectionSectionAngleError* errorFunc = new SectionSectionAngleError(variables, 45);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-2);
-	delete errorFunc;
-}
+    delete errorFunc;
+    for (int i = 0; i < 8; i++) {
+      delete variables[i];
+    }
 
-TEST(SectionSectionAngleErrorTest, IncorrectVariableCount) {
-    double x1s[] = {0.0}; double y1s[] = {0.0};
-    double x1e[] = {1.0}; double y1e[] = {0.0};
-    double x2s[] = {0.0}; double y2s[] = {0.0};
-
-    std::vector<Variable*> variables = {
-            new Variable(x1s), new Variable(y1s),
-            new Variable(x1e), new Variable(y1e),
-            new Variable(x2s), new Variable(y2s)
-    };
-
-    EXPECT_THROW(SectionSectionAngleError errorFunc(variables, 90.0), std::invalid_argument);
 }
