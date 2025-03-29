@@ -109,22 +109,27 @@ public:
     ~LSMTask() {
         delete c_function;
 		for (auto func: m_functions) {
-			delete func;
-		}
-		for (Variable* v : m_X) {
-			delete v;
+		    if (func->getType() != VARIABLE) {
+		        delete func;
+		    }
 		}
 		for (auto func: m_grad) {
-			delete func;
+		    if (func->getType() != VARIABLE) {
+		        delete func;
+		    }
 		}
 		for (auto func: m_hess) {
 			for (auto f: func) {
-				delete f;
+			    if (f->getType() != VARIABLE) {
+			        delete f;
+			    }
 			}
 		}
 		for (auto func: m_jac) {
 			for (auto f: func) {
-				delete f;
+			    if (f->getType() != VARIABLE) {
+			        delete f;
+			    }
 			}
 		}
     }
