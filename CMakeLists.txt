@@ -18,7 +18,7 @@ set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 FetchContent_Declare(
         eigen
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
-        GIT_TAG        3.3  # Выберите версию, которую хотите использовать
+        GIT_TAG         3.4.0
 )
 
 
