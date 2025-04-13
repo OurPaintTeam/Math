@@ -12,9 +12,9 @@ TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     Subtraction* e = new Subtraction(x->clone(), c);
     Function* f = new Power(e, d);
     std::vector<Variable*> variables = { x };
-    TaskF task(f, variables);
+    TaskF* task = new TaskF(f, variables);
     GradientOptimizer optimizer(0.1, 1000); // learningRate=0.1, maxIterations=1000
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
 
     optimizer.optimize();
 
@@ -27,6 +27,8 @@ TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     EXPECT_NEAR(result[0], 3.0, 1e-2);
 
     EXPECT_NEAR(finalError, 0.0, 1e-4);
+    delete task;
+    delete x;
 }
 
 TEST(OptimizerTest, MultiVariableQuadraticFunction) {
@@ -43,10 +45,10 @@ TEST(OptimizerTest, MultiVariableQuadraticFunction) {
     Power* i = new Power(g, c->clone());
     Addition* f = new Addition(h, i);
     std::vector<Variable*> variables = { x, y };
-    TaskF task(f, variables);
+    TaskF* task=  new TaskF(f, variables);
 
     GradientOptimizer optimizer(0.1, 1000); // learningRate=0.1, maxIterations=1000
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
 
     optimizer.optimize();
 
@@ -60,6 +62,9 @@ TEST(OptimizerTest, MultiVariableQuadraticFunction) {
     EXPECT_NEAR(result[1], -5.0, 1e-2);
 
     EXPECT_NEAR(finalError, 0.0, 1e-4);
+    delete task;
+    delete x;
+    delete y;
 }
 
 TEST(OptimizerTest, DoesNotConvergeWithHighLearningRate) {
@@ -70,19 +75,20 @@ TEST(OptimizerTest, DoesNotConvergeWithHighLearningRate) {
     Subtraction* d = new Subtraction(x->clone(), b);
     Power* f = new Power(d, c); // e = (x - 1)^2
     std::vector<Variable*> variables = { x };
-    TaskF task(f, variables);
+    TaskF* task = new TaskF(f, variables);
 
     GradientOptimizer optimizer(10.0, 100); // learningRate=10.0, maxIterations=100
-    optimizer.setTask(&task);
-
+    optimizer.setTask(task);
     optimizer.optimize();
-
     std::vector<double> result = optimizer.getResult();
     bool converged = optimizer.isConverged();
     double finalError = optimizer.getCurrentError();
 
     EXPECT_FALSE(converged);
     EXPECT_GT(finalError, 1.0);
+
+    delete task;
+    delete x;
 }
 
 TEST(OptimizerTest, OptimizeWithoutSettingTask) {
@@ -110,10 +116,10 @@ TEST(OptimizerTest, AlreadyOptimal) {
     Subtraction* g = new Subtraction(x->clone(), b);
     Power* f = new Power(g, c);
     std::vector<Variable*> variables = { x };
-    TaskF task(f, variables);
+    TaskF* task = new TaskF(f, variables);
 
     GradientOptimizer optimizer(0.1, 1000);
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
 
     optimizer.optimize();
 
@@ -126,4 +132,7 @@ TEST(OptimizerTest, AlreadyOptimal) {
     EXPECT_DOUBLE_EQ(result[0], 4.0);
 
     EXPECT_DOUBLE_EQ(finalError, 0.0);
+
+    delete task;
+    delete x;
 }

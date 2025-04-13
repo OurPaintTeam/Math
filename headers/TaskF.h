@@ -25,9 +25,9 @@ public:
     }
 
     ~TaskF() {
-            if (c_function->getType() == VARIABLE) {
-                return;
-            }
+        if (c_function->getType() == VARIABLE) {
+            return;
+        }
 	    delete c_function;
 	    for (Function* f : m_grad) {
 		    delete f;
