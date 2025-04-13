@@ -25,9 +25,12 @@ public:
         }
     }
 
-	~LSMFORLMTask() {
-		delete c_function;
-	}
+    ~LSMFORLMTask() {
+        for (Function* f : m_functions) {
+            delete f;
+        }
+        delete c_function;
+    }
 
     inline double getError() const {
         return c_function->evaluate();

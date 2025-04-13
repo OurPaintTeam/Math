@@ -6,12 +6,12 @@
 TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     //f(x) = (x - 3)^2
     double a = 0.0;
-    Variable* x = new Variable(&a);
+    Variable x(&a);
     Constant* c = new Constant(3.);
     Constant* d = new Constant(2.);
-    Subtraction* e = new Subtraction(x->clone(), c);
+    Subtraction* e = new Subtraction(&x, c);
     Function* f = new Power(e, d);
-    std::vector<Variable*> variables = { x };
+    std::vector<Variable*> variables = { &x };
     LSMTask task({f}, variables);
     NewtonGaussSolver optimizer(10000); // maxIterations=1000
     optimizer.setTask(&task);
@@ -28,8 +28,7 @@ TEST(OptimizerTest, SingleVariableQuadraticFunction) {
 
     EXPECT_NEAR(finalError, 0.0, 1e-4);
 }
-/*
-TEST(OptimizerTest, MultiVariableQuadraticFunction) {
+/*TEST(OptimizerTest, MultiVariableQuadraticFunction) {
     // f(x, y) = (x - 2)^2 + (y + 5)^2
     double a = 1.0;
     double b = 2.0;
@@ -56,7 +55,7 @@ TEST(OptimizerTest, MultiVariableQuadraticFunction) {
 
     //EXPECT_TRUE(converged);
 
-    EXPECT_NEAR(result[0], 2.0, 1e-2);
+     EXPECT_NEAR(result[0], 2.0, 1e-2);
     EXPECT_NEAR(result[1], -5.0, 1e-2);
 
     EXPECT_NEAR(finalError, 0.0, 1e-4);

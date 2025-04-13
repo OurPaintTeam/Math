@@ -5,16 +5,16 @@
 TEST(OptimizerTestLMS, Himmelblau){
     double x_value = 0.0;
     double y_value = 0.0;
-    Variable* x = new Variable(&x_value);
-    Variable* y = new Variable(&y_value);
-    Function* x_squared = new Power(x->clone(), new Constant(2.0));
-    Function* term1 = new Power(new Subtraction(new Addition(x_squared, y->clone()), new Constant(11.0)), new Constant(2.0));
-    Function* y_squared = new Power(y->clone(), new Constant(2.0));
-    Function* term2 = new Power(new Subtraction(new Addition(x->clone(), y_squared), new Constant(7.0)), new Constant(2.0));
+    Variable x(&x_value);
+    Variable y(&y_value);
+    Function* x_squared = new Power(x.clone(), new Constant(2.0));
+    Function* term1 = new Power(new Subtraction(new Addition(x_squared, y.clone()), new Constant(11.0)), new Constant(2.0));
+    Function* y_squared = new Power(y.clone(), new Constant(2.0));
+    Function* term2 = new Power(new Subtraction(new Addition(x.clone(), y_squared), new Constant(7.0)), new Constant(2.0));
     Function* himmelblau = new Addition(term1, term2);
 
-	std::vector<Variable*> variables = {x, y};
-    LSMFORLMTask task({himmelblau}, variables);
+    std::vector<Variable*> variables = {&x, &y};
+    LSMFORLMTask task = LSMFORLMTask({himmelblau}, variables);
     LevenbergMarquardtSolver optimizer;
     optimizer.setTask(&task);
     optimizer.optimize();
@@ -66,11 +66,11 @@ TEST(OptimizerTestLMS, PerpendicularityTest) {
     Function* sub21 =  new Subtraction(sqqrt1, new Constant(20));
     // Define the task with the error function and the variables
     std::vector<Variable*> variables = {x1, y1, x2, y2, x3, y3, x4, y4};
-    LSMFORLMTask task({dot_product, sub2, sub21}, variables);
+    LSMFORLMTask* task = new LSMFORLMTask({dot_product, sub2, sub21}, variables);
 
     // Initialize optimizer and run optimization
     LevenbergMarquardtSolver optimizer; // maxIterations=1000
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
     optimizer.optimize();
     // Get the result and check for convergence
     std::vector<double> result = optimizer.getResult();
@@ -107,10 +107,10 @@ TEST(TestsForCAD, PerpLenghtSetTest) {
     PointPointDistanceError* f2 = new PointPointDistanceError(section2, 100);
     SectionSectionPerpendicularError* f3 = new SectionSectionPerpendicularError(variables);
     PointOnPointError* f4 = new PointOnPointError(ppReq);
-    LSMFORLMTask task({f1,f2,f3,f4}, variables);
+    LSMFORLMTask* task = new LSMFORLMTask({f1,f2,f3,f4}, variables);
     // Initialize optimizer and run optimization
     LevenbergMarquardtSolver optimizer; // maxIterations=1000
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
     optimizer.optimize();
     std::vector<double> result = optimizer.getResult();
     for (int i = 0; i < result.size(); i++) {
@@ -147,10 +147,10 @@ TEST(TestsForCAD, PerpLenghtSetTestBigSize) {
     PointPointDistanceError* f2 = new PointPointDistanceError(section2, 100);
     SectionSectionPerpendicularError* f3 = new SectionSectionPerpendicularError(variables);
     PointOnPointError* f4 = new PointOnPointError(ppReq);
-    LSMFORLMTask task({f1,f2,f3,f4}, variables);
+    LSMFORLMTask* task = new LSMFORLMTask({f1,f2,f3,f4}, variables);
     // Initialize optimizer and run optimization
     LevenbergMarquardtSolver optimizer; // maxIterations=1000
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
     optimizer.optimize();
     std::vector<double> result = optimizer.getResult();
     for (int i = 0; i < result.size(); i++) {
@@ -178,10 +178,10 @@ TEST(TestsForCAD, PPDistanceTest) {
             variables[0], variables[1], variables[2], variables[3]
     };
     PointPointDistanceError* f4 = new PointPointDistanceError(ppReq, 20);
-    LSMFORLMTask task({f4}, ppReq);
+    LSMFORLMTask *task =new LSMFORLMTask ({f4}, ppReq);
     // Initialize optimizer and run optimization
     LevenbergMarquardtSolver optimizer; // maxIterations=1000
-    optimizer.setTask(&task);
+    optimizer.setTask(task);
     optimizer.optimize();
     std::vector<double> result = optimizer.getResult();
     for (int i = 0; i < result.size(); i++) {
