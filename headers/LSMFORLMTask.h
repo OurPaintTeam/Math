@@ -26,9 +26,9 @@ public:
     }
 
     ~LSMFORLMTask() {
-        for (Function* f : m_functions) {
-            delete f;
-        }
+        //for (Function* f : m_functions) {
+        //    delete f;
+        //}
         delete c_function;
     }
 
