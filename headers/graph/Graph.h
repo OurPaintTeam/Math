@@ -136,75 +136,111 @@ public:
     }
 
     // TODO test and Imp
-    std::vector<VertexType> traverse(const VertexType& start, SearchType type) const {}
+    std::vector<VertexType> traverse(const VertexType& start, SearchType type) const {
+        return {};
+    }
 
     // TODO test and Imp
     // Является ли граф связным (для ориентированных)
     // и
     // сильно связным (для неориентированных)
-    bool isConnected() const {}
+    bool isConnected() const {
+        return false;
+    }
 
     // TODO test and Imp
     // Выделить все компоненты связности (или сильной связности)
-    std::vector<std::vector<VertexType>> connectedComponents() const {}
+    std::vector<std::vector<VertexType>> connectedComponents() const {
+        return {};
+    }
 
     // TODO test and Imp
     // Проверка графа на ацикличность (для ориентированных - DAG)
-    bool isAcyclic() const {}
+    bool isAcyclic() const {
+        return false;
+    }
 
     // TODO test and Imp
     // Топологическая сортировка (актуально для ориентированного ацикличного графа)
-    std::vector<VertexType> topologicalSort() const;
+    std::vector<VertexType> topologicalSort() const {
+        return {};
+    };
 
     // TODO test and Imp
     // желательно использовать using
-    PathResult<VertexType, WeightType> dijkstra(const VertexType& start) const {}
+    PathResult<VertexType, WeightType> dijkstra(const VertexType& start) const {
+        return PathResult<VertexType, WeightType>{};
+    }
 
     // TODO test and Imp
-    PathResult<VertexType, WeightType> bellmanFord(const VertexType& start) const {}
+    PathResult<VertexType, WeightType> bellmanFord(const VertexType& start) const {
+        return PathResult<VertexType, WeightType>{};
+    }
 
     // TODO test and Imp
     // Алгоритм Флойда — Уоршелла: возвращает матрицу кратчайших путей между всеми парами вершин
-    std::unordered_map<VertexType, std::unordered_map<VertexType, WeightType>> floydWarshall() const {}
+    std::unordered_map<VertexType, std::unordered_map<VertexType, WeightType>> floydWarshall() const {
+        return {};
+    }
 
     // TODO test and Imp
-    std::vector<WeightType> kruskalMST() const {}
+    std::vector<WeightType> kruskalMST() const {
+        return {};
+    }
 
     // TODO test and Imp
-    std::vector<WeightType> primMST(const VertexType& start) const {}
+    std::vector<WeightType> primMST(const VertexType& start) const {
+        return {};
+    }
 
     // TODO test and Imp
     // Существует ли Эйлеров цикл / путь (неориентированный, ориентированный)
-    bool hasEulerianPath() const {}
+    bool hasEulerianPath() const {
+        return false;
+    }
 
     // TODO test and Imp
     // Построение Эйлерова пути или цикла, если он существует
-    std::vector<VertexType> eulerianPath() const {}
+    std::vector<VertexType> eulerianPath() const {
+        return {};
+    }
 
     // TODO test and Imp
     // Поиск гамильтонова пути (или цикла)
     // это NP полная задача
-    std::vector<VertexType> hamiltonianPath() const {}
+    std::vector<VertexType> hamiltonianPath() const {
+        return {};
+    }
 
     // TODO test and Imp
     // Алгоритм Форда-Фулкерсона (Edmonds-Karp) для вычисления максимального потока
-    WeightType maxFlow(const VertexType& source, const VertexType& sink) {}
+    WeightType maxFlow(const VertexType& source, const VertexType& sink) {
+        return WeightType{};
+    }
 
     // TODO test and Imp
     // Поиск максимального паросочетания в двудольном графе (алгоритм Хопкрофта–Карпа)
-    WeightType bipartiteMatching() const {}
+    WeightType bipartiteMatching() const {
+        return WeightType{};
+    }
 
     // TODO test and Imp
     // Транспонирования графа (актально для ориентированных графов)
-    Graph transpose() const {}
+    Graph transpose() const {
+        return {};
+    }
 
     // TODO test and Imp
     // Построение дополнительного графа (для неориентированного, невзвешенного)
-    Graph complement() const {}
+    Graph complement() const {
+        return {};
+    }
 
     // TODO test and Imp
     // Выделение подграфа по множеству вершин
-    Graph subGraph(std::vector<VertexType>& vertices) const {}
+    Graph subGraph(std::vector<VertexType>& vertices) const {
+        return {};
+    }
 
     // Maybe next: graph iterators
 
