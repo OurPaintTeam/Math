@@ -21,6 +21,7 @@ TEST(OptimizerTestLMS, Himmelblau){
     std::vector<double> result = optimizer.getResult();
     bool converged = optimizer.isConverged();
     EXPECT_TRUE(converged);
+    delete himmelblau;
 }
 /*
 TEST(OptimizerTestLMS, PerpendicularityTest) {
