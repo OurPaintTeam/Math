@@ -511,6 +511,9 @@ TEST(GraphTest, GetEdgeWeight) {
     }
 }
 
+// TODO
+TEST(GraphTest, getAllEdges) {}
+
 TEST(GraphTest, SetEdgeWeight) {
     // Directed and Weighted Graph
     {

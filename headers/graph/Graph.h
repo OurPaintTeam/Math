@@ -151,7 +151,18 @@ public:
     // TODO test and Imp
     // Выделить все компоненты связности (или сильной связности)
     std::vector<std::vector<VertexType>> connectedComponents() const {
-        return {};
+        std::vector<std::vector<VertexType>> components;
+        std::unordered_set<VertexType> visited;
+
+        for (const auto& vertex : _vertices) {
+            if (visited.find(vertex) == visited.end()) {
+                std::vector<VertexType> component;
+                DFS(vertex, visited, component);
+                components.push_back(std::move(component));
+            }
+        }
+
+        return components;
     }
 
     // TODO test and Imp
@@ -238,8 +249,33 @@ public:
 
     // TODO test and Imp
     // Выделение подграфа по множеству вершин
-    Graph subGraph(std::vector<VertexType>& vertices) const {
-        return {};
+    Graph<VertexType, WeightType> subGraph(std::vector<VertexType>& vertices) const {
+        Graph<VertexType, WeightType> sub;
+        for (const auto& v : vertices) {
+            sub.addVertex(v);
+        }
+
+        std::unordered_set<VertexType> vertexSet(vertices.begin(), vertices.end());
+
+
+        for (const auto& vertex : vertices) {
+            auto it = _adjacencyList.find(vertex);
+            if (it != _adjacencyList.end()) {
+                for (const auto& edge : it->second) {
+                    if (vertexSet.contains(edge.to)) {
+                        // Для неориентированного графа добавляем только одно направление, чтобы избежать дублирования
+                        if constexpr (DirectedPolicyType::isDirected) {
+                            sub.addEdge(edge.from, edge.to, edge.weight);
+                        } else {
+                            if (edge.from < edge.to) {
+                                sub.addEdge(edge.from, edge.to, edge.weight);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        return sub;
     }
 
     // Maybe next: graph iterators
