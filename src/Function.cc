@@ -25,7 +25,7 @@ double Variable::evaluate() const {
 }
 
 Function* Variable::derivative(Variable* var) const {
-    if (*this == var) {
+    if (value == var->value) {
         return new Constant(1.0);
     }
     return new Constant(0.0);
@@ -39,8 +39,8 @@ bool Variable::operator==(Variable* other) const {
     return this->value == other->value;
 }
 
-void Variable::setValue(double value) {
-    *this->value = value;
+void Variable::setValue(double val) {
+    *this->value = val;
 }
 
 // -------------------- Addition Implementations --------------------

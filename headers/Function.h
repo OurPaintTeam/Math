@@ -90,10 +90,9 @@ public:
 
 // Class Variable
 class Variable : public Function {
-private:
+public:
     double* value; // Reference to the variable's value
 
-public:
     explicit Variable(double* value);
 
     double evaluate() const override;

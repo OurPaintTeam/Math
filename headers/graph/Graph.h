@@ -17,10 +17,10 @@
     typename WeightedPolicyType
 
 
-template <typename VertexType,
-          typename WeightType = double,
-          typename DirectedPolicyType = UndirectedPolicy,
-          typename WeightedPolicyType = UnweightedPolicy>
+template<typename VertexType,
+        typename WeightType = double,
+        typename DirectedPolicyType = UndirectedPolicy,
+        typename WeightedPolicyType = UnweightedPolicy>
 class Graph :
         private DirectedPolicyType,
         private WeightedPolicyType {
@@ -30,13 +30,14 @@ class Graph :
 
 public:
     Graph() = default;
+
     virtual ~Graph() = default;
 
-    template <typename... Args>
-    void addVertex(const Args&... vertex);
+    template<typename... Args>
+    void addVertex(const Args& ... vertex);
 
-    template <typename... Args>
-    bool removeVertex(const Args&... vertex);
+    template<typename... Args>
+    bool removeVertex(const Args& ... vertex);
 
     bool addEdge(const VertexType& from, const VertexType& to, const WeightType& weight = WeightType());
 
@@ -49,12 +50,15 @@ public:
     // TODO test and Imp
     std::vector<EdgeType> getAllEdges() const {
         std::unordered_set<EdgeType> targetEdges;
-        for (const auto& [vertex, edges] : _adjacencyList) {
-            for (const auto& edge : edges) {
-                targetEdges.emplace(edge);
+        for (const auto& [vertex, edges]: _adjacencyList) {
+            for (const EdgeType& edge: edges) {
+                EdgeType edge1(edge.to, edge.from, edge.weight);
+                if (!targetEdges.contains(edge1)) {
+                    targetEdges.emplace(edge);
+                }
             }
         }
-        return std::vector<EdgeType>(targetEdges.begin(), targetEdges.end());
+        return {targetEdges.begin(), targetEdges.end()};
     }
 
     bool isDirected() const;
@@ -63,8 +67,8 @@ public:
 
     bool hasVertex(const VertexType& v) const;
 
-    template <typename... Args>
-    bool hasVertices(const Args&... vertex);
+    template<typename... Args>
+    bool hasVertices(const Args& ... vertex);
 
     bool hasEdge(const VertexType& from, const VertexType& to) const;
 
@@ -82,9 +86,9 @@ public:
     }
 
     void printGraph(std::ostream& os) const {
-        for (const auto& [vertex, edges] : _adjacencyList) {
+        for (const auto& [vertex, edges]: _adjacencyList) {
             os << vertex << " -> ";
-            for (const auto& edge : edges) {
+            for (const auto& edge: edges) {
                 os << edge.from << edge.to;
                 if (WeightedPolicyType::isWeighted) {
                     os << "(" << edge.weight << ")";
@@ -98,9 +102,9 @@ public:
     // TODO test and Imp
     std::string printGraph() const {
         std::string str;
-        for (const auto& [vertex, edges] : _adjacencyList) {
+        for (const auto& [vertex, edges]: _adjacencyList) {
             str += vertex + " -> ";
-            for (const auto& edge : edges) {
+            for (const auto& edge: edges) {
                 str += edge.from + edge.to + " (" + edge.weight + ") ";
             }
             str += '\n';
@@ -123,8 +127,8 @@ public:
 
     size_t edgeCount() const {
         std::unordered_set<EdgeType> targetEdges;
-        for (const auto& [vertex, edges] : _adjacencyList) {
-            for (const auto& edge : edges) {
+        for (const auto& [vertex, edges]: _adjacencyList) {
+            for (const auto& edge: edges) {
                 targetEdges.emplace(edge);
             }
         }
@@ -154,7 +158,7 @@ public:
         std::vector<std::vector<VertexType>> components;
         std::unordered_set<VertexType> visited;
 
-        for (const auto& vertex : _vertices) {
+        for (const auto& vertex: _vertices) {
             if (visited.find(vertex) == visited.end()) {
                 std::vector<VertexType> component;
                 DFS(vertex, visited, component);
@@ -249,19 +253,19 @@ public:
 
     // TODO test and Imp
     // Выделение подграфа по множеству вершин
-    Graph<VertexType, WeightType> subGraph(std::vector<VertexType>& vertices) const {
-        Graph<VertexType, WeightType> sub;
-        for (const auto& v : vertices) {
+    Graph<VertexType, WeightType, UndirectedPolicy, WeightedPolicy> subGraph(std::vector<VertexType>& vertices) const {
+        Graph<VertexType, WeightType, UndirectedPolicy, WeightedPolicy> sub;
+        for (const auto& v: vertices) {
             sub.addVertex(v);
         }
 
         std::unordered_set<VertexType> vertexSet(vertices.begin(), vertices.end());
 
 
-        for (const auto& vertex : vertices) {
+        for (const auto& vertex: vertices) {
             auto it = _adjacencyList.find(vertex);
             if (it != _adjacencyList.end()) {
-                for (const auto& edge : it->second) {
+                for (const auto& edge: it->second) {
                     if (vertexSet.contains(edge.to)) {
                         // Для неориентированного графа добавляем только одно направление, чтобы избежать дублирования
                         if constexpr (DirectedPolicyType::isDirected) {
@@ -293,7 +297,7 @@ protected:
         visited.insert(v);
         component.push_back(v);
         if (_adjacencyList.find(v) != _adjacencyList.end()) {
-            for (const auto& e : _adjacencyList.at(v)) {
+            for (const auto& e: _adjacencyList.at(v)) {
                 if (visited.find(e.to) == visited.end()) {
                     DFS(e.to, visited, component);
                 }
@@ -304,83 +308,84 @@ protected:
 private:
 
     bool remVertex(const VertexType& v) {
-            // Find the vertex in the set of vertices
-            auto it = _vertices.find(v);
-            if (it == _vertices.end()) {
-                return false; // Vertex not found
-            }
+        // Find the vertex in the set of vertices
+        auto it = _vertices.find(v);
+        if (it == _vertices.end()) {
+            return false; // Vertex not found
+        }
 
-            // Remove the vertex from the set
-            _vertices.erase(it);
+        // Remove the vertex from the set
+        _vertices.erase(it);
 
-            if (DirectedPolicyType::isDirected) {
-                // For a directed graph, remove outgoing edges
-                _adjacencyList.erase(v); // Remove outgoing edges
+        if (DirectedPolicyType::isDirected) {
+            // For a directed graph, remove outgoing edges
+            _adjacencyList.erase(v); // Remove outgoing edges
 
-                // Remove incoming edges by iterating over all vertices
-                for (auto& [vertex, edges] : _adjacencyList) {
-                    edges.erase(
+            // Remove incoming edges by iterating over all vertices
+            for (auto& [vertex, edges]: _adjacencyList) {
+                edges.erase(
                         std::remove_if(edges.begin(), edges.end(), [&](const EdgeType& edge) { return edge.to == v; }),
                         edges.end()
-                    );
-                }
-            } else {
-                // For an undirected graph, remove both outgoing and incoming edges
-                auto adjIt = _adjacencyList.find(v);
-                if (adjIt != _adjacencyList.end()) {
-                    auto& vec = adjIt->second;
+                );
+            }
+        } else {
+            // For an undirected graph, remove both outgoing and incoming edges
+            auto adjIt = _adjacencyList.find(v);
+            if (adjIt != _adjacencyList.end()) {
+                auto& vec = adjIt->second;
 
-                    // For each vertex that has an edge to 'v', remove the edge to 'v'
-                    for (const auto& elem : vec) {
-                      VertexType to = elem.to;
+                // For each vertex that has an edge to 'v', remove the edge to 'v'
+                for (const auto& elem: vec) {
+                    VertexType to = elem.to;
 
-                      auto toIt = _adjacencyList.find(to);
-                      if (toIt != _adjacencyList.end()) {
+                    auto toIt = _adjacencyList.find(to);
+                    if (toIt != _adjacencyList.end()) {
                         auto& vec2 = toIt->second;
                         vec2.erase(std::remove_if(
-                                       vec2.begin(), vec2.end(), [&](const EdgeType& edge) { return edge.to == v; }),
+                                           vec2.begin(), vec2.end(), [&](const EdgeType& edge) { return edge.to == v; }),
                                    vec2.end());
-                      }
                     }
                 }
-
-                // Remove the vertex from the adjacency list
-                _adjacencyList.erase(v);
             }
 
-            return true; // Vertex successfully removed
+            // Remove the vertex from the adjacency list
+            _adjacencyList.erase(v);
         }
+
+        return true; // Vertex successfully removed
+    }
 };
 
 
-template <GRAPH_TEMPLATE_PARAMS>
-template <typename... Args>
-void Graph<VertexType,WeightType,DirectedPolicyType,WeightedPolicyType>::addVertex(const Args&... vertex)
-{
-    (void)std::initializer_list<int>{
-        (
-            _vertices.insert(vertex),
-            _adjacencyList.emplace(vertex, std::vector<EdgeType>{}),
-            0
+template<GRAPH_TEMPLATE_PARAMS>
+template<typename... Args>
+void Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::addVertex(const Args& ... vertex) {
+    (void) std::initializer_list<int>{
+            (
+                    _vertices.insert(vertex),
+                            _adjacencyList.emplace(vertex, std::vector<EdgeType>{}),
+                            0
             )...
     };
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-template <typename... Args>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::removeVertex(const Args&... vertices) {
+template<GRAPH_TEMPLATE_PARAMS>
+template<typename... Args>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::removeVertex(const Args& ... vertices) {
     bool success = true;
-    (void)std::initializer_list<int>{
-        (
-            success &= remVertex(vertices),
-            0
+    (void) std::initializer_list<int>{
+            (
+                    success &= remVertex(vertices),
+                            0
             )...
     };
     return success;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::addEdge(const VertexType& from, const VertexType& to, const WeightType& weight) {
+template<GRAPH_TEMPLATE_PARAMS>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::addEdge(const VertexType& from,
+                                                                                    const VertexType& to,
+                                                                                    const WeightType& weight) {
     if (_vertices.find(from) == _vertices.end() || _vertices.find(to) == _vertices.end()) {
         return false;
     }
@@ -412,8 +417,9 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::addE
     return true;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::removeEdge(const VertexType& from, const VertexType& to) {
+template<GRAPH_TEMPLATE_PARAMS>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::removeEdge(const VertexType& from,
+                                                                                       const VertexType& to) {
     if (_vertices.find(from) == _vertices.end() || _vertices.find(to) == _vertices.end()) {
         return false;
     }
@@ -424,8 +430,8 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::remo
     auto& fromEdges = _adjacencyList[from];
     size_t originalSize = fromEdges.size();
     fromEdges.erase(
-        std::remove_if(fromEdges.begin(), fromEdges.end(), [&](const EdgeType& edge) { return edge.to == to; }),
-        fromEdges.end()
+            std::remove_if(fromEdges.begin(), fromEdges.end(), [&](const EdgeType& edge) { return edge.to == to; }),
+            fromEdges.end()
     );
     if (fromEdges.size() != originalSize) {
         removed = true;
@@ -436,8 +442,8 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::remo
         auto& toEdges = _adjacencyList[to];
         originalSize = toEdges.size();
         toEdges.erase(
-            std::remove_if(toEdges.begin(), toEdges.end(), [&](const EdgeType& edge) { return edge.to == from; }),
-            toEdges.end()
+                std::remove_if(toEdges.begin(), toEdges.end(), [&](const EdgeType& edge) { return edge.to == from; }),
+                toEdges.end()
         );
         if (toEdges.size() != originalSize) {
             removed = true;
@@ -447,18 +453,20 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::remo
     return removed;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
+template<GRAPH_TEMPLATE_PARAMS>
 bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::isWeighted() const {
     return WeightedPolicyType::isWeighted;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
+template<GRAPH_TEMPLATE_PARAMS>
 bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::isDirected() const {
     return DirectedPolicyType::isDirected;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::setEdgeWeight(const VertexType& from, const VertexType& to, const WeightType& weight) {
+template<GRAPH_TEMPLATE_PARAMS>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::setEdgeWeight(const VertexType& from,
+                                                                                          const VertexType& to,
+                                                                                          const WeightType& weight) {
     if (_vertices.find(from) == _vertices.end() || _vertices.find(to) == _vertices.end()) {
         return false;
     }
@@ -470,7 +478,7 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::setE
     auto itFrom = _adjacencyList.find(from);
 
     bool found = false;
-    for (auto& edge : itFrom->second) {
+    for (auto& edge: itFrom->second) {
         if (edge.to == to) {
             edge.weight = weight;
             found = true;
@@ -480,7 +488,7 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::setE
 
     if constexpr (!DirectedPolicyType::isDirected) {
         auto itTo = _adjacencyList.find(to);
-        for (auto& edge : itTo->second) {
+        for (auto& edge: itTo->second) {
             if (edge.to == from) {
                 edge.weight = weight;
                 break;
@@ -491,8 +499,9 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::setE
     return found;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-WeightType Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getEdgeWeight(const VertexType& from, const VertexType& to) const {
+template<GRAPH_TEMPLATE_PARAMS>
+WeightType Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getEdgeWeight(const VertexType& from,
+                                                                                                const VertexType& to) const {
     if (_vertices.find(from) == _vertices.end() || _vertices.find(to) == _vertices.end()) {
         throw std::invalid_argument("One or both vertices do not exist.");
     }
@@ -503,7 +512,7 @@ WeightType Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>
 
     auto it = _adjacencyList.find(from);
     if (it != _adjacencyList.end()) {
-        for (const auto& edge : it->second) {
+        for (const auto& edge: it->second) {
             if (edge.to == to) {
                 return edge.weight;
             }
@@ -513,20 +522,20 @@ WeightType Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>
     throw std::invalid_argument("EdgeType does not exist.");
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasVertex(const VertexType& v) const
-{
+template<GRAPH_TEMPLATE_PARAMS>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasVertex(const VertexType& v) const {
     return _vertices.find(v) != _vertices.end();
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-template <typename... Args>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasVertices(const Args&... vertex) {
+template<GRAPH_TEMPLATE_PARAMS>
+template<typename... Args>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasVertices(const Args& ... vertex) {
     return ((_vertices.find(vertex) != _vertices.end()) && ...);
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasEdge(const VertexType& from, const VertexType& to) const {
+template<GRAPH_TEMPLATE_PARAMS>
+bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasEdge(const VertexType& from,
+                                                                                    const VertexType& to) const {
     auto it = _adjacencyList.find(from);
     if (it != _adjacencyList.end()) {
         return std::any_of(it->second.begin(), it->second.end(),
@@ -535,15 +544,14 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasE
     return false;
 }
 
-template <GRAPH_TEMPLATE_PARAMS>
-std::vector<VertexType> Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getVertices() const
-{
+template<GRAPH_TEMPLATE_PARAMS>
+std::vector<VertexType> Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getVertices() const {
     return std::vector<VertexType>(_vertices.begin(), _vertices.end());
 };
 
-template <GRAPH_TEMPLATE_PARAMS>
+template<GRAPH_TEMPLATE_PARAMS>
 std::unordered_map<VertexType, std::vector<Edge<VertexType, WeightType>>>
-Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getAdjacencyList() const  {
+Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getAdjacencyList() const {
     return _adjacencyList;
 }
 

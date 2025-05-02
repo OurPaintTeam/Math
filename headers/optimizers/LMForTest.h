@@ -40,8 +40,6 @@ public:
         int iteration = 0;
         Eigen::VectorXd gradient;
         Eigen::MatrixXd hessian;
-        Eigen::MatrixXd jacobian;
-        Eigen::VectorXd residuals;
 
         while (iteration < maxIterations) {
             auto [residuals, jacobian] = task->linearizeFunction();
