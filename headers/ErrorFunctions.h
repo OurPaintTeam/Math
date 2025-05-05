@@ -39,9 +39,15 @@ public:
     double evaluate() const override{
         return c_f->evaluate();
     }
+    std::string to_string() const override {
+        return c_f->to_string();
+    }
 
     Function *derivative(Variable *var) const override{
         return c_f->derivative(var);
+    }
+    Function* simplify() const override {
+        return c_f->simplify();
     }
     Function* clone() const override {
         throw std::runtime_error("Not implemented");

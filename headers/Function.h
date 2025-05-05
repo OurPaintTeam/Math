@@ -25,12 +25,15 @@ public:
 
     // Evaluate the function
     virtual double evaluate() const = 0;
-
     // Compute the derivative with respect to a specific variable
     virtual Function* derivative(Variable* var) const = 0;
-
     // Clone method
     virtual Function* clone() const = 0;
+    // Simplification of the function
+    virtual Function* simplify() const { return clone(); }
+
+    // String representation
+    virtual std::string to_string() const = 0;
     virtual FunctionType getType() const {return OTHER;}
 };
 // Class for unary operation
@@ -47,6 +50,8 @@ public:
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;
     virtual Function* clone() const override = 0;
+    virtual std::string to_string() const override = 0;
+
     virtual FunctionType getType() const override {return UNARY;}
 };
 // Class for binary operation
@@ -67,6 +72,9 @@ public:
     virtual double evaluate() const override = 0;
     virtual Function* derivative(Variable* var) const override = 0;
     virtual Function* clone() const override = 0;
+    virtual Function* simplify() const override = 0;
+    virtual std::string to_string() const override = 0;
+
     virtual FunctionType getType() const override {return BINARY;}
 };
 // Class Constant (constant function)
@@ -82,7 +90,9 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    std::string to_string() const override {
+        return std::to_string(value);
+    }
     // Destructor (default is sufficient as there are no dynamic members)
     ~Constant() override = default;
     FunctionType getType() const override {return CONSTANT;}
@@ -99,6 +109,7 @@ public:
 
     Function* derivative(Variable* var) const override;
 
+
     Variable* clone() const override;
 
     void setValue(double value);
@@ -106,6 +117,9 @@ public:
     // Comparison operator to check if two Variables refer to the same double
     bool operator==(Variable* other) const;
     ~Variable() = default;
+    std::string to_string() const override {
+        return "VAR";
+    }
 
     FunctionType getType() const override{ return VARIABLE;}
 };
@@ -121,8 +135,10 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
-
+    Function* simplify() const override;
+    std::string to_string() const override {
+        return "(" + left->to_string() + " + " + right->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Addition(const Addition&) = delete;
     Addition& operator=(const Addition&) = delete;
@@ -139,9 +155,10 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
-
-
+    Function* simplify() const override;
+    std::string to_string() const override {
+        return "(" + left->to_string() + " - " + right->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Subtraction(const Subtraction&) = delete;
     Subtraction& operator=(const Subtraction&) = delete;
@@ -157,7 +174,10 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override;
+    std::string to_string() const override {
+        return "(" + left->to_string() + " * " + right->to_string() + ")";
+    }
 
     // Disable copy constructor and copy assignment to prevent shallow copies
     Multiplication(const Multiplication&) = delete;
@@ -173,8 +193,13 @@ public:
 
     Function* derivative(Variable* var) const override;
 
+    std::string to_string() const override {
+        return "(" + left->to_string() + " / " + right->to_string() + ")";
+    }
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Division(left->clone(), right->clone());
+    }
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
@@ -192,8 +217,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
+    Function* simplify() const override;
 
 
+    std::string to_string() const override {
+        return "(" + left->to_string() + " ^ " + right->to_string() + ")";
+    }
 
     // Disable copy constructor and copy assignment to prevent shallow copies
     Power(const Power&) = delete;
@@ -210,8 +239,11 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
+    Function* simplify() const override;
 
-
+    std::string to_string() const override {
+        return "(-" + operand->to_string() + ")";
+    }
 
     // Disable copy constructor and copy assignment to prevent shallow copies
     Negation(const Negation&) = delete;
@@ -228,9 +260,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
-
-
+    Function* simplify() const override {
+        return new Abs(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "abs(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Abs(const Abs&) = delete;
     Abs& operator=(const Abs&) = delete;
@@ -246,9 +281,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
-
-
+    Function* simplify() const override {
+        return new Sign(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "sign(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Sign(const Sign&) = delete;
     Sign& operator=(const Sign&) = delete;
@@ -268,9 +306,14 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
+    Function* simplify() const override {
+        return new Mod(numerator->simplify(), denominator->simplify());
+    }
 
 
-
+    std::string to_string() const override {
+        return "(" + left->to_string() + " % " + right->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Mod(const Mod&) = delete;
     Mod& operator=(const Mod&) = delete;
@@ -286,7 +329,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Exp(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "exp(" + operand->to_string() + ")";
+    }
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
@@ -304,9 +352,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
-
-
+    Function* simplify() const override {
+        return new Ln(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "ln(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Ln(const Ln&) = delete;
     Ln& operator=(const Ln&) = delete;
@@ -321,9 +372,13 @@ public:
     double evaluate() const override;
 
     Function* derivative(Variable* var) const override;
-
+    Function* simplify() const override {
+        return new Log(left->simplify(), right->simplify());
+    }
     Function* clone() const override;
-
+    std::string to_string() const override {
+        return "log(" + left->to_string() + ", " + right->to_string() + ")";
+    }
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
@@ -341,7 +396,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Sqrt(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "sqrt(" + operand->to_string() + ")";
+    }
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
@@ -359,7 +419,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Sin(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "sin(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Sin(const Sin&) = delete;
     Sin& operator=(const Sin&) = delete;
@@ -375,7 +440,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Cos(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "cos(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Cos(const Cos&) = delete;
     Cos& operator=(const Cos&) = delete;
@@ -391,7 +461,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Asin(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "asin(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Asin(const Asin&) = delete;
     Asin& operator=(const Asin&) = delete;
@@ -407,7 +482,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Acos(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "acos(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Acos(const Acos&) = delete;
     Acos& operator=(const Acos&) = delete;
@@ -423,6 +503,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
+    Function* simplify() const override {
+            return  new Tan(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "tan(" + operand->to_string() + ")";
+    }
 
     // Disable copy constructor and copy assignment to prevent shallow copies
     Tan(const Tan&) = delete;
@@ -439,7 +525,9 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    std::string to_string() const override {
+        return "atan(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Atan(const Atan&) = delete;
     Atan& operator=(const Atan&) = delete;
@@ -455,7 +543,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Cot(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "cot(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Cot(const Cot&) = delete;
     Cot& operator=(const Cot&) = delete;
@@ -471,7 +564,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Acot(operand->simplify());
+    }
+    std::string to_string() const override {
+        return "acot(" + operand->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Acot(const Acot&) = delete;
     Acot& operator=(const Acot&) = delete;
@@ -488,7 +586,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+        return new Max(left->simplify(), right->simplify());
+    }
+    std::string to_string() const override {
+        return "max(" + left->to_string() + ", " + right->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Max(const Max&) = delete;
     Max& operator=(const Max&) = delete;
@@ -504,7 +607,12 @@ public:
     Function* derivative(Variable* var) const override;
 
     Function* clone() const override;
-
+    Function* simplify() const override {
+            return new Min(left->simplify(), right->simplify());
+    }
+    std::string to_string() const override {
+        return "min(" + left->to_string() + ", " + right->to_string() + ")";
+    }
     // Disable copy constructor and copy assignment to prevent shallow copies
     Min(const Min&) = delete;
     Min& operator=(const Min&) = delete;

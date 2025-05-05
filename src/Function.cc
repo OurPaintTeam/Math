@@ -55,6 +55,31 @@ Function* Addition::derivative(Variable* var) const {
             right->derivative(var)
     );
 }
+Function* Addition::simplify() const  {
+  Function* l = left->simplify();
+  Function* r = right->simplify();
+
+  Constant* lc = dynamic_cast<Constant*>(l);
+  Constant* rc = dynamic_cast<Constant*>(r);
+
+  if (lc && rc) {
+    double result = lc->evaluate() + rc->evaluate();
+    delete l; delete r;
+    return new Constant(result);
+  }
+
+  if (lc && lc->evaluate() == 0.0) {
+    delete lc;
+    return r;
+  }
+
+  if (rc && rc->evaluate() == 0.0) {
+    delete rc;
+    return l;
+  }
+
+  return new Addition(l, r);
+}
 
 Function* Addition::clone() const {
     return new Addition(left->clone(), right->clone());
@@ -73,6 +98,26 @@ Function* Subtraction::derivative(Variable* var) const {
             left->derivative(var),
             right->derivative(var)
     );
+}
+Function* Subtraction::simplify() const  {
+  Function* l = left->simplify();
+  Function* r = right->simplify();
+
+  Constant* lc = dynamic_cast<Constant*>(l);
+  Constant* rc = dynamic_cast<Constant*>(r);
+
+  if (lc && rc) {
+    double result = lc->evaluate() - rc->evaluate();
+    delete l; delete r;
+    return new Constant(result);
+  }
+
+  if (rc && rc->evaluate() == 0.0) {
+    delete rc;
+    return l;
+  }
+
+  return new Subtraction(l, r);
 }
 
 Function* Subtraction::clone() const {
@@ -96,6 +141,40 @@ Function* Multiplication::derivative(Variable* var) const {
 
 Function* Multiplication::clone() const {
     return new Multiplication(left->clone(), right->clone());
+}
+Function * Multiplication::simplify() const{
+  Function* l = left->simplify();
+  Function* r = right->simplify();
+
+  Constant* lc = dynamic_cast<Constant*>(l);
+  Constant* rc = dynamic_cast<Constant*>(r);
+
+  if (lc && rc) {
+    double result = lc->evaluate() * rc->evaluate();
+    delete l; delete r;
+    return new Constant(result);
+  }
+
+  if ((lc && lc->evaluate() == 0.0) || (rc && rc->evaluate() == 0.0)) {
+    if (l->getType() != VARIABLE) {
+      delete l;
+    } if (r->getType() != VARIABLE) {
+      delete r;
+    }
+    return new Constant(0.0);
+  }
+
+  if (lc && lc->evaluate() == 1.0) {
+    delete lc;
+    return r;
+  }
+
+  if (rc && rc->evaluate() == 1.0) {
+    delete rc;
+    return l;
+  }
+
+  return new Multiplication(l, r);
 }
 
 // -------------------- Division Implementations --------------------
@@ -146,6 +225,34 @@ Function* Power::derivative(Variable* var) const {
     // n * u^(n-1) * u'
     return new Multiplication(exp, new Multiplication(new_power, left_derivative));
 }
+Function* Power::simplify() const {
+  Function* b = left->simplify();
+  Function* e = right->simplify();
+
+  Constant* bc = dynamic_cast<Constant*>(b);
+  Constant* ec = dynamic_cast<Constant*>(e);
+
+  if (bc && ec) {
+    double result = std::pow(bc->evaluate(), ec->evaluate());
+    delete b; delete e;
+    return new Constant(result);
+  }
+
+  if (ec && ec->evaluate() == 1.0) {
+    delete e;
+    return b;
+  }
+
+  if (ec && ec->evaluate() == 0.0) {
+    if (b->getType() != VARIABLE) {
+      delete b;
+    }
+    delete e;
+    return new Constant(1.0);
+  }
+
+  return new Power(b, e);
+}
 
 Function* Power::clone() const {
     return new Power(left->clone(), right->clone());
@@ -164,6 +271,25 @@ Function* Negation::derivative(Variable* var) const {
 
 Function* Negation::clone() const {
     return new Negation(operand->clone());
+}
+Function* Negation::simplify() const  {
+  Function* op = operand->simplify();
+
+  Constant* c = dynamic_cast<Constant*>(op);
+  if (c) {
+    double result = -c->evaluate();
+    delete c;
+    return new Constant(result);
+  }
+
+  Negation* neg = dynamic_cast<Negation*>(op);
+  if (neg) {
+    Function* inner = neg->operand->clone();
+    delete op;
+    return inner;
+  }
+
+  return new Negation(op);
 }
 
 // -------------------- Abs Implementations --------------------

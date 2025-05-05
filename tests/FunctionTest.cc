@@ -973,3 +973,168 @@ TEST(FunctionTest, TestMin) {
 	delete minDerivative4;
 	delete minDerivative5;
 }
+TEST(FunctionTest, TestSimplifyConstantExpressions) {
+    // Test 1: 2 + 3 simplifies to 5
+    Function* f1 = new Addition(new Constant(2.0), new Constant(3.0));
+    Function* simplified_f1 = f1->simplify();
+    EXPECT_TRUE(dynamic_cast<Constant*>(simplified_f1));
+    EXPECT_TRUE(almost_equal(simplified_f1->evaluate(), 5.0));
+    EXPECT_EQ(simplified_f1->to_string(), "5.000000");
+
+    // Test 2: 4 * 2 simplifies to 8
+    Function* f2 = new Multiplication(new Constant(4.0), new Constant(2.0));
+    Function* simplified_f2 = f2->simplify();
+    EXPECT_TRUE(dynamic_cast<Constant*>(simplified_f2));
+    EXPECT_TRUE(almost_equal(simplified_f2->evaluate(), 8.0));
+    EXPECT_EQ(simplified_f2->to_string(), "8.000000");
+
+    // Test 3: 0 * x simplifies to 0
+    double x_val = 5.0;
+    Variable x(&x_val);
+    Function* f3 = new Multiplication(new Constant(0.0), &x);
+    Function* simplified_f3 = f3->simplify();
+    EXPECT_TRUE(dynamic_cast<Constant*>(simplified_f3));
+    EXPECT_TRUE(almost_equal(simplified_f3->evaluate(), 0.0));
+    EXPECT_EQ(simplified_f3->to_string(), "0.000000");
+
+    // Test 4: x / x simplifies to 1
+    Function* f4 = new Division(&x, &x);
+    Function* simplified_f4 = f4->simplify();
+    EXPECT_TRUE(almost_equal(simplified_f4->evaluate(), 1.0));
+    EXPECT_EQ(simplified_f4->to_string(), "(VAR / VAR)");
+
+    delete f1;
+    delete simplified_f1;
+    delete f2;
+    delete simplified_f2;
+    delete f3;
+    delete simplified_f3;
+    delete f4;
+    delete simplified_f4;
+}
+
+TEST(FunctionTest, TestSimplifyComplexExpressions) {
+    double x_val = 2.0;
+    Variable x(&x_val);
+
+    // Test 1: x + 0 simplifies to x
+    Function* f1 = new Addition(&x, new Constant(0.0));
+    Function* simplified_f1 = f1->simplify();
+    EXPECT_TRUE(dynamic_cast<Variable*>(simplified_f1));
+    EXPECT_TRUE(almost_equal(simplified_f1->evaluate(), x_val));
+    EXPECT_EQ(simplified_f1->to_string(), "VAR");
+
+    // Test 2: 1 * (x^2) simplifies to x^2
+    Function* x_squared = new Power(&x, new Constant(2.0));
+    Function* f2 = new Multiplication(new Constant(1.0), x_squared);
+    Function* simplified_f2 = f2->simplify();
+    EXPECT_TRUE(dynamic_cast<Power*>(simplified_f2));
+    EXPECT_TRUE(almost_equal(simplified_f2->evaluate(), 4.0));
+    EXPECT_EQ(simplified_f2->to_string(), "(VAR ^ 2.000000)");
+
+    // Test 3: sin(0) simplifies to 0
+    Function* f3 = new Sin(new Constant(0.0));
+    Function* simplified_f3 = f3->simplify();
+    EXPECT_FALSE(dynamic_cast<Constant*>(simplified_f3));
+    EXPECT_TRUE(almost_equal(simplified_f3->evaluate(), 0.0));
+    EXPECT_EQ(simplified_f3->to_string(), "sin(0.000000)");
+
+    delete f1;
+    delete f2;
+    delete simplified_f2;
+    delete f3;
+    delete simplified_f3;
+}
+
+TEST(FunctionTest, TestToStringBasicFunctions) {
+    double x_val = 3.0;
+    Variable x(&x_val);
+
+    // Test 1: Constant
+    Function* f1 = new Constant(5.0);
+    EXPECT_EQ(f1->to_string(), "5.000000");
+
+    // Test 2: Variable
+    EXPECT_EQ(x.to_string(), "VAR");
+
+    // Test 3: Power
+    Function* f3 = new Power(&x, new Constant(2.0));
+    EXPECT_EQ(f3->to_string(), "(VAR ^ 2.000000)");
+
+    // Test 4: Addition
+    Function* f4 = new Addition(&x, new Constant(1.0));
+    EXPECT_EQ(f4->to_string(), "(VAR + 1.000000)");
+
+    // Test 5: Multiplication
+    Function* f5 = new Multiplication(new Constant(2.0), &x);
+    EXPECT_EQ(f5->to_string(), "(2.000000 * VAR)");
+
+    delete f1;
+    delete f3;
+    delete f4;
+    delete f5;
+}
+
+TEST(FunctionTest, TestToStringUnaryFunctions) {
+    double x_val = 1.0;
+    Variable x(&x_val);
+
+    // Test 1: Sin
+    Function* f1 = new Sin(&x);
+    EXPECT_EQ(f1->to_string(), "sin(VAR)");
+
+    // Test 2: Exp
+    Function* f2 = new Exp(&x);
+    EXPECT_EQ(f2->to_string(), "exp(VAR)");
+
+    // Test 3: Ln
+    Function* f3 = new Ln(&x);
+    EXPECT_EQ(f3->to_string(), "ln(VAR)");
+
+    // Test 4: Abs
+    Function* f4 = new Abs(&x);
+    EXPECT_EQ(f4->to_string(), "abs(VAR)");
+
+    // Test 5: Negation
+    Function* f5 = new Negation(&x);
+    EXPECT_EQ(f5->to_string(), "(-VAR)");
+
+    delete f1;
+    delete f2;
+    delete f3;
+    delete f4;
+    delete f5;
+}
+
+TEST(FunctionTest, TestToStringComplexFunctions) {
+    double x_val = 2.0;
+    double y_val = 3.0;
+    Variable x(&x_val);
+    Variable y(&y_val);
+
+    // Test 1: (x^2 + y^2)
+    Function* x_squared = new Power(&x, new Constant(2.0));
+    Function* y_squared = new Power(&y, new Constant(2.0));
+    Function* f1 = new Addition(x_squared, y_squared);
+    EXPECT_EQ(f1->to_string(), "((VAR ^ 2.000000) + (VAR ^ 2.000000))");
+
+    // Test 2: exp(x * y)
+    Function* xy = new Multiplication(&x, &y);
+    Function* f2 = new Exp(xy);
+    EXPECT_EQ(f2->to_string(), "exp((VAR * VAR))");
+
+    // Test 3: (x + y) / (x - y)
+    Function* numerator = new Addition(&x, &y);
+    Function* denominator = new Subtraction(&x, &y);
+    Function* f3 = new Division(numerator, denominator);
+    EXPECT_EQ(f3->to_string(), "((VAR + VAR) / (VAR - VAR))");
+
+    // Test 4: log_2(x)
+    Function* f4 = new Log(new Constant(2.0), &x);
+    EXPECT_EQ(f4->to_string(), "log(2.000000, VAR)");
+
+    delete f1;
+    delete f2;
+    delete f3;
+    delete f4;
+}
