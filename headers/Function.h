@@ -56,7 +56,7 @@ protected:
     Function* right;
 public:
     Binary(Function* l, Function* r): left(l), right(r) {}
-    ~Binary(){
+    ~Binary() {
         if (left->getType() != VARIABLE) {
             delete left;
         }

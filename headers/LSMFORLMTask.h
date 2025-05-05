@@ -15,8 +15,7 @@ public:
     LSMFORLMTask(std::vector<Function*> functions, std::vector<Variable*> x) : m_functions(functions), m_X(x) {
         c_function = nullptr;
         for (size_t i = 0; i < m_functions.size(); ++i) {
-            Constant* two = new Constant(2.0);
-            Power* squaredFunction = new Power(m_functions[i]->clone(), two);
+            Function* squaredFunction = new Multiplication(m_functions[i]->clone(), m_functions[i]->clone());
             if (i == 0) {
                 c_function = squaredFunction;
             } else {
@@ -26,9 +25,6 @@ public:
     }
 
     ~LSMFORLMTask() {
-        //for (Function* f : m_functions) {
-        //    delete f;
-        //}
         delete c_function;
     }
 

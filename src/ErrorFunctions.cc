@@ -34,14 +34,13 @@ PointPointDistanceError::PointPointDistanceError(std::vector<Variable* > x, doub
         throw std::invalid_argument("PointPointDistanceError: wrong number of x");
     }
     v_error = error;
-    Function *err = new Constant(error);
-    Function *sq = new Constant(0.5);
-    Function *pow2 = new Constant(2);
-    Function *A = new Subtraction(x[2], x[0]);
-    Function *B = new Subtraction(x[3], x[1]);
-    Function *E = new Power(new Addition(new Power(A, pow2), new Power(B,pow2->clone())),sq);
-    Function *F = new Subtraction(E, err);
-    c_f = F;
+    Function* dx = new Subtraction(x[2], x[0]);  // x2 - x1
+    Function* dy = new Subtraction(x[3], x[1]);  // y2 - y1
+    Function* dx2 = new Multiplication(dx, dx->clone());  // (x2 - x1)(x2 - x1)
+    Function* dy2 = new Multiplication(dy, dy->clone());  // (y2 - y1)(y2 - y1)
+    Function* dist2 = new Addition(dx2, dy2);    // (x2 - x1)(x2 - x1) + (y2 - y1)(y2 - y1)
+    Function* target = new Constant(error * error);
+    c_f = new Subtraction(dist2, target);
 }
 Function *PointPointDistanceError::clone() const {
     return new PointPointDistanceError(m_X, v_error);
@@ -58,11 +57,17 @@ SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable* >
     if (x.size() != 8) {
         throw std::invalid_argument("SectionSectionParallelError: wrong number of x");
     }
-    Function *v1 = new Subtraction(x[2], x[0]);
-    Function *v2 = new Subtraction(x[3], x[1]);
-    Function *w1 = new Subtraction(x[6], x[4]);
-    Function *w2 = new Subtraction(x[7], x[5]);
-    Function* F = new Subtraction(new Multiplication(v1, w2), new Multiplication(v2, w1));
+    Function* F = new Subtraction(
+            new Multiplication(
+                    new Subtraction(x[2], x[0]),
+                    new Subtraction(x[7], x[5])
+            ),
+            new Multiplication(
+                    new Subtraction(x[3], x[1]),
+                    new Subtraction(x[6], x[4])
+            )
+    );
+
     c_f = F;
 }
 Function *SectionSectionParallelError::clone() const {
@@ -75,11 +80,16 @@ SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<V
         throw std::invalid_argument("SectionSectionPerpendicularError: wrong number of x");
     }
 
-    Function *v1 = new Subtraction(x[2], x[0]);
-    Function *v2 = new Subtraction(x[3], x[1]);
-    Function *w1 = new Subtraction(x[6], x[4]);
-    Function *w2 = new Subtraction(x[7], x[5]);
-    Function* F = new Addition(new Multiplication(v1, w1), new Multiplication(v2, w2));
+    Function* F = new Addition(
+            new Multiplication(
+                    new Subtraction(x[2], x[0]),
+                    new Subtraction(x[6], x[4])
+            ),
+            new Multiplication(
+                    new Subtraction(x[3], x[1]),
+                    new Subtraction(x[7], x[5])
+            )
+    );
     c_f = F;
 }
 Function *SectionSectionPerpendicularError::clone() const {
