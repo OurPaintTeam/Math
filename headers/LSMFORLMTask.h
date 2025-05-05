@@ -10,21 +10,37 @@ class LSMFORLMTask {
     Function* c_function;
     std::vector<Function*> m_functions;
     std::vector<Variable*> m_X;
-
+    std::vector<std::vector<Function*>> m_jac;
+    std::vector<Function*> m_grad;
 public:
     LSMFORLMTask(std::vector<Function*> functions, std::vector<Variable*> x) : m_functions(functions), m_X(x) {
         c_function = nullptr;
         for (size_t i = 0; i < m_functions.size(); ++i) {
-            Function* squaredFunction = new Multiplication(m_functions[i]->clone(), m_functions[i]->clone());
+            Constant* two = new Constant(2.0);
+            Power* squaredFunction = new Power(m_functions[i]->clone(), two);
             if (i == 0) {
                 c_function = squaredFunction;
             } else {
                 c_function = new Addition(c_function, squaredFunction);
             }
         }
+        for (int j = 0; j < m_functions.size(); j++) {
+            m_jac.push_back(std::vector<Function*>());
+            for (int k = 0; k < m_X.size(); k++) {
+                m_jac[j].push_back(m_functions[j]->derivative(m_X[k]));
+            }
+        }
     }
 
     ~LSMFORLMTask() {
+        for (auto vec : m_jac) {
+            for (auto f : vec) {
+                delete f;
+            }
+        }
+        for (auto f : m_grad) {
+            delete f;
+        }
         delete c_function;
     }
 
@@ -88,13 +104,11 @@ public:
     std::pair<Eigen::VectorXd, Eigen::MatrixXd> linearizeFunction() const {
         Eigen::VectorXd residuals(m_functions.size());
         Eigen::MatrixXd jac(m_functions.size(), m_X.size());
-
+#pragma omp parallel for collapse(2) default(none) shared(m_functions, m_X, m_jac)
         for (size_t i = 0; i < m_functions.size(); ++i) {
             residuals(i) = m_functions[i]->evaluate();
             for (size_t j = 0; j < m_X.size(); ++j) {
-                Function* partialDerivative = m_functions[i]->derivative(m_X[j]);
-                jac(i, j) = partialDerivative->evaluate();
-                delete partialDerivative;
+                jac(i, j) = m_jac[i][j]->evaluate();
             }
         }
         return {residuals, jac};
