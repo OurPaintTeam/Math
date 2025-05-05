@@ -11,7 +11,6 @@ class LSMFORLMTask {
     std::vector<Function*> m_functions;
     std::vector<Variable*> m_X;
     std::vector<std::vector<Function*>> m_jac;
-    std::vector<Function*> m_grad;
 public:
     LSMFORLMTask(std::vector<Function*> functions, std::vector<Variable*> x) : m_functions(functions), m_X(x) {
         c_function = nullptr;
@@ -27,7 +26,9 @@ public:
         for (int j = 0; j < m_functions.size(); j++) {
             m_jac.push_back(std::vector<Function*>());
             for (int k = 0; k < m_X.size(); k++) {
-                m_jac[j].push_back(m_functions[j]->derivative(m_X[k]));
+                Function* dfdj = m_functions[j]->derivative(m_X[k]);
+                m_jac[j].push_back(dfdj->simplify());
+                delete dfdj;
             }
         }
     }
@@ -37,9 +38,6 @@ public:
             for (auto f : vec) {
                 delete f;
             }
-        }
-        for (auto f : m_grad) {
-            delete f;
         }
         delete c_function;
     }
