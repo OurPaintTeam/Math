@@ -154,3 +154,25 @@ SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, do
 Function *SectionSectionAngleError::clone() const {
     return new SectionSectionAngleError(m_X, v_error);
 }
+
+ArcCenterOnPerpendicularError::ArcCenterOnPerpendicularError(std::vector<Variable *> x) : ErrorFunctions(x) {
+    if (x.size() != 6) {
+        throw std::invalid_argument("ArcCenterOnPerpendicularError: wrong number of x");
+    }
+    // Вычисляем середину отрезка p1p2
+    Function* midX = new Division(new Addition(x[0], x[2]), new Constant(2));
+    Function* midY = new Division(new Addition(x[1], x[3]), new Constant(2));
+    // Вычисляем вектор от середины к p3
+    Function* vecX = new Subtraction(x[4], midX);
+    Function* vecY = new Subtraction(x[5], midY);
+    // Вычисляем вектор от p1 к p2
+    Function* segX = new Subtraction(x[2], x[0]);
+    Function* segY = new Subtraction(x[3], x[1]);
+    // Проверяем, что векторы перпендикулярны (скалярное произведение равно 0)
+    Function* dotProduct = new Addition(new Multiplication(vecX, segX), new Multiplication(vecY, segY));
+    c_f = dotProduct;
+}
+
+Function* ArcCenterOnPerpendicularError::clone() const {
+    return new ArcCenterOnPerpendicularError(m_X);
+}

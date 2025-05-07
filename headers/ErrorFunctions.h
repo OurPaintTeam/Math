@@ -124,4 +124,11 @@ public:
     Function* clone() const override;
 };
 
+//11
+class ArcCenterOnPerpendicularError : public ErrorFunctions {
+public:
+    ArcCenterOnPerpendicularError(std::vector<Variable *> x);
+    Function* clone() const override;
+};
+
 #endif // ! MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_
