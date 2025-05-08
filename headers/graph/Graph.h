@@ -6,6 +6,7 @@
 #include <unordered_set>
 #include <vector>
 #include <stdexcept>
+#include <queue>
 
 #include "Politicians.h"
 #include "GraphObjects.h"
@@ -118,6 +119,35 @@ public:
             std::unordered_set<VertexType> visited;
             DFS(start, visited, component);
         }
+        return component;
+    }
+
+    template<typename Predicate>
+    std::vector<VertexType> findComponentByEdgeType(const VertexType& start, Predicate edgePredicate) const {
+        std::vector<VertexType> component;
+        if (!hasVertex(start)) {
+            return component;
+        }
+
+        std::unordered_set<VertexType> visited;
+        std::queue<VertexType> queue;
+        queue.push(start);
+        visited.insert(start);
+
+        while (!queue.empty()) {
+            VertexType current = queue.front();
+            queue.pop();
+            component.push_back(current);
+
+            const auto& edges = _adjacencyList.at(current);
+            for (const auto& edge : edges) {
+                if (edgePredicate(edge) && visited.find(edge.to) == visited.end()) {
+                    visited.insert(edge.to);
+                    queue.push(edge.to);
+                }
+            }
+        }
+
         return component;
     }
 
