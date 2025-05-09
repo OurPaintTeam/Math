@@ -1,5 +1,9 @@
 #include "ErrorFunctions.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 //------------------------- POINTSECDIST IMPLEMENTATION -------------------------
 PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, double error) : ErrorFunctions(x) {
     v_error = error;
