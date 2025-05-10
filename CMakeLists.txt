@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.20)
 # Увеличиваем максимальную длину путей к объектным файлам (меньше будет warnings)
 set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
