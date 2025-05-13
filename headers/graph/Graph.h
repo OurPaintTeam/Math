@@ -577,7 +577,7 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::hasE
 template<GRAPH_TEMPLATE_PARAMS>
 std::vector<VertexType> Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::getVertices() const {
     return std::vector<VertexType>(_vertices.begin(), _vertices.end());
-};
+}
 
 template<GRAPH_TEMPLATE_PARAMS>
 std::unordered_map<VertexType, std::vector<Edge<VertexType, WeightType>>>

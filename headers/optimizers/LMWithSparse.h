@@ -31,13 +31,13 @@ public:
                              double initLambda = 1e-3,
                              double epsilon1 = 1e-8,
                              double epsilon2 = 1e-8)
-            : maxIterations(maxIterations),
-              lambda(initLambda),
+            : lambda(initLambda),
               epsilon1(epsilon1),
-              epsilon2(epsilon2) {}
+              epsilon2(epsilon2),
+              maxIterations(maxIterations) {}
 
-    void setTask(LSMFORLMTask* task) {
-        this->task = dynamic_cast<LSMFORLMTask*>(task);
+    void setTask(LSMFORLMTask* newTask) {
+        this->task = dynamic_cast<LSMFORLMTask*>(newTask);
         if (!this->task) {
             throw std::invalid_argument("Task must be of type LSMFORLMTask.");
         }

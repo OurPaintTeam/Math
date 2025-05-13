@@ -26,7 +26,7 @@ Function *PointSectionDistanceError::clone() const {
 }
 
 // ------------------------- POINTONSECTION IMPLEMENTATION -------------------------
-PointOnSectionError::PointOnSectionError(std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
+PointOnSectionError::PointOnSectionError([[maybe_unused]] std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
 Function *PointOnSectionError::clone() const {
     return new PointOnSectionError(m_X);
 }
@@ -51,7 +51,7 @@ Function *PointPointDistanceError::clone() const {
 }
 
 // ------------------------- POINTONPOINT IMPLEMENTATION -------------------------
-PointOnPointError::PointOnPointError(std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
+PointOnPointError::PointOnPointError([[maybe_unused]] std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
 Function *PointOnPointError::clone() const {
     return new PointOnPointError(m_X);
 }
@@ -120,13 +120,13 @@ Function *SectionCircleDistanceError::clone() const {
 }
 
 // ------------------------- SECTIONONCIRCLE IMPLEMENTATION -------------------------
-SectionOnCircleError::SectionOnCircleError(std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
+SectionOnCircleError::SectionOnCircleError([[maybe_unused]] std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
 Function *SectionOnCircleError::clone() const {
     return new SectionOnCircleError(m_X);
 }
 
 //------------------------- SECTIONINCIRCLE IMPLEMENTATION -------------------------
-SectionInCircleError::SectionInCircleError(std::vector<Variable *> x) : ErrorFunctions(x) {
+SectionInCircleError::SectionInCircleError([[maybe_unused]] std::vector<Variable *> x) : ErrorFunctions(x) {
     //No implementation on simple Functions without Max
 }
 Function *SectionInCircleError::clone() const {

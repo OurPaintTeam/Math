@@ -3,8 +3,8 @@
 NewtonGaussSolver::NewtonGaussSolver(int maxItr)
         : task(nullptr), converged(false), maxIterations(maxItr) {}
 
-void NewtonGaussSolver::setTask(Task *task) {
-    this->task = dynamic_cast<LSMTask*>(task);
+void NewtonGaussSolver::setTask(Task *newTask) {
+    this->task = dynamic_cast<LSMTask*>(newTask);
     if (!this->task) {
         throw std::invalid_argument("Task must be of type LSMTask");
     }
@@ -65,7 +65,7 @@ void NewtonGaussSolver::optimize() {
 
         task->setError(result);
 
-        double currentError = task->getError();
+        // double currentError = task->getError();
         // std::cout << currentError << '\n';
 
         double delta_norm = 0.0;

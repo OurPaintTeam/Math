@@ -27,12 +27,12 @@ public:
             : lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1), epsilon2(epsilon2),
               maxIterations(maxIterations), converged(false) {}
 
-    void setTask(LSMFORLMTask* task) {
-        this->task = dynamic_cast<LSMFORLMTask*>(task);
+    void setTask(LSMFORLMTask* newTask) {
+        this->task = dynamic_cast<LSMFORLMTask*>(newTask);
         if (!this->task) {
             throw std::invalid_argument("Task is not of type LSMFORLMTask.");
         }
-        result = Eigen::Map<Eigen::VectorXd>(task->getValues().data(), task->getValues().size());;
+        result = Eigen::Map<Eigen::VectorXd>(task->getValues().data(), task->getValues().size());
         currentError = task->getError();
     }
 
