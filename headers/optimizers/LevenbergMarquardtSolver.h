@@ -24,9 +24,9 @@ private:
 public:
     LMSolver(double initLambda = 1.0, double b_increase = 2.0, double b_decrease = 2.0,
              double epsilon1 = 1e-6, double epsilon2 = 1e-6, int maxIterations = 100)
-            : lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1),
-              epsilon2(epsilon2),
-              maxIterations(maxIterations), converged(false) {}
+            : converged(false), lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease),
+              epsilon1(epsilon1),
+              epsilon2(epsilon2), maxIterations(maxIterations) {}
 
     void setTask(Task *task) override;
 

@@ -47,7 +47,7 @@ void LMSolver::optimize() {
 
         Matrix<> newResult = Matrix<>(m_result).transpose() - delta;
         std::vector<double> newParams(newResult.rows_size());
-        for (int i = 0; i < newResult.rows_size(); ++i) {
+        for (std::size_t i = 0; i < newResult.rows_size(); ++i) {
             newParams[i] = newResult(i, 0);
         }
 
