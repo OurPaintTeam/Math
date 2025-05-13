@@ -14,7 +14,7 @@ class LSMFORLMTask {
 public:
     LSMFORLMTask(std::vector<Function*> functions, std::vector<Variable*> x) : m_functions(functions), m_X(x) {
         c_function = nullptr;
-        for (size_t i = 0; i < m_functions.size(); ++i) {
+        for (std::size_t i = 0; i < m_functions.size(); ++i) {
             Constant* two = new Constant(2.0);
             Power* squaredFunction = new Power(m_functions[i]->clone(), two);
             if (i == 0) {
@@ -23,9 +23,9 @@ public:
                 c_function = new Addition(c_function, squaredFunction);
             }
         }
-        for (int j = 0; j < m_functions.size(); j++) {
+        for (std::size_t j = 0; j < m_functions.size(); j++) {
             m_jac.push_back(std::vector<Function*>());
-            for (int k = 0; k < m_X.size(); k++) {
+            for (std::size_t k = 0; k < m_X.size(); k++) {
                 Function* dfdj = m_functions[j]->derivative(m_X[k]);
                 m_jac[j].push_back(dfdj->simplify());
                 delete dfdj;
@@ -59,7 +59,7 @@ public:
         if (x.size() != m_X.size()) {
             throw std::invalid_argument("Vector of variables has incorrect size.");
         }
-        for (size_t i = 0; i < x.size(); ++i) {
+        for (std::size_t i = 0; i < x.size(); ++i) {
             m_X[i]->setValue(x[i]);
         }
         return c_function->evaluate();
@@ -67,7 +67,7 @@ public:
 
     Eigen::VectorXd gradient() const {
         Eigen::VectorXd grad(m_X.size());
-        for (size_t i = 0; i < m_X.size(); ++i) {
+        for (std::size_t i = 0; i < m_X.size(); ++i) {
             Function* partialDerivative = c_function->derivative(m_X[i]);
             grad(i) = partialDerivative->evaluate();
             delete partialDerivative;
@@ -77,8 +77,8 @@ public:
 
     Eigen::MatrixXd hessian() const {
         Eigen::MatrixXd hessianMatrix(m_X.size(), m_X.size());
-        for (size_t i = 0; i < m_X.size(); ++i) {
-            for (size_t j = 0; j < m_X.size(); ++j) {
+        for (std::size_t i = 0; i < m_X.size(); ++i) {
+            for (std::size_t j = 0; j < m_X.size(); ++j) {
                 Function* secondPartialDerivative = c_function->derivative(m_X[i])->derivative(m_X[j]);
                 hessianMatrix(i, j) = secondPartialDerivative->evaluate();
                 delete secondPartialDerivative;
@@ -89,8 +89,8 @@ public:
 
     Eigen::MatrixXd jacobian() const {
         Eigen::MatrixXd jac(m_functions.size(), m_X.size());
-        for (size_t i = 0; i < m_functions.size(); ++i) {
-            for (size_t j = 0; j < m_X.size(); ++j) {
+        for (std::size_t i = 0; i < m_functions.size(); ++i) {
+            for (std::size_t j = 0; j < m_X.size(); ++j) {
                 Function* partialDerivative = m_functions[i]->derivative(m_X[j]);
                 jac(i, j) = partialDerivative->evaluate();
                 delete partialDerivative;
@@ -102,10 +102,10 @@ public:
     std::pair<Eigen::VectorXd, Eigen::MatrixXd> linearizeFunction() const {
         Eigen::VectorXd residuals(m_functions.size());
         Eigen::MatrixXd jac(m_functions.size(), m_X.size());
-#pragma omp parallel for collapse(2) default(none) shared(m_functions, m_X, m_jac)
-        for (size_t i = 0; i < m_functions.size(); ++i) {
+#pragma omp parallel for default(none) shared(m_functions, m_X, m_jac, residuals, jac)
+        for (std::size_t i = 0; i < m_functions.size(); ++i) {
             residuals(i) = m_functions[i]->evaluate();
-            for (size_t j = 0; j < m_X.size(); ++j) {
+            for (std::size_t j = 0; j < m_X.size(); ++j) {
                 jac(i, j) = m_jac[i][j]->evaluate();
             }
         }
