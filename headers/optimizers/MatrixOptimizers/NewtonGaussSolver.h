@@ -1,14 +1,10 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_NEWTONGAUSSESOLVER_H_
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_NEWTONGAUSSESOLVER_H_
 
-#include <stdexcept>
-#include <cmath>
-
-#include "Optimizer.h"
+#include "MatrixOptimizer.h"
 #include "LSMTask.h"
-#include "QR.h"
 
-class NewtonGaussSolver : public Optimizer {
+class NewtonGaussSolver : public MatrixOptimizer {
     LSMTask *task;
     std::vector<double> result;
     bool converged;
@@ -22,7 +18,7 @@ public:
 
     bool isConverged() const override;
 
-    void setTask(Task *task) override;
+    void setTask(TaskMatrix *task) override;
 
     double getCurrentError() const override;
 };

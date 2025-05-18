@@ -1,14 +1,11 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_LEVENBERGMARQUARDTSOLVER_H_
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_LEVENBERGMARQUARDTSOLVER_H_
 
-#include "Optimizer.h"
+#include "MatrixOptimizer.h"
 #include "LSMTask.h"
-#include "QR.h"
 #include <vector>
-#include <cmath>
-#include <stdexcept>
 
-class LMSolver : public Optimizer {
+class LMSolver : public MatrixOptimizer {
 private:
     LSMTask *c_task;
     std::vector<double> m_result;
@@ -28,7 +25,7 @@ public:
               epsilon2(epsilon2),
               maxIterations(maxIterations), converged(false) {}
 
-    void setTask(Task *task) override;
+    void setTask(TaskMatrix *task) override;
 
     void optimize() override;
 

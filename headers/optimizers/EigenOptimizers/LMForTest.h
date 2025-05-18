@@ -1,14 +1,13 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_LMFORTEST_H_
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_LMFORTEST_H_
 
-#include "Optimizer.h"
+#include "EigenOptimizer.h"
 #include "LSMFORLMTask.h"
 #include <Eigen/Dense>
 #include <vector>
-#include <cmath>
 #include <stdexcept>
 
-class LevenbergMarquardtSolver {
+class LevenbergMarquardtSolver: public EigenOptimizer {
 private:
     LSMFORLMTask* task;
     Eigen::VectorXd result;
@@ -27,16 +26,16 @@ public:
             : lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1), epsilon2(epsilon2),
               maxIterations(maxIterations), converged(false) {}
 
-    void setTask(LSMFORLMTask* task) {
+    void setTask(TaskEigen* task) override {
         this->task = dynamic_cast<LSMFORLMTask*>(task);
         if (!this->task) {
             throw std::invalid_argument("Task is not of type LSMFORLMTask.");
         }
-        result = Eigen::Map<Eigen::VectorXd>(task->getValues().data(), task->getValues().size());;
-        currentError = task->getError();
+        result = Eigen::Map<Eigen::VectorXd>(this->task->getValues().data(), this->task->getValues().size());;
+        currentError = this->task->getError();
     }
 
-    void optimize() {
+    void optimize() override {
         int iteration = 0;
         Eigen::VectorXd gradient;
         Eigen::MatrixXd hessian;
@@ -78,15 +77,15 @@ public:
         std::cout << "Levenberg-Marquardt converged after " << iteration << " iterations." << std::endl;
     }
 
-    std::vector<double> getResult() const {
+    std::vector<double> getResult() const override{
         return std::vector<double>(result.data(), result.data() + result.size());
     }
 
-    bool isConverged() const {
+    bool isConverged() const override{
         return converged;
     }
 
-    double getCurrentError() const {
+    double getCurrentError() const override{
         return currentError;
     }
 };

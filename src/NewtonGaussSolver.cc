@@ -1,9 +1,9 @@
 #include "NewtonGaussSolver.h"
-
+#include "QR.h"
 NewtonGaussSolver::NewtonGaussSolver(int maxItr)
         : task(nullptr), converged(false), maxIterations(maxItr) {}
 
-void NewtonGaussSolver::setTask(Task *task) {
+void NewtonGaussSolver::setTask(TaskMatrix *task) {
     this->task = dynamic_cast<LSMTask*>(task);
     if (!this->task) {
         throw std::invalid_argument("Task must be of type LSMTask");

@@ -1,16 +1,16 @@
 // Created by Eugene Bychkov on 14.11.2024.
 
 #include "LevenbergMarquardtSolver.h"
-
+#include "QR.h"
 std::vector<double> LMSolver::getResult() const {
     return m_result;
 }
 
-void LMSolver::setTask(Task *task) {
+void LMSolver::setTask(TaskMatrix *task) {
     if (!task) {
         throw std::runtime_error("Task is null");
     }
-    c_task = dynamic_cast<LSMTask *>(task);
+    c_task = dynamic_cast<LSMTask*>(task);
     if (!c_task) {
         throw std::runtime_error("Task is not LSMTask");
     }

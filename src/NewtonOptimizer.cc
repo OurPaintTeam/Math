@@ -2,10 +2,13 @@
 // Created by Eugene Bychkov on 03.11.2024.
 //
 #include "NewtonOptimizer.h"
-
+#include "QR.h"
 NewtonOptimizer::NewtonOptimizer(int maxItr): maxIterations(maxItr), task(nullptr), converged(false){}
-void NewtonOptimizer::setTask(Task *task){
-    this->task = task;
+void NewtonOptimizer::setTask(TaskMatrix *task){
+    this->task = dynamic_cast<TaskMatrix*>(task);
+    if (!task) {
+        throw std::invalid_argument("Task must be of type TaskMatrix");
+    }
     result = task->getValues();
 }
 void NewtonOptimizer::optimize(){

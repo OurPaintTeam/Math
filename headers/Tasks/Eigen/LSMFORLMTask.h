@@ -1,12 +1,10 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_LSMFORLMTASK_H_
 #define MINIMIZEROPTIMIZER_HEADERS_LSMFORLMTASK_H_
-
-#include "TaskF.h"
-#include <Eigen/Dense>
+#include "TaskEigen.h"
 #include <stdexcept>
 #include <utility>
 
-class LSMFORLMTask {
+class LSMFORLMTask: public TaskEigen {
     Function* c_function;
     std::vector<Function*> m_functions;
     std::vector<Variable*> m_X;
@@ -42,11 +40,11 @@ public:
         delete c_function;
     }
 
-    inline double getError() const {
+    inline double getError() const override{
         return c_function->evaluate();
     }
 
-    inline std::vector<double> getValues() const {
+    inline std::vector<double> getValues() const override{
         std::vector<double> values;
         values.reserve(m_X.size());
         for (const auto& x : m_X) {
@@ -55,7 +53,7 @@ public:
         return values;
     }
 
-    double setError(const std::vector<double>& x) {
+    double setError(const std::vector<double>& x) override{
         if (x.size() != m_X.size()) {
             throw std::invalid_argument("Vector of variables has incorrect size.");
         }
@@ -65,7 +63,7 @@ public:
         return c_function->evaluate();
     }
 
-    Eigen::VectorXd gradient() const {
+    Eigen::VectorXd gradient() const override{
         Eigen::VectorXd grad(m_X.size());
         for (size_t i = 0; i < m_X.size(); ++i) {
             Function* partialDerivative = c_function->derivative(m_X[i]);
@@ -75,7 +73,7 @@ public:
         return grad;
     }
 
-    Eigen::MatrixXd hessian() const {
+    Eigen::MatrixXd hessian() const override{
         Eigen::MatrixXd hessianMatrix(m_X.size(), m_X.size());
         for (size_t i = 0; i < m_X.size(); ++i) {
             for (size_t j = 0; j < m_X.size(); ++j) {
@@ -87,7 +85,7 @@ public:
         return hessianMatrix;
     }
 
-    Eigen::MatrixXd jacobian() const {
+    Eigen::MatrixXd jacobian() const override{
         Eigen::MatrixXd jac(m_functions.size(), m_X.size());
         for (size_t i = 0; i < m_functions.size(); ++i) {
             for (size_t j = 0; j < m_X.size(); ++j) {
@@ -99,7 +97,7 @@ public:
         return jac;
     }
 
-    std::pair<Eigen::VectorXd, Eigen::MatrixXd> linearizeFunction() const {
+    std::pair<Eigen::VectorXd, Eigen::MatrixXd> linearizeFunction() const override{
         Eigen::VectorXd residuals(m_functions.size());
         Eigen::MatrixXd jac(m_functions.size(), m_X.size());
 #pragma omp parallel for collapse(2) default(none) shared(m_functions, m_X, m_jac)

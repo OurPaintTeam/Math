@@ -3,11 +3,12 @@
 GradientOptimizer::GradientOptimizer(double lr, int maxIter)
         : task(nullptr), converged(false), learningRate(lr), maxIterations(maxIter) {}
 
-void GradientOptimizer::setTask(Task* tsk) {
-    this->task = tsk;
-    if (task) {
-        result = task->getValues();
+void GradientOptimizer::setTask(TaskMatrix* tsk) {
+    this->task = dynamic_cast<TaskMatrix*>(tsk);
+    if (!task) {
+        throw std::invalid_argument("Task must be of type TaskMatrix");
     }
+    result = task->getValues();
 }
 
 void GradientOptimizer::optimize() {

@@ -3,9 +3,9 @@
 
 #include "Function.h"
 #include "Matrix.h"
-#include "Task.h"
+#include "TaskMatrix.h"
 
-class TaskF: public Task {
+class TaskF: public TaskMatrix {
     Function* c_function;
     std::vector<Variable*> m_X;
     std::vector<Function*> m_grad;

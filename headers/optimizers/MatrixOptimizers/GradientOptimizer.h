@@ -1,13 +1,12 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_GRADIENTOPTIMIZER_H_
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_GRADIENTOPTIMIZER_H_
 
-#include "Optimizer.h"
-#include "TaskF.h"
+#include "MatrixOptimizer.h"
 #include <vector>
 
-class GradientOptimizer : public Optimizer {
+class GradientOptimizer : public MatrixOptimizer {
 private:
-    Task *task;
+    TaskMatrix *task;
     std::vector<double> result;
     bool converged;
     double learningRate;
@@ -16,7 +15,7 @@ private:
 public:
     GradientOptimizer(double lr = 0.01, int maxIter = 1000);
 
-    void setTask(Task *tsk) override;
+    void setTask(TaskMatrix *tsk) override;
 
     void optimize() override;
 

@@ -34,8 +34,14 @@ include_directories(${eigen_SOURCE_DIR})
 # Добавьте папки с заголовочными файлами
 include_directories(headers)
 include_directories(headers/optimizers)
+include_directories(headers/optimizers/MatrixOptimizers)
+include_directories(headers/optimizers/EigenOptimizers)
+include_directories(headers/optimizers)
 include_directories(headers/decomposition)
 include_directories(headers/graph)
+include_directories(headers/Tasks/Matrix)
+include_directories(headers/Tasks/Eigen)
+include_directories(headers/Tasks)
 
 
 # Сборка основной библиотеки

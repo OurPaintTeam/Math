@@ -1,7 +1,7 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_LMWITHSPARSE_H_
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_LMWITHSPARSE_H_
 
-#include "Optimizer.h"
+#include "EigenOptimizer.h"
 #include "LSMFORLMTask.h"
 #include <Eigen/Sparse>
 #include <Eigen/SparseCholesky>
@@ -10,7 +10,7 @@
 #include <cmath>
 #include <stdexcept>
 
-class LMSparse {
+class LMSparse: public Optimizer {
 private:
     LSMFORLMTask* task;
     Eigen::VectorXd result;
@@ -36,7 +36,7 @@ public:
               epsilon1(epsilon1),
               epsilon2(epsilon2) {}
 
-    void setTask(LSMFORLMTask* task) {
+    void setTask(TaskEigen* task) {
         this->task = dynamic_cast<LSMFORLMTask*>(task);
         if (!this->task) {
             throw std::invalid_argument("Task must be of type LSMFORLMTask.");

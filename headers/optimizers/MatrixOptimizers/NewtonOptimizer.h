@@ -1,10 +1,9 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_NEWTONOPTIMIZER_H_
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_NEWTONOPTIMIZER_H_
-
-#include "Optimizer.h"
-#include "../decomposition/QR.h"
-class NewtonOptimizer : public Optimizer {
-    Task *task;
+#include "TaskMatrix.h"
+#include "MatrixOptimizer.h"
+class NewtonOptimizer : public MatrixOptimizer {
+    TaskMatrix *task;
     std::vector<double> result;
     bool converged;
     int maxIterations;
@@ -17,7 +16,7 @@ public:
 
     bool isConverged() const override;
 
-    void setTask(Task *task) override;
+    void setTask(TaskMatrix *task) override;
 
     double getCurrentError() const override;
 };

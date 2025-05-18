@@ -8,8 +8,6 @@ class Optimizer {
 public:
     virtual ~Optimizer() = default;
 
-    virtual void setTask(Task* task) = 0;
-
     virtual void optimize() = 0;
 
     virtual std::vector<double> getResult() const = 0;

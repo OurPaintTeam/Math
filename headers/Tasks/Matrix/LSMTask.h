@@ -1,11 +1,10 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_LSMTASK_H_
 #define MINIMIZEROPTIMIZER_HEADERS_LSMTASK_H_
 
-#include "Task.h"
-#include "Matrix.h"
+#include "TaskMatrix.h"
 #include <vector>
 
-class LSMTask : public Task {
+class LSMTask : public TaskMatrix {
     Function* c_function;
     std::vector<Function*> m_functions;
     std::vector<Variable*> m_X;
