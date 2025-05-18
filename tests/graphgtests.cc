@@ -674,7 +674,4 @@ TEST(GraphTest, PrintGraph) {
     graph.addVertex(13);
     graph.addVertex(14);
 }
-
-/*
-
 */

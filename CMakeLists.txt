@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.24)
+cmake_minimum_required(VERSION 3.20)
 # Увеличиваем максимальную длину путей к объектным файлам (меньше будет warnings)
 set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
@@ -121,3 +121,12 @@ add_test(NAME ErrorFunctionTest COMMAND ErrorFunctionTest)
 add_test(NAME LMTest COMMAND LMTest)
 add_test(NAME LMTestWithOurMatrix COMMAND LMTestWithOurMatrix)
 add_test(NAME SimpleGraph COMMAND SimpleGraph)
+
+set(TYPE_OF_COMPILING BOOL 1)
+if (TYPE_OF_COMPILING)
+    if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+        target_compile_options(Math PRIVATE -Wall -Wextra -Wpedantic)
+    elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
+        target_compile_options(Math PRIVATE /W4)
+    endif ()
+endif ()

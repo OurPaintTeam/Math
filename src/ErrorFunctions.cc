@@ -1,5 +1,9 @@
 #include "ErrorFunctions.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 //------------------------- POINTSECDIST IMPLEMENTATION -------------------------
 PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, double error) : ErrorFunctions(x) {
     v_error = error;
@@ -22,7 +26,7 @@ Function *PointSectionDistanceError::clone() const {
 }
 
 // ------------------------- POINTONSECTION IMPLEMENTATION -------------------------
-PointOnSectionError::PointOnSectionError(std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
+PointOnSectionError::PointOnSectionError([[maybe_unused]] std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
 Function *PointOnSectionError::clone() const {
     return new PointOnSectionError(m_X);
 }
@@ -47,7 +51,7 @@ Function *PointPointDistanceError::clone() const {
 }
 
 // ------------------------- POINTONPOINT IMPLEMENTATION -------------------------
-PointOnPointError::PointOnPointError(std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
+PointOnPointError::PointOnPointError([[maybe_unused]] std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
 Function *PointOnPointError::clone() const {
     return new PointOnPointError(m_X);
 }
@@ -116,13 +120,13 @@ Function *SectionCircleDistanceError::clone() const {
 }
 
 // ------------------------- SECTIONONCIRCLE IMPLEMENTATION -------------------------
-SectionOnCircleError::SectionOnCircleError(std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
+SectionOnCircleError::SectionOnCircleError([[maybe_unused]] std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
 Function *SectionOnCircleError::clone() const {
     return new SectionOnCircleError(m_X);
 }
 
 //------------------------- SECTIONINCIRCLE IMPLEMENTATION -------------------------
-SectionInCircleError::SectionInCircleError(std::vector<Variable *> x) : ErrorFunctions(x) {
+SectionInCircleError::SectionInCircleError([[maybe_unused]] std::vector<Variable *> x) : ErrorFunctions(x) {
     //No implementation on simple Functions without Max
 }
 Function *SectionInCircleError::clone() const {
@@ -153,4 +157,26 @@ SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, do
 }
 Function *SectionSectionAngleError::clone() const {
     return new SectionSectionAngleError(m_X, v_error);
+}
+
+ArcCenterOnPerpendicularError::ArcCenterOnPerpendicularError(std::vector<Variable *> x) : ErrorFunctions(x) {
+    if (x.size() != 6) {
+        throw std::invalid_argument("ArcCenterOnPerpendicularError: wrong number of x");
+    }
+    // Вычисляем середину отрезка p1p2
+    Function* midX = new Division(new Addition(x[0], x[2]), new Constant(2));
+    Function* midY = new Division(new Addition(x[1], x[3]), new Constant(2));
+    // Вычисляем вектор от середины к p3
+    Function* vecX = new Subtraction(x[4], midX);
+    Function* vecY = new Subtraction(x[5], midY);
+    // Вычисляем вектор от p1 к p2
+    Function* segX = new Subtraction(x[2], x[0]);
+    Function* segY = new Subtraction(x[3], x[1]);
+    // Проверяем, что векторы перпендикулярны (скалярное произведение равно 0)
+    Function* dotProduct = new Addition(new Multiplication(vecX, segX), new Multiplication(vecY, segY));
+    c_f = dotProduct;
+}
+
+Function* ArcCenterOnPerpendicularError::clone() const {
+    return new ArcCenterOnPerpendicularError(m_X);
 }

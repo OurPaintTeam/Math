@@ -1,7 +1,9 @@
 #ifndef MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_
 #define MINIMIZEROPTIMIZER_HEADERS_FUNCTION_H_
+
 #include <cmath>
 #include <stdexcept>
+#include <string>
 
 enum FunctionType {
     CONSTANT,

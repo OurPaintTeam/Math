@@ -1,5 +1,9 @@
 #include "Function.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
+
 // -------------------- Constant Implementations --------------------
 
 Constant::Constant(double value) : value(value) {}
@@ -323,7 +327,7 @@ double Sign::evaluate() const {
     }
 }
 
-Function* Sign::derivative(Variable* var) const {
+Function* Sign::derivative(Variable*) const {
     return new Constant(0.0);
 }
 
@@ -345,7 +349,7 @@ double Mod::evaluate() const {
     return std::fmod(num, den);
 }
 
-Function* Mod::derivative(Variable* var) const {
+Function* Mod::derivative(Variable*) const {
     return new Constant(0.0);
 }
 

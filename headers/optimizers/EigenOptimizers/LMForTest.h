@@ -5,6 +5,7 @@
 #include "LSMFORLMTask.h"
 #include <Eigen/Dense>
 #include <vector>
+#include <cmath>
 #include <stdexcept>
 
 class LevenbergMarquardtSolver: public EigenOptimizer {
