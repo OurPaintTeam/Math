@@ -3,7 +3,7 @@
 
 #include "Matrix.h"
 #include "Function.h"
-#include "ErrorFunctions.h"
+#include "ErrorFunction.h"
 #include <vector>
 
 class Task {

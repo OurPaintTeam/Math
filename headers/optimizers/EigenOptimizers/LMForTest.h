@@ -24,8 +24,8 @@ private:
 public:
     LevenbergMarquardtSolver(int maxIterations = 100, double initLambda = 0.1, double b_increase = 2.0, double b_decrease = 2.0,
                              double epsilon1 = 1e-6, double epsilon2 = 1e-6)
-            : lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1), epsilon2(epsilon2),
-              maxIterations(maxIterations), converged(false) {}
+            : converged(false), lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1),
+              epsilon2(epsilon2), maxIterations(maxIterations) {}
 
     void setTask(TaskEigen* task) override {
         this->task = dynamic_cast<LSMFORLMTask*>(task);

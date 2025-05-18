@@ -1,20 +1,18 @@
 cmake_minimum_required(VERSION 3.20)
-# Увеличиваем максимальную длину путей к объектным файлам (меньше будет warnings)
+
 set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
 project(Math)
 
-# Укажите стандарт C++
+
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
-# Используем FetchContent для загрузки Eigen
+
 include(FetchContent)
 
-# Отключаем глобально сборку тестов и примеров (меньше будет warnings)
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-# Загрузка Eigen
 FetchContent_Declare(
         eigen
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
@@ -26,12 +24,10 @@ FetchContent_Declare(
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-# Загрузка Eigen, если он не был загружен
 FetchContent_MakeAvailable(eigen)
 
-# Убедитесь, что директория Eigen подключена
 include_directories(${eigen_SOURCE_DIR})
-# Добавьте папки с заголовочными файлами
+
 include_directories(headers)
 include_directories(headers/optimizers)
 include_directories(headers/optimizers/MatrixOptimizers)
