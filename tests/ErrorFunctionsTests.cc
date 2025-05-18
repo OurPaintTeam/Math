@@ -1,5 +1,5 @@
 #include "gtest/gtest.h"
-#include "ErrorFunctions.h"
+#include "ErrorFunction.h"
 
 //------------------------- POINTSECDIST TESTS -------------------------
 TEST(PointSectionDistanceErrorTest, CorrectErrorValue) {

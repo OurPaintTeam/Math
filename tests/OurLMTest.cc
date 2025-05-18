@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "LevenbergMarquardtSolver.h"
-#include "ErrorFunctions.h"
+#include "ErrorFunction.h"
 
 TEST(OptimizerTestOURLMS, Himmelblau){
     double x_value = 0.0;

@@ -120,7 +120,7 @@ public:
     bool operator==(Variable* other) const;
     ~Variable() = default;
     std::string to_string() const override {
-        return "VAR";
+        return "VAR(" + std::to_string(*value) + ")";
     }
 
     FunctionType getType() const override{ return VARIABLE;}

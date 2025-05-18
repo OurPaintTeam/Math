@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 #include "LMForTest.h"
-#include "ErrorFunctions.h"
+#include "ErrorFunction.h"
 
 TEST(OptimizerTestLMS, Himmelblau){
     double x_value = 0.0;
