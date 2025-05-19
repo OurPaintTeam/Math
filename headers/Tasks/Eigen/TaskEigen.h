@@ -6,7 +6,7 @@
 #define TASKEIGEN_H
 #include "Task.h"
 #include <Eigen/Dense>
-class TaskEigen: Task {
+class TaskEigen: public Task {
   virtual Eigen::VectorXd gradient() const = 0;
   virtual Eigen::MatrixXd hessian() const = 0;
   virtual Eigen::MatrixXd jacobian() const = 0;
