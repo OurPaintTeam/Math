@@ -43,6 +43,7 @@ public:
         }
         result = Eigen::Map<Eigen::VectorXd>(task->getValues().data(), task->getValues().size());
         currentError = task->getError();
+        structureInitialized = false;
     }
 
     void optimize() {
