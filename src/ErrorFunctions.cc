@@ -22,13 +22,21 @@ PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, 
     c_f = G;
 }
 Function *PointSectionDistanceError::clone() const {
-    return new PointSectionDistanceError(m_X, v_error);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new PointSectionDistanceError(m_X_clone, v_error);
 }
 
 // ------------------------- POINTONSECTION IMPLEMENTATION -------------------------
 PointOnSectionError::PointOnSectionError([[maybe_unused]] std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
 Function *PointOnSectionError::clone() const {
-    return new PointOnSectionError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new PointOnSectionError(m_X_clone);
 }
 
 // ------------------------- POINTPOINTDIST IMPLEMENTATION -------------------------
@@ -47,13 +55,21 @@ PointPointDistanceError::PointPointDistanceError(std::vector<Variable* > x, doub
     c_f = new Subtraction(dist2, target);
 }
 Function *PointPointDistanceError::clone() const {
-    return new PointPointDistanceError(m_X, v_error);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new PointPointDistanceError(m_X_clone, v_error);
 }
 
 // ------------------------- POINTONPOINT IMPLEMENTATION -------------------------
 PointOnPointError::PointOnPointError([[maybe_unused]] std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
 Function *PointOnPointError::clone() const {
-    return new PointOnPointError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new PointOnPointError(m_X_clone);
 }
 
 // ------------------------- SECSECPARALLEL IMPLEMENTATION -------------------------
@@ -75,7 +91,11 @@ SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable* >
     c_f = F;
 }
 Function *SectionSectionParallelError::clone() const {
-    return new SectionSectionParallelError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new SectionSectionParallelError(m_X_clone);
 }
 
 //------------------------- SECSECPERPENDICULAR IMPLEMENTATION -------------------------
@@ -97,7 +117,11 @@ SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<V
     c_f = F;
 }
 Function *SectionSectionPerpendicularError::clone() const {
-    return new SectionSectionPerpendicularError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new SectionSectionPerpendicularError(m_X_clone);
 }
 
 //------------------------- SECTIONCIRCLEDISTANCE IMPLEMENTATION -------------------------
@@ -116,13 +140,21 @@ SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable* > x
     c_f = F;
 }
 Function *SectionCircleDistanceError::clone() const {
-    return new SectionCircleDistanceError(m_X, v_error);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new SectionCircleDistanceError(m_X_clone, v_error);
 }
 
 // ------------------------- SECTIONONCIRCLE IMPLEMENTATION -------------------------
 SectionOnCircleError::SectionOnCircleError([[maybe_unused]] std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
 Function *SectionOnCircleError::clone() const {
-    return new SectionOnCircleError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new SectionOnCircleError(m_X_clone);
 }
 
 //------------------------- SECTIONINCIRCLE IMPLEMENTATION -------------------------
@@ -130,7 +162,11 @@ SectionInCircleError::SectionInCircleError([[maybe_unused]] std::vector<Variable
     //No implementation on simple Functions without Max
 }
 Function *SectionInCircleError::clone() const {
-    return new SectionInCircleError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new SectionInCircleError(m_X_clone);
 }
 
 //------------------------- SECTIONSECTIONANGLE IMPLEMENTATION -------------------------
@@ -156,7 +192,11 @@ SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, do
     c_f = new Subtraction(angle, err);
 }
 Function *SectionSectionAngleError::clone() const {
-    return new SectionSectionAngleError(m_X, v_error);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new SectionSectionAngleError(m_X_clone, v_error);
 }
 
 ArcCenterOnPerpendicularError::ArcCenterOnPerpendicularError(std::vector<Variable *> x) : ErrorFunction(x) {
@@ -178,5 +218,9 @@ ArcCenterOnPerpendicularError::ArcCenterOnPerpendicularError(std::vector<Variabl
 }
 
 Function* ArcCenterOnPerpendicularError::clone() const {
-    return new ArcCenterOnPerpendicularError(m_X);
+    std::vector<Variable*> m_X_clone;
+    for (auto& v : m_X) {
+        m_X_clone.push_back(v->clone());
+    }
+    return new ArcCenterOnPerpendicularError(m_X_clone);
 }

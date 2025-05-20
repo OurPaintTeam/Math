@@ -3,7 +3,7 @@
 //
 #include "NewtonOptimizer.h"
 #include "QR.h"
-NewtonOptimizer::NewtonOptimizer(int maxItr): maxIterations(maxItr), task(nullptr), converged(false){}
+NewtonOptimizer::NewtonOptimizer(int maxItr): task(nullptr), converged(false), maxIterations(maxItr){}
 void NewtonOptimizer::setTask(TaskMatrix *task){
     this->task = dynamic_cast<TaskMatrix*>(task);
     if (!task) {
@@ -19,7 +19,7 @@ void NewtonOptimizer::optimize(){
         result = task->getValues();
         Matrix<> grad = task->gradient();
         double norm = 0;
-        for (int i = 0; i < grad.cols_size(); i++) {
+        for (std::size_t i = 0; i < grad.cols_size(); i++) {
             norm += grad(i, 0) * grad(i, 0);
         }
         norm = std::sqrt(norm);
@@ -32,10 +32,10 @@ void NewtonOptimizer::optimize(){
         qrH.qr();
         Matrix<> HInv = qrH.pseudoInverse();
         Matrix<> step = (HInv + Matrix<>::identity(HInv.cols_size()) * 0.0001) * grad;
-        for (int i = 0; i < result.size(); i++) {
+        for (std::size_t i = 0; i < result.size(); i++) {
             result[i] -= step(i, 0);
         }
-        double err = task->setError(result);
+        //double err = task->setError(result);
     }
     std::cout << "NewtonOptimizer: " << itr << " iterations" << std::endl;
 }

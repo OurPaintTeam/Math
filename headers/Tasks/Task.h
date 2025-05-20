@@ -7,7 +7,8 @@
 #include <vector>
 
 class Task {
-    public:
+public:
+    virtual ~Task() = default;
     virtual inline double getError() const =  0;
     virtual inline std::vector<double> getValues() const = 0;
     virtual double setError(const std::vector<double>& x) = 0;

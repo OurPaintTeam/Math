@@ -25,8 +25,8 @@ public:
             m_jac.push_back(std::vector<Function*>());
             for (std::size_t k = 0; k < m_X.size(); k++) {
                 Function* dfdj = m_functions[j]->derivative(m_X[k]);
-                m_jac[j].push_back(dfdj->simplify());
-                delete dfdj;
+                m_jac[j].push_back(dfdj/*->simplify()*/);
+                //delete dfdj;
             }
         }
     }
@@ -100,15 +100,21 @@ public:
     std::pair<Eigen::VectorXd, Eigen::MatrixXd> linearizeFunction() const override {
         Eigen::VectorXd residuals(m_functions.size());
         Eigen::MatrixXd jac(m_functions.size(), m_X.size());
-#pragma omp parallel for collapse(2) default(none) shared(m_functions, m_X, m_jac, residuals, jac)
-        for (std::size_t i = 0; i < m_functions.size(); ++i) {
-            for (std::size_t j = 0; j < m_X.size(); ++j) {
+
+        auto& functions = m_functions;
+        auto& X = m_X;
+        auto& jacobianFuncs = m_jac;
+
+#pragma omp parallel for collapse(2) default(none) shared(functions, X, jacobianFuncs, residuals, jac)
+        for (int i = 0; i < static_cast<int>(functions.size()); ++i) {
+            for (int j = 0; j < static_cast<int>(X.size()); ++j) {
                 if (j == 0) {
-                    residuals(i) = m_functions[i]->evaluate();
+                    residuals(i) = functions[i]->evaluate();
                 }
-                jac(i, j) = m_jac[i][j]->evaluate();
+                jac(i, j) = jacobianFuncs[i][j]->evaluate();
             }
         }
+
         return { residuals, jac };
     }
 

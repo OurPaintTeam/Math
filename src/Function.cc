@@ -36,7 +36,7 @@ Function* Variable::derivative(Variable* var) const {
 }
 
 Variable* Variable::clone() const{
-    return const_cast<Variable*>(this);
+    return new Variable(value);
 }
 
 bool Variable::operator==(Variable* other) const {

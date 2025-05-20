@@ -27,8 +27,8 @@ public:
             : converged(false), lambda(initLambda), b_increase(b_increase), b_decrease(b_decrease), epsilon1(epsilon1),
               epsilon2(epsilon2), maxIterations(maxIterations) {}
 
-    void setTask(TaskEigen* task) override {
-        this->task = dynamic_cast<LSMFORLMTask*>(task);
+    void setTask(TaskEigen* newTask) override {
+        this->task = dynamic_cast<LSMFORLMTask*>(newTask);
         if (!this->task) {
             throw std::invalid_argument("Task is not of type LSMFORLMTask.");
         }

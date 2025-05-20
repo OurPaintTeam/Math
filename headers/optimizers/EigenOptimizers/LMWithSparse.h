@@ -36,7 +36,7 @@ public:
               epsilon2(epsilon2),
               maxIterations(maxIterations) {}
 
-    void setTask(Task* task) {
+    void setTask(Task* task) { // stupid
         this->task = dynamic_cast<LSMFORLMTask*>(task);
         if (!this->task) {
             throw std::invalid_argument("Task must be of type LSMFORLMTask.");

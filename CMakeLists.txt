@@ -4,7 +4,6 @@ set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
 project(Math)
 
-
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
@@ -123,6 +122,6 @@ if (TYPE_OF_COMPILING)
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(Math PRIVATE -Wall -Wextra -Wpedantic)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
-        target_compile_options(Math PRIVATE /W4)
+        #target_compile_options(Math PRIVATE /W4)
     endif ()
 endif ()
