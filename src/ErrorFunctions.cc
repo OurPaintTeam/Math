@@ -15,7 +15,7 @@ PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, 
     Function* pow2 = new Constant(2);
     Function* A = new Subtraction(x[5], x[3]);
     Function* B = new Subtraction(x[4], x[2]);
-    Function* C = new Subtraction(new Multiplication(x[4], x[3]), new Multiplication(x[5], x[2]));
+    Function* C = new Subtraction(new Multiplication(x[4]->clone(), x[3]->clone()), new Multiplication(x[5]->clone(), x[2]->clone()));
     Function* E = new Addition(new Subtraction(new Multiplication(A, x[0]), new Multiplication(B, x[1])), C);
     Function* F = new Division(E, new Power(new Addition(new Power(A->clone(), pow2), new Power(B->clone(), pow2->clone())),sq));
     Function* G = new Subtraction(F, err);
@@ -129,12 +129,15 @@ SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable* > x
     if (x.size() != 7) {
         throw std::invalid_argument("SectionCircleDistanceError: wrong number of x");
     }
+    delete x[4];
+    delete x[5];
     // xs ys xe ye xc yc r
     v_error = error;
     Function *dist = new Addition(new Constant(error), new Constant(x[6]->evaluate()));
+    delete x[6];
     Function *A = new Subtraction(x[3], x[1]);
     Function *B = new Subtraction(x[2], x[0]);
-    Function *C = new Subtraction(new Multiplication(x[2], x[1]), new Multiplication(x[0], x[3]));
+    Function *C = new Subtraction(new Multiplication(x[2]->clone(), x[1]->clone()), new Multiplication(x[0]->clone(), x[3]->clone()));
     Function *e = new Division(new Addition(new Subtraction(A, B), C), new Sqrt(new Addition(new Power(A->clone(),A->clone()), new Power(B->clone(), B->clone()))));
     Function *F = new Subtraction(e, dist);
     c_f = F;
@@ -159,7 +162,9 @@ Function *SectionOnCircleError::clone() const {
 
 //------------------------- SECTIONINCIRCLE IMPLEMENTATION -------------------------
 SectionInCircleError::SectionInCircleError([[maybe_unused]] std::vector<Variable *> x) : ErrorFunction(x) {
-    //No implementation on simple Functions without Max
+    for (auto& v : x) {
+        delete v;
+    }
 }
 Function *SectionInCircleError::clone() const {
     std::vector<Variable*> m_X_clone;

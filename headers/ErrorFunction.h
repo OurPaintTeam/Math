@@ -26,10 +26,10 @@ protected:
     std::vector<Variable *> m_X;
     double v_error;
 public:
-    ErrorFunction(std::vector<Variable *> x, double error=0) : c_f(nullptr), m_X(x), v_error(error) {}
+    ErrorFunction(std::vector<Variable *> x, double error = 0) : c_f(nullptr), m_X(x), v_error(error) {}
 
 	~ErrorFunction() {
-		delete c_f;
+        delete c_f;
 	}
 
     std::vector<Variable*> getVariables() {
