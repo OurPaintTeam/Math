@@ -6,12 +6,12 @@
 TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     //f(x) = (x - 3)^2
     double a = 0.0;
-    Variable x(&a);
+    Variable* x = new Variable(&a);
     Constant* c = new Constant(3.);
     Constant* d = new Constant(2.);
-    Subtraction* e = new Subtraction(&x, c);
+    Subtraction* e = new Subtraction(x, c);
     Function* f = new Power(e, d);
-    std::vector<Variable*> variables = { &x };
+    std::vector<Variable*> variables = { x };
     LSMTask task({f}, variables);
     NewtonGaussSolver optimizer(10000); // maxIterations=1000
     optimizer.setTask(&task);

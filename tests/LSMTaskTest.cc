@@ -24,28 +24,24 @@ protected:
 TEST_F(TestFunction, EvaluateConstant) {
     EXPECT_DOUBLE_EQ(const2->evaluate(), 2.0);
     delete powerFunc;
-    delete var;
 }
 
 TEST_F(TestFunction, EvaluateVariable) {
     var->setValue(5.0);
     EXPECT_DOUBLE_EQ(var->evaluate(), 5.0);
     delete powerFunc;
-    delete var;
 }
 
 TEST_F(TestFunction, EvaluateAddition) {
     var->setValue(5.0);
     EXPECT_DOUBLE_EQ(addFunc->evaluate(), 7.0); // 5 + 2 = 7
     delete powerFunc;
-    delete var;
 }
 
 TEST_F(TestFunction, EvaluatePower) {
     var->setValue(2.0);
     EXPECT_DOUBLE_EQ(powerFunc->evaluate(), 64.0); // (2 + 2)^3 = 4^3 = 64
     delete powerFunc;
-    delete var;
 }
 
 // Тесты для производных
@@ -54,7 +50,6 @@ TEST_F(TestFunction, DerivativeVariable) {
     EXPECT_DOUBLE_EQ(d->evaluate(), 1.0); // d(x)/dx = 1
     delete d;
     delete powerFunc;
-    delete var;
 }
 
 TEST_F(TestFunction, DerivativeAddition) {
@@ -62,7 +57,6 @@ TEST_F(TestFunction, DerivativeAddition) {
     EXPECT_DOUBLE_EQ(d->evaluate(), 1.0); // d(x + 2)/dx = 1
     delete d;
     delete powerFunc;
-    delete var;
 }
 
 // Тесты для LSMTask
@@ -75,7 +69,6 @@ TEST_F(TestFunction, GradientLSMTask) {
     Matrix<> grad = task->gradient();
     EXPECT_DOUBLE_EQ(grad(0, 0), 1458.0); // d((x + 2)^6)/dx at x=1 := 1458
     delete task;
-    delete var;
 }
 
 TEST_F(TestFunction, HessianLSMTask) {
@@ -87,7 +80,6 @@ TEST_F(TestFunction, HessianLSMTask) {
     Matrix<> hess = task->hessian();
     EXPECT_DOUBLE_EQ(hess(0, 0), 2430.0); // d^2((x + 2)^3)/dx^2 at x=1
     delete task;
-    delete var;
 }
 
 TEST_F(TestFunction, JacobianLSMTask) {
@@ -98,7 +90,6 @@ TEST_F(TestFunction, JacobianLSMTask) {
     Matrix<> jac = task->jacobian();
     EXPECT_DOUBLE_EQ(jac(0, 0), 27.0); // d((x + 2)^3)/dx at x=1
     delete task;
-    delete var;
 }
 
 // Тесты для метода linearizeFunction
@@ -119,7 +110,6 @@ TEST_F(TestFunction, LinearizeFunctionSimple) {
     // Derivative of f(x) = x is 1
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
     delete powerFunc;
-    delete var;
     delete task;
     delete x;
 }
@@ -146,10 +136,7 @@ TEST_F(TestFunction, HessianTest) {
     EXPECT_DOUBLE_EQ(hessian(1, 0), 8.0);
     EXPECT_DOUBLE_EQ(hessian(1, 1), 16.0);
     delete powerFunc;
-    delete var;
     delete task;
-    delete x;
-    delete y;
 }
 TEST_F(TestFunction, LinearizeFunctionWithConstant) {
     double valx = 2.0;
@@ -168,9 +155,7 @@ TEST_F(TestFunction, LinearizeFunctionWithConstant) {
     // Derivative of f(x) = x + 2 is 1
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 1.0);
     delete powerFunc;
-    delete var;
     delete task;
-    delete x;
 }
 
 TEST_F(TestFunction, LinearizeFunctionNonLinear) {
@@ -190,9 +175,7 @@ TEST_F(TestFunction, LinearizeFunctionNonLinear) {
     // Derivative of f(x) = (x + 2)^3 is 3 * (x + 2)^2, at x = 2 it is 72
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 48.0);
     delete powerFunc;
-    delete var;
     delete task;
-    delete x;
 }
 
 TEST_F(TestFunction, LinearizeMultipleFunctions) {
@@ -201,7 +184,7 @@ TEST_F(TestFunction, LinearizeMultipleFunctions) {
     Variable* y = new Variable(&y_val);
 
     Function* func1 = new Addition(x, y);  // f1(x, y) = x + y
-    Function* func2 = new Multiplication(x, y);  // f2(x, y) = x * y
+    Function* func2 = new Multiplication(x->clone(), y->clone());  // f2(x, y) = x * y
 
     std::vector<Function*> functions = { func1, func2 };
     std::vector<Variable*> variables = { x, y };
@@ -223,10 +206,7 @@ TEST_F(TestFunction, LinearizeMultipleFunctions) {
     EXPECT_DOUBLE_EQ(jacobian(1, 0), 2.0);
     EXPECT_DOUBLE_EQ(jacobian(1, 1), 1.0);
     delete powerFunc;
-    delete var;
     delete task;
-    delete x;
-    delete y;
 }
 
 TEST_F(TestFunction, LinearizeFunctionZeroValues) {
@@ -246,7 +226,5 @@ TEST_F(TestFunction, LinearizeFunctionZeroValues) {
     // Derivative of f(x) = (x + 2)^3 is 3 * (x + 2)^2, at x = 0 it is 12
     EXPECT_DOUBLE_EQ(jacobian(0, 0), 12.0);
     delete powerFunc;
-    delete var;
     delete task;
-    delete x;
 }

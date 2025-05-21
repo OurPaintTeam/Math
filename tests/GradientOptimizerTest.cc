@@ -9,7 +9,7 @@ TEST(OptimizerTest, SingleVariableQuadraticFunction) {
     Variable* x = new Variable(&a);
     Constant* c = new Constant(3);
     Constant* d = new Constant(2);
-    Subtraction* e = new Subtraction(x->clone(), c);
+    Subtraction* e = new Subtraction(x, c);
     Function* f = new Power(e, d);
     std::vector<Variable*> variables = { x };
     TaskF* task = new TaskF(f, variables);
@@ -28,7 +28,6 @@ TEST(OptimizerTest, SingleVariableQuadraticFunction) {
 
     EXPECT_NEAR(finalError, 0.0, 1e-4);
     delete task;
-    delete x;
 }
 
 TEST(OptimizerTest, MultiVariableQuadraticFunction) {
@@ -39,8 +38,8 @@ TEST(OptimizerTest, MultiVariableQuadraticFunction) {
     Variable* y = new Variable(&b);
     Constant* c = new Constant(2.0);
     Constant* d = new Constant(5.0);
-    Subtraction* e = new Subtraction(x->clone(), c);
-    Addition* g = new Addition(y->clone(), d);
+    Subtraction* e = new Subtraction(x, c);
+    Addition* g = new Addition(y, d);
     Power* h = new Power(e, c->clone());
     Power* i = new Power(g, c->clone());
     Addition* f = new Addition(h, i);
@@ -63,8 +62,6 @@ TEST(OptimizerTest, MultiVariableQuadraticFunction) {
 
     EXPECT_NEAR(finalError, 0.0, 1e-4);
     delete task;
-    delete x;
-    delete y;
 }
 
 TEST(OptimizerTest, DoesNotConvergeWithHighLearningRate) {
@@ -72,7 +69,7 @@ TEST(OptimizerTest, DoesNotConvergeWithHighLearningRate) {
     Variable* x = new Variable(&a);
     Constant* b = new Constant(1.0);
     Constant* c = new Constant(2.0);
-    Subtraction* d = new Subtraction(x->clone(), b);
+    Subtraction* d = new Subtraction(x, b);
     Power* f = new Power(d, c); // e = (x - 1)^2
     std::vector<Variable*> variables = { x };
     TaskF* task = new TaskF(f, variables);
@@ -88,7 +85,6 @@ TEST(OptimizerTest, DoesNotConvergeWithHighLearningRate) {
     EXPECT_GT(finalError, 1.0);
 
     delete task;
-    delete x;
 }
 
 TEST(OptimizerTest, OptimizeWithoutSettingTask) {
@@ -113,7 +109,7 @@ TEST(OptimizerTest, AlreadyOptimal) {
     Variable* x = new Variable(&a);
     Constant* b = new Constant(4.0);
     Constant* c = new Constant(2.0);
-    Subtraction* g = new Subtraction(x->clone(), b);
+    Subtraction* g = new Subtraction(x, b);
     Power* f = new Power(g, c);
     std::vector<Variable*> variables = { x };
     TaskF* task = new TaskF(f, variables);
@@ -134,5 +130,4 @@ TEST(OptimizerTest, AlreadyOptimal) {
     EXPECT_DOUBLE_EQ(finalError, 0.0);
 
     delete task;
-    delete x;
 }
