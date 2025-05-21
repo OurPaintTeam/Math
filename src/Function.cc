@@ -154,18 +154,15 @@ Function * Multiplication::simplify() const{
   Constant* rc = dynamic_cast<Constant*>(r);
 
   if (lc && rc) {
-    double result = lc->evaluate() * rc->evaluate();
-    delete l; delete r;
-    return new Constant(result);
+      double result = lc->evaluate() * rc->evaluate();
+      delete l; delete r;
+      return new Constant(result);
   }
 
   if ((lc && lc->evaluate() == 0.0) || (rc && rc->evaluate() == 0.0)) {
-    if (l->getType() != VARIABLE) {
       delete l;
-    } if (r->getType() != VARIABLE) {
       delete r;
-    }
-    return new Constant(0.0);
+      return new Constant(0.0);
   }
 
   if (lc && lc->evaluate() == 1.0) {
@@ -248,11 +245,9 @@ Function* Power::simplify() const {
   }
 
   if (ec && ec->evaluate() == 0.0) {
-    if (b->getType() != VARIABLE) {
       delete b;
-    }
-    delete e;
-    return new Constant(1.0);
+      delete e;
+      return new Constant(1.0);
   }
 
   return new Power(b, e);

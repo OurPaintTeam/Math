@@ -902,7 +902,7 @@ TEST(FunctionTest, TestMin) {
 	EXPECT_DOUBLE_EQ(res1, 3.0); // Check value Min(3, 5)
 
 	// Derivative: d/dx Min(x, 5) = 1 if x < 5, else 0
-	Function* minDerivative1 = minFunc1->derivative(a1->clone());
+	Function* minDerivative1 = minFunc1->derivative(a1);
 	double expected_derivative1 = 1.0; // Since a_val1 = 3 < 5
 	EXPECT_DOUBLE_EQ(minDerivative1->evaluate(), expected_derivative1); // Check derivative at x=3
 
@@ -916,7 +916,7 @@ TEST(FunctionTest, TestMin) {
 	EXPECT_DOUBLE_EQ(res2, 2.0); // Check value Min(7, 2)
 
 	// Derivative: d/dx Min(x, 2) = 0 since x > 2
-	Function* minDerivative2 = minFunc2->derivative(a2->clone());
+	Function* minDerivative2 = minFunc2->derivative(a2);
 	double expected_derivative2 = 0.0; // Since a_val2 = 7 > 2
 	EXPECT_DOUBLE_EQ(minDerivative2->evaluate(), expected_derivative2); // Check derivative at x=7
 
@@ -930,7 +930,7 @@ TEST(FunctionTest, TestMin) {
 	EXPECT_DOUBLE_EQ(res3, 4.0); // Check value Min(4, 4)
 
 	// Derivative: d/dx Min(x, x) = 0 by convention
-	Function* minDerivative3 = minFunc3->derivative(a3->clone());
+	Function* minDerivative3 = minFunc3->derivative(a3);
 	double expected_derivative3 = 0.0;
 	EXPECT_DOUBLE_EQ(minDerivative3->evaluate(), expected_derivative3); // Check derivative at x=4
 
@@ -944,7 +944,7 @@ TEST(FunctionTest, TestMin) {
 	EXPECT_DOUBLE_EQ(res4, 10.0); // Check value Min(15, 10)
 
 	// Derivative: d/dx Min(x, 10) = 0
-	Function* minDerivative4 = minFunc4->derivative(a4->clone());
+	Function* minDerivative4 = minFunc4->derivative(a4);
 	double expected_derivative4 = 0.0;
 	EXPECT_DOUBLE_EQ(minDerivative4->evaluate(), expected_derivative4); // Check derivative at x=15
 
@@ -958,7 +958,7 @@ TEST(FunctionTest, TestMin) {
 	EXPECT_DOUBLE_EQ(res5, -10.0); // Check value Min(-10, -5)
 
 	// Derivative: d/dx Min(x, -5) = 1
-	Function* minDerivative5 = minFunc5->derivative(a5->clone());
+	Function* minDerivative5 = minFunc5->derivative(a5);
 	double expected_derivative5 = 1.0;
 	EXPECT_DOUBLE_EQ(minDerivative5->evaluate(), expected_derivative5); // Check derivative at x=-10
 
@@ -1040,6 +1040,7 @@ TEST(FunctionTest, TestSimplifyComplexExpressions) {
     EXPECT_EQ(simplified_f3->to_string(), "sin(0.000000)");
 
     delete f1;
+    delete simplified_f1;
     delete f2;
     delete simplified_f2;
     delete f3;
