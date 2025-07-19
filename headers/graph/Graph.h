@@ -7,6 +7,7 @@
 #include <vector>
 #include <stdexcept>
 #include <queue>
+#include <algorithm>
 
 #include "Politicians.h"
 #include "GraphObjects.h"
