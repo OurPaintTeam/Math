@@ -25,8 +25,8 @@ public:
             m_jac.push_back(std::vector<Function*>());
             for (std::size_t k = 0; k < m_X.size(); k++) {
                 Function* dfdj = m_functions[j]->derivative(m_X[k]);
-                m_jac[j].push_back(dfdj/*->simplify()*/);
-                //delete dfdj;
+                m_jac[j].push_back(dfdj->simplify());
+                delete dfdj;
             }
         }
     }
@@ -37,7 +37,8 @@ public:
                 delete f;
             }
         }
-        delete c_function;
+        // TODO
+        //delete c_function;
     }
 
     inline double getError() const override{
