@@ -215,8 +215,8 @@ ArcCenterOnPerpendicularError::ArcCenterOnPerpendicularError(std::vector<Variabl
     Function* vecX = new Subtraction(x[4], midX);
     Function* vecY = new Subtraction(x[5], midY);
     // Вычисляем вектор от p1 к p2
-    Function* segX = new Subtraction(x[2], x[0]);
-    Function* segY = new Subtraction(x[3], x[1]);
+    Function* segX = new Subtraction(x[2]->clone(), x[0]->clone());
+    Function* segY = new Subtraction(x[3]->clone(), x[1]->clone());
     // Проверяем, что векторы перпендикулярны (скалярное произведение равно 0)
     Function* dotProduct = new Addition(new Multiplication(vecX, segX), new Multiplication(vecY, segY));
     c_f = dotProduct;

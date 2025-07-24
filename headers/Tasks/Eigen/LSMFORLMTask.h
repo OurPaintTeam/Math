@@ -37,8 +37,7 @@ public:
                 delete f;
             }
         }
-        // TODO
-        //delete c_function;
+        delete c_function;
     }
 
     inline double getError() const override{
