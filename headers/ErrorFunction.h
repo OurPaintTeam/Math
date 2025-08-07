@@ -131,4 +131,15 @@ public:
     Function* clone() const override;
 };
 
+class VerticalError : public ErrorFunction {
+public:
+  VerticalError(std::vector<Variable *> x);
+  Function* clone() const override;
+};
+
+class HorizontalError : public ErrorFunction {
+public:
+  HorizontalError(std::vector<Variable *> x);
+  Function* clone() const override;
+};
 #endif // ! MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_

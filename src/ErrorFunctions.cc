@@ -229,3 +229,38 @@ Function* ArcCenterOnPerpendicularError::clone() const {
     }
     return new ArcCenterOnPerpendicularError(m_X_clone);
 }
+// ------------------------- VERTICAL ERROR IMPLEMENTATION -------------------------
+VerticalError::VerticalError(std::vector<Variable*> x) : ErrorFunction(x) {
+  if (x.size() != 4) {
+    throw std::invalid_argument("VerticalError: wrong number of x");
+  }
+  // Проверка: x1 == x2
+  Function* F = new Subtraction(x[0], x[2]);  // x1 - x2
+  c_f = F;
+}
+
+Function* VerticalError::clone() const {
+  std::vector<Variable*> m_X_clone;
+  for (auto& v : m_X) {
+    m_X_clone.push_back(v->clone());
+  }
+  return new VerticalError(m_X_clone);
+}
+
+// ------------------------- GORIZONTAL ERROR IMPLEMENTATION -------------------------
+HorizontalError::HorizontalError(std::vector<Variable*> x) : ErrorFunction(x) {
+  if (x.size() != 4) {
+    throw std::invalid_argument("GorizontalError: wrong number of x");
+  }
+  // Проверка: y1 == y2
+  Function* F = new Subtraction(x[1], x[3]);  // y1 - y2
+  c_f = F;
+}
+
+Function* HorizontalError::clone() const {
+  std::vector<Variable*> m_X_clone;
+  for (auto& v : m_X) {
+    m_X_clone.push_back(v->clone());
+  }
+  return new HorizontalError(m_X_clone);
+}

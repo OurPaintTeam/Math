@@ -137,3 +137,31 @@ TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-2);
     delete errorFunc;
 }
+//------------------------- VERTICAL ERROR TEST -------------------------
+TEST(VerticalErrorTest, CorrectVerticalErrorValue) {
+  double x1[] = {2.0}; double y1[] = {1.0};
+  double x2[] = {2.0}; double y2[] = {5.0};
+
+  std::vector<Variable*> variables = {
+    new Variable(x1), new Variable(y1),
+    new Variable(x2), new Variable(y2)
+};
+
+  VerticalError* errorFunc = new VerticalError(variables);
+  EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-6);
+  delete errorFunc;
+}
+//------------------------- HORIZONTAL ERROR TEST -------------------------
+TEST(GorizontalErrorTest, CorrectGorizontalErrorValue) {
+  double x1[] = {1.0}; double y1[] = {3.0};
+  double x2[] = {5.0}; double y2[] = {3.0};
+
+  std::vector<Variable*> variables = {
+    new Variable(x1), new Variable(y1),
+    new Variable(x2), new Variable(y2)
+};
+
+  HorizontalError* errorFunc = new HorizontalError(variables);
+  EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-6);
+  delete errorFunc;
+}
