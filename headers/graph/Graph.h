@@ -292,7 +292,6 @@ public:
 
         std::unordered_set<VertexType> vertexSet(vertices.begin(), vertices.end());
 
-
         for (const auto& vertex: vertices) {
             auto it = _adjacencyList.find(vertex);
             if (it != _adjacencyList.end()) {
@@ -302,7 +301,7 @@ public:
                         if constexpr (DirectedPolicyType::isDirected) {
                             sub.addEdge(edge.from, edge.to, edge.weight);
                         } else {
-                            if (edge.from < edge.to) {
+                            if (edge.from <= edge.to) {
                                 sub.addEdge(edge.from, edge.to, edge.weight);
                             }
                         }
@@ -310,6 +309,7 @@ public:
                 }
             }
         }
+
         return sub;
     }
 
@@ -443,7 +443,9 @@ bool Graph<VertexType, WeightType, DirectedPolicyType, WeightedPolicyType>::addE
 
     _adjacencyList[from].emplace_back(from, to, weight);
     if constexpr (DirectedPolicyType::isDirected == false) {
-        _adjacencyList[to].emplace_back(to, from, weight);
+        if (from != to) {
+            _adjacencyList[to].emplace_back(to, from, weight);
+        }
     }
     return true;
 }
