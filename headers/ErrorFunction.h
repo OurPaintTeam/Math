@@ -130,16 +130,17 @@ public:
     ArcCenterOnPerpendicularError(std::vector<Variable *> x);
     Function* clone() const override;
 };
-
 class VerticalError : public ErrorFunction {
 public:
   VerticalError(std::vector<Variable *> x);
   Function* clone() const override;
+  ~VerticalError() override;
 };
 
 class HorizontalError : public ErrorFunction {
 public:
   HorizontalError(std::vector<Variable *> x);
   Function* clone() const override;
+  ~HorizontalError() override;
 };
 #endif // ! MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_

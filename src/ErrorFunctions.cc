@@ -228,7 +228,8 @@ Function* ArcCenterOnPerpendicularError::clone() const {
         m_X_clone.push_back(v->clone());
     }
     return new ArcCenterOnPerpendicularError(m_X_clone);
-}
+} 
+
 // ------------------------- VERTICAL ERROR IMPLEMENTATION -------------------------
 VerticalError::VerticalError(std::vector<Variable*> x) : ErrorFunction(x) {
   if (x.size() != 4) {
@@ -246,7 +247,13 @@ Function* VerticalError::clone() const {
   }
   return new VerticalError(m_X_clone);
 }
-
+VerticalError::~VerticalError() {
+  delete c_f;
+  delete m_X[1];
+  delete m_X[3];
+  m_X[1] = nullptr;
+  m_X[3] = nullptr;
+}
 // ------------------------- GORIZONTAL ERROR IMPLEMENTATION -------------------------
 HorizontalError::HorizontalError(std::vector<Variable*> x) : ErrorFunction(x) {
   if (x.size() != 4) {
@@ -263,4 +270,11 @@ Function* HorizontalError::clone() const {
     m_X_clone.push_back(v->clone());
   }
   return new HorizontalError(m_X_clone);
+}
+HorizontalError::~HorizontalError() {
+  delete c_f;
+  delete m_X[0];
+  delete m_X[2];
+  m_X[0] = nullptr;
+  m_X[2] = nullptr;
 }
