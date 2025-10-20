@@ -235,8 +235,7 @@ VerticalError::VerticalError(std::vector<Variable*> x) : ErrorFunction(x) {
   if (x.size() != 4) {
     throw std::invalid_argument("VerticalError: wrong number of x");
   }
-  // Проверка: x1 == x2
-  Function* F = new Subtraction(x[0], x[2]);  // x1 - x2
+  Function* F = new Subtraction(x[0], x[2]);
   c_f = F;
 }
 
@@ -247,17 +246,14 @@ Function* VerticalError::clone() const {
   }
   return new VerticalError(m_X_clone);
 }
-VerticalError::~VerticalError() {
-  delete c_f;
-  delete m_X[1];
-  delete m_X[3];
-  m_X[1] = nullptr;
-  m_X[3] = nullptr;
+VerticalError::~VerticalError(){
+    delete m_X[1];
+    delete m_X[3];
 }
 // ------------------------- GORIZONTAL ERROR IMPLEMENTATION -------------------------
 HorizontalError::HorizontalError(std::vector<Variable*> x) : ErrorFunction(x) {
   if (x.size() != 4) {
-    throw std::invalid_argument("GorizontalError: wrong number of x");
+    throw std::invalid_argument("HorizontalError: wrong number of x");
   }
   // Проверка: y1 == y2
   Function* F = new Subtraction(x[1], x[3]);  // y1 - y2
@@ -271,10 +267,7 @@ Function* HorizontalError::clone() const {
   }
   return new HorizontalError(m_X_clone);
 }
-HorizontalError::~HorizontalError() {
-  delete c_f;
-  delete m_X[0];
-  delete m_X[2];
-  m_X[0] = nullptr;
-  m_X[2] = nullptr;
+HorizontalError::~HorizontalError(){
+    delete m_X[0];
+    delete m_X[2];
 }

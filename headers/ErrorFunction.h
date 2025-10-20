@@ -28,9 +28,9 @@ protected:
 public:
     ErrorFunction(std::vector<Variable *> x, double error = 0) : c_f(nullptr), m_X(x), v_error(error) {}
 
-	~ErrorFunction() {
+    ~ErrorFunction() {
         delete c_f;
-	}
+    }
 
     std::vector<Variable*> getVariables() {
         return m_X;
@@ -134,13 +134,13 @@ class VerticalError : public ErrorFunction {
 public:
   VerticalError(std::vector<Variable *> x);
   Function* clone() const override;
-  ~VerticalError() override;
+  ~VerticalError();
 };
 
 class HorizontalError : public ErrorFunction {
 public:
   HorizontalError(std::vector<Variable *> x);
   Function* clone() const override;
-  ~HorizontalError() override;
+  ~HorizontalError();
 };
 #endif // ! MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_
