@@ -17,15 +17,11 @@ FetchContent_Declare(
         GIT_REPOSITORY https://gitlab.com/libeigen/eigen.git
         GIT_TAG         3.4.0
 )
-
-
+FetchContent_MakeAvailable(eigen)
+include_directories(${eigen_SOURCE_DIR})
 # Отключаем тестирование и сборку примеров Eigen (меньше будет warnings)
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-
-FetchContent_MakeAvailable(eigen)
-
-include_directories(${eigen_SOURCE_DIR})
 
 include_directories(headers)
 include_directories(headers/optimizers)
@@ -50,72 +46,7 @@ add_library(Math
         src/NewtonGaussSolver.cc
         )
 
-if (NOT TARGET gtest)
-    FetchContent_Declare(
-            googletest
-            GIT_REPOSITORY https://github.com/google/googletest.git
-            GIT_TAG 03597a01ee50ed33e9dfd640b249b4be3799d395
-    )
-    set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
-    FetchContent_MakeAvailable(googletest)
-endif()
-
-# Сборка тестов
-enable_testing()
-
-
-# Added executable tests files
-add_executable(MatrixTest tests/TestsMatrix.cc)
-target_link_libraries(MatrixTest Math gtest gtest_main)
-
-add_executable(QRTest tests/TestsQR.cc)
-target_link_libraries(QRTest Math gtest gtest_main)
-
-add_executable(QRPerformanceTest tests/QRPerformanceTests.cc)
-target_link_libraries(QRPerformanceTest Math gtest gtest_main)
-
-add_executable(FunctionTest tests/FunctionTest.cc)
-target_link_libraries(FunctionTest Math gtest gtest_main)
-
-add_executable(OptimizationTaskTest tests/TaskTest.cc)
-target_link_libraries(OptimizationTaskTest Math gtest gtest_main)
-
-add_executable(GradientOptimizerTest tests/GradientOptimizerTest.cc)
-target_link_libraries(GradientOptimizerTest Math gtest gtest_main)
-
-add_executable(NewtonOptimizerTest tests/NewtonGaussSolverTests.cc)
-target_link_libraries(NewtonOptimizerTest Math gtest gtest_main)
-
-add_executable(NewtonGaussSolverTests tests/NewtonGaussSolverTests.cc)
-target_link_libraries(NewtonGaussSolverTests Math gtest gtest_main)
-
-add_executable(LSMTaskTest tests/LSMTaskTest.cc)
-target_link_libraries(LSMTaskTest Math gtest gtest_main)
-
-add_executable(ErrorFunctionTest tests/ErrorFunctionsTests.cc)
-target_link_libraries(ErrorFunctionTest Math gtest gtest_main)
-
-add_executable(LMTest tests/LMTest.cc)
-target_link_libraries(LMTest Math gtest gtest_main)
-
-add_executable(LMTestWithOurMatrix tests/OurLMTest.cc)
-target_link_libraries(LMTestWithOurMatrix Math gtest gtest_main)
-
-add_executable(SimpleGraph tests/graphgtests.cc)
-target_link_libraries(SimpleGraph gtest gtest_main)
-
-# Run tests
-add_test(NAME FunctionTests COMMAND FunctionTest)
-add_test(NAME OptimizationTaskTest COMMAND OptimizationTaskTest)
-add_test(NAME GradientOptimizerTests COMMAND GradientOptimizerTest)
-add_test(NAME NewtonOptimizerTests COMMAND NewtonOptimizerTest)
-add_test(NAME NewtonGaussSolverTests COMMAND NewtonGaussSolverTests)
-add_test(NAME MatrixTest COMMAND MatrixTest)
-add_test(NAME QRTest COMMAND QRTest)
-add_test(NAME ErrorFunctionTest COMMAND ErrorFunctionTest)
-add_test(NAME LMTest COMMAND LMTest)
-add_test(NAME LMTestWithOurMatrix COMMAND LMTestWithOurMatrix)
-add_test(NAME SimpleGraph COMMAND SimpleGraph)
+add_subdirectory(tests)
 
 set(TYPE_OF_COMPILING BOOL 1)
 if (TYPE_OF_COMPILING)
