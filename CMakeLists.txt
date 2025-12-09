@@ -10,7 +10,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 include(FetchContent)
 
 set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
-set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+set(EIGEN_LEAVE_TEST_IN_ALL OFF CACHE BOOL "" FORCE)
 
 FetchContent_Declare(
         eigen
@@ -23,19 +23,6 @@ include_directories(${eigen_SOURCE_DIR})
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-include_directories(headers)
-include_directories(headers/optimizers)
-include_directories(headers/optimizers/MatrixOptimizers)
-include_directories(headers/optimizers/EigenOptimizers)
-include_directories(headers/optimizers)
-include_directories(headers/decomposition)
-include_directories(headers/graph)
-include_directories(headers/Tasks/Matrix)
-include_directories(headers/Tasks/Eigen)
-include_directories(headers/Tasks)
-
-
-# Сборка основной библиотеки
 add_library(Math
         src/LevenbergMarquardtSolver.cc
         src/QR.cc
@@ -44,7 +31,23 @@ add_library(Math
         src/GradientOptimizer.cc
         src/NewtonOptimizer.cc
         src/NewtonGaussSolver.cc
-        )
+)
+target_include_directories(Math
+    PUBLIC
+        headers
+        headers/optimizers
+        headers/optimizers/MatrixOptimizers
+        headers/optimizers/EigenOptimizers
+        headers/decomposition
+        headers/graph
+        headers/Tasks
+        headers/Tasks/Matrix
+        headers/Tasks/Eigen
+)
+
+target_link_libraries(Math
+    PUBLIC Eigen3::Eigen
+)
 
 add_subdirectory(tests)
 
