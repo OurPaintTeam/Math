@@ -21,6 +21,8 @@ TEST(StochasticGradientOptimizerTest, SingleVariableQuadratic) {
 
     EXPECT_NEAR(result[0], 3.0, 0.5);
     EXPECT_LT(error, 1.0);
+
+    delete f;
 }
 
 TEST(StochasticGradientOptimizerTest, TwoVariableQuadratic) {
@@ -45,6 +47,9 @@ TEST(StochasticGradientOptimizerTest, TwoVariableQuadratic) {
     EXPECT_NEAR(result[0], 2.0, 0.5);
     EXPECT_NEAR(result[1], -5.0, 0.5);
     EXPECT_LT(error, 1.0);
+
+    delete f1;
+    delete f2;
 }
 
 TEST(StochasticGradientOptimizerTest, AlreadyOptimal) {
@@ -63,4 +68,6 @@ TEST(StochasticGradientOptimizerTest, AlreadyOptimal) {
 
     EXPECT_TRUE(optimizer.isConverged());
     EXPECT_NEAR(optimizer.getCurrentError(), 0.0, 1e-6);
+
+    delete f;
 }
