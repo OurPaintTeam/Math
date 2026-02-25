@@ -21,6 +21,8 @@ TEST(AdamOptimizerTest, SingleVariableQuadratic) {
 
     EXPECT_NEAR(result[0], 3.0, 1e-1);
     EXPECT_NEAR(error, 0.0, 0.1);
+
+    delete f;
 }
 
 TEST(AdamOptimizerTest, TwoVariableQuadratic) {
@@ -43,6 +45,9 @@ TEST(AdamOptimizerTest, TwoVariableQuadratic) {
 
     EXPECT_NEAR(result[0], 2.0, 1e-1);
     EXPECT_NEAR(result[1], -5.0, 1e-1);
+
+    delete f1;
+    delete f2;
 }
 
 TEST(AdamOptimizerTest, AlreadyOptimal) {
@@ -61,6 +66,8 @@ TEST(AdamOptimizerTest, AlreadyOptimal) {
 
     EXPECT_TRUE(optimizer.isConverged());
     EXPECT_NEAR(optimizer.getCurrentError(), 0.0, 1e-6);
+
+    delete f;
 }
 
 TEST(AdamOptimizerTest, Himmelblau) {
