@@ -32,6 +32,7 @@ add_library(Math
         src/NewtonOptimizer.cc
         src/NewtonGaussSolver.cc
         src/StochasticGradientOptimizer.cc
+        src/AdamOptimizer.cc
 )
 target_include_directories(Math
     PUBLIC
