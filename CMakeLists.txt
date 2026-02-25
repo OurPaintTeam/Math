@@ -31,6 +31,7 @@ add_library(Math
         src/GradientOptimizer.cc
         src/NewtonOptimizer.cc
         src/NewtonGaussSolver.cc
+        src/StochasticGradientOptimizer.cc
 )
 target_include_directories(Math
     PUBLIC
