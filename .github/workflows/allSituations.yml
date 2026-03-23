@@ -9,7 +9,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Configure Project
-        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DTYPE_OF_COMPILING=0 -DTYPE_OF_OPTIMIZATION=0
+        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DTYPE_OF_COMPILING=0 -DTYPE_OF_OPTIMIZATION=0 -DMEMCHECK_TIMEOUT_DEFAULT=1800
       - name: Build Project
         run: cmake --build build
       - name: Clang-Tidy
