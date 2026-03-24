@@ -14,6 +14,7 @@ endif()
 
 option(ENABLE_MEMCHECK "Configure CTest memcheck with Valgrind" ON)
 set(TEST_TIMEOUT_DEFAULT 60 CACHE STRING "Per-test timeout in seconds")
+set(MEMCHECK_TIMEOUT_DEFAULT 900 CACHE STRING "Per-memcheck-test timeout in seconds")
 
 # Settings Valgrind for CTest
 if (ENABLE_MEMCHECK)
@@ -45,7 +46,7 @@ function(add_math_test name src)
                 COMMAND ${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS} $<TARGET_FILE:${name}>)
         set_tests_properties(${memcheck_name} PROPERTIES
                 LABELS "unit;memcheck"
-                TIMEOUT ${TEST_TIMEOUT_DEFAULT}
+                TIMEOUT ${MEMCHECK_TIMEOUT_DEFAULT}
         )
     endif()
 endfunction()
