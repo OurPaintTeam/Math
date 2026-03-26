@@ -26,6 +26,7 @@ set(EIGEN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 add_library(Math
         src/LevenbergMarquardtSolver.cc
         src/QR.cc
+        src/SparseQR.cc
         src/Function.cc
         src/ErrorFunctions.cc
         src/GradientOptimizer.cc
