@@ -15,24 +15,34 @@ SparseQR::SparseQR(const SparseMatrix<>& A) {
     _A = A;
 }
 
-SparseQR::SparseQR(const SparseQR& other) : _A(other._A), _Q(other._Q), _R(other._R) {}
+SparseQR::SparseQR(const SparseQR& other)
+    : _A(other._A), _R(other._R), _ref_ptr(other._ref_ptr), _ref_idx(other._ref_idx),
+      _ref_val(other._ref_val), _ref_beta(other._ref_beta) {}
 
 SparseQR::SparseQR(SparseQR&& other) noexcept
-    : _A(std::move(other._A)), _Q(std::move(other._Q)), _R(std::move(other._R)) {}
+    : _A(std::move(other._A)), _R(std::move(other._R)), _ref_ptr(std::move(other._ref_ptr)),
+      _ref_idx(std::move(other._ref_idx)), _ref_val(std::move(other._ref_val)),
+      _ref_beta(std::move(other._ref_beta)) {}
 
 SparseQR& SparseQR::operator=(const SparseQR& other) {
     SparseQR temp(other);
     std::swap(_A, temp._A);
-    std::swap(_Q, temp._Q);
     std::swap(_R, temp._R);
+    std::swap(_ref_ptr, temp._ref_ptr);
+    std::swap(_ref_idx, temp._ref_idx);
+    std::swap(_ref_val, temp._ref_val);
+    std::swap(_ref_beta, temp._ref_beta);
     return *this;
 }
 
 SparseQR& SparseQR::operator=(SparseQR&& other) noexcept {
     SparseQR temp(std::move(other));
     std::swap(_A, temp._A);
-    std::swap(_Q, temp._Q);
     std::swap(_R, temp._R);
+    std::swap(_ref_ptr, temp._ref_ptr);
+    std::swap(_ref_idx, temp._ref_idx);
+    std::swap(_ref_val, temp._ref_val);
+    std::swap(_ref_beta, temp._ref_beta);
     return *this;
 }
 
@@ -55,13 +65,13 @@ void SparseQR::qr() {
             data[it.col() * m + i] = it.value();
         }
     }
-    std::vector<size_t> ref_ptr(min_mn + 1, 0);
-    std::vector<size_t> ref_idx;
-    std::vector<double> ref_val;
-    std::vector<double> ref_beta(min_mn, 0.0);
+    _ref_ptr.assign(min_mn + 1, 0);
+    _ref_idx.clear();
+    _ref_val.clear();
+    _ref_beta.assign(min_mn, 0.0);
 
-    ref_idx.reserve(m * 2);
-    ref_val.reserve(m * 2);
+    _ref_idx.reserve(m * 2);
+    _ref_val.reserve(m * 2);
     for (size_t k = 0; k < min_mn; ++k) {
         double* __restrict__ ck = data.data() + k * m;
 
@@ -69,7 +79,7 @@ void SparseQR::qr() {
         for (size_t i = k; i < m; ++i) sigma += ck[i] * ck[i];
 
         if (sigma < 1e-24) {
-            ref_ptr[k + 1] = ref_ptr[k];
+            _ref_ptr[k + 1] = _ref_ptr[k];
             continue;
         }
 
@@ -80,21 +90,21 @@ void SparseQR::qr() {
 
         double vtv = sigma + ck[k] * ck[k] - old_lead * old_lead;
         double beta = 2.0 / vtv;
-        ref_beta[k] = beta;
+        _ref_beta[k] = beta;
 
-        const size_t rstart = ref_idx.size();
+        const size_t rstart = _ref_idx.size();
         for (size_t i = k; i < m; ++i) {
             if (ck[i] != 0.0) {
-                ref_idx.push_back(i);
-                ref_val.push_back(ck[i]);
+                _ref_idx.push_back(i);
+                _ref_val.push_back(ck[i]);
             }
         }
-        ref_ptr[k + 1] = ref_idx.size();
-        const size_t rend = ref_ptr[k + 1];
+        _ref_ptr[k + 1] = _ref_idx.size();
+        const size_t rend = _ref_ptr[k + 1];
         const size_t rlen = rend - rstart;
 
-        const size_t* __restrict__ ridx = ref_idx.data() + rstart;
-        const double* __restrict__ rval = ref_val.data() + rstart;
+        const size_t* __restrict__ ridx = _ref_idx.data() + rstart;
+        const double* __restrict__ rval = _ref_val.data() + rstart;
 
         ck[k] = alpha;
         std::memset(ck + k + 1, 0, (m - k - 1) * sizeof(double));
@@ -124,49 +134,10 @@ void SparseQR::qr() {
             _R(i, j) = col[i];
         }
     }
-
-    std::vector<double> q(m * min_mn, 0.0);
-    for (size_t i = 0; i < min_mn; ++i) q[i * m + i] = 1.0;
-
-    for (size_t kk = min_mn; kk > 0; --kk) {
-        const size_t k = kk - 1;
-        if (ref_beta[k] == 0.0) continue;
-
-        const double beta = ref_beta[k];
-        const size_t rstart = ref_ptr[k];
-        const size_t rend = ref_ptr[k + 1];
-        const size_t rlen = rend - rstart;
-        const size_t* __restrict__ ridx = ref_idx.data() + rstart;
-        const double* __restrict__ rval = ref_val.data() + rstart;
-
-        for (size_t j = k; j < min_mn; ++j) {
-            double* __restrict__ qcol = q.data() + j * m;
-
-            double dot = 0.0;
-            for (size_t p = 0; p < rlen; ++p) {
-                dot += rval[p] * qcol[ridx[p]];
-            }
-
-            if (dot == 0.0) continue;
-
-            const double s = beta * dot;
-            for (size_t p = 0; p < rlen; ++p) {
-                qcol[ridx[p]] -= s * rval[p];
-            }
-        }
-    }
-
-    _Q = Matrix<>(m, min_mn);
-    for (size_t j = 0; j < min_mn; ++j) {
-        const double* qcol = q.data() + j * m;
-        for (size_t i = 0; i < m; ++i) {
-            _Q(i, j) = qcol[i];
-        }
-    }
 }
 
 Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
-    if (_Q.rows_size() == 0 || _R.rows_size() == 0) {
+    if (_R.rows_size() == 0 || _R.cols_size() == 0) {
         throw std::runtime_error("Call qr() before solve().");
     }
     if (b.rows_size() != _A.rows_size()) {
@@ -177,7 +148,7 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
     const size_t k = std::min(m, n);
     const size_t nrhs = b.cols_size();
 
-    Matrix<> y = _Q.transpose() * b;
+    Matrix<> y = applyQt(b);
     Matrix<> x(n, nrhs);
 
     if (n <= k) {
@@ -208,7 +179,7 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
 }
 
 Matrix<> SparseQR::pseudoInverse(double damping) const {
-    if (_Q.rows_size() == 0 || _R.rows_size() == 0) {
+    if (_R.rows_size() == 0 || _R.cols_size() == 0) {
         throw std::runtime_error("Call qr() before pseudoInverse().");
     }
     if (damping < 0.0) {
@@ -218,7 +189,7 @@ Matrix<> SparseQR::pseudoInverse(double damping) const {
     Matrix<> RtR = Rt * _R;
     Matrix<> reg = Matrix<>::identity(RtR.rows_size(), RtR.cols_size()) * damping;
     Matrix<> inv = (RtR + reg).inverse();
-    return inv * Rt * _Q.transpose();
+    return inv * Rt * Q().transpose();
 }
 
 size_t SparseQR::rank(double tol) const {
@@ -251,8 +222,74 @@ SparseMatrix<> SparseQR::A() const {
     return _A;
 }
 
+Matrix<> SparseQR::applyQ(const Matrix<>& B) const {
+    if (B.rows_size() != _A.rows_size()) {
+        throw std::invalid_argument("applyQ: matrix rows must match A rows.");
+    }
+    Matrix<> result(B);
+    for (size_t kk = _ref_beta.size(); kk > 0; --kk) {
+        const size_t k = kk - 1;
+        const double beta = _ref_beta[k];
+        if (beta == 0.0) continue;
+        const size_t rstart = _ref_ptr[k];
+        const size_t rend = _ref_ptr[k + 1];
+        const size_t* ridx = _ref_idx.data() + rstart;
+        const double* rval = _ref_val.data() + rstart;
+        const size_t rlen = rend - rstart;
+        for (size_t j = 0; j < result.cols_size(); ++j) {
+            double dot = 0.0;
+            for (size_t p = 0; p < rlen; ++p) {
+                dot += rval[p] * result(ridx[p], j);
+            }
+            if (dot == 0.0) continue;
+            const double s = beta * dot;
+            for (size_t p = 0; p < rlen; ++p) {
+                result(ridx[p], j) -= s * rval[p];
+            }
+        }
+    }
+    return result;
+}
+
+Matrix<> SparseQR::applyQt(const Matrix<>& B) const {
+    if (B.rows_size() != _A.rows_size()) {
+        throw std::invalid_argument("applyQt: matrix rows must match A rows.");
+    }
+    Matrix<> result(B);
+    for (size_t k = 0; k < _ref_beta.size(); ++k) {
+        const double beta = _ref_beta[k];
+        if (beta == 0.0) continue;
+        const size_t rstart = _ref_ptr[k];
+        const size_t rend = _ref_ptr[k + 1];
+        const size_t* ridx = _ref_idx.data() + rstart;
+        const double* rval = _ref_val.data() + rstart;
+        const size_t rlen = rend - rstart;
+        for (size_t j = 0; j < result.cols_size(); ++j) {
+            double dot = 0.0;
+            for (size_t p = 0; p < rlen; ++p) {
+                dot += rval[p] * result(ridx[p], j);
+            }
+            if (dot == 0.0) continue;
+            const double s = beta * dot;
+            for (size_t p = 0; p < rlen; ++p) {
+                result(ridx[p], j) -= s * rval[p];
+            }
+        }
+    }
+    return result;
+}
+
 Matrix<> SparseQR::Q() const {
-    return _Q;
+    if (_R.rows_size() == 0 || _R.cols_size() == 0) {
+        return Matrix<>();
+    }
+    const size_t m = _A.rows_size();
+    const size_t k = std::min(_A.rows_size(), _A.cols_size());
+    Matrix<> identity(m, k);
+    for (size_t i = 0; i < k; ++i) {
+        identity(i, i) = 1.0;
+    }
+    return applyQ(identity);
 }
 
 Matrix<> SparseQR::R() const {

@@ -3,12 +3,19 @@
 
 #include "Matrix.h"
 #include "SparseMatrix.h"
+#include <vector>
 
 class SparseQR {
 private:
     SparseMatrix<> _A;
-    Matrix<> _Q;
     Matrix<> _R;
+    std::vector<size_t> _ref_ptr;
+    std::vector<size_t> _ref_idx;
+    std::vector<double> _ref_val;
+    std::vector<double> _ref_beta;
+
+    Matrix<> applyQ(const Matrix<>& B) const;
+    Matrix<> applyQt(const Matrix<>& B) const;
 
 public:
     explicit SparseQR(const SparseMatrix<>& A);
