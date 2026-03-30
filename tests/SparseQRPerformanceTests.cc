@@ -230,6 +230,38 @@ BenchResult RunCase(size_t rows, size_t cols, double density, int repeats, uint3
     return {denseMs, sparseMs, eigenMs};
 }
 
+void RunSolveCase(size_t rows, size_t cols, size_t rhsCols, double density, int repeats,
+                  uint32_t seedA, uint32_t seedB, double residualFactor)
+{
+    Matrix<double> denseA = BuildSparseLikeDense(rows, cols, density, seedA);
+    SparseMatrix<double> sparseA(denseA);
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparseA);
+    Matrix<double> b = BuildDenseRhs(rows, rhsCols, seedB);
+
+    Matrix<double> xSparse;
+    Matrix<double> xEigen;
+
+    const double sparseSolveMs = TimeSparseSolveMs(sparseA, b, repeats, xSparse);
+    const double eigenSolveMs = TimeEigenSparseSolveMs(eigenA, b, repeats, xEigen);
+
+    const double sparseResidual = ResidualNorm(denseA, xSparse, b);
+    const double eigenResidual = ResidualNorm(denseA, xEigen, b);
+
+    EXPECT_GT(sparseSolveMs, 0.0);
+    EXPECT_GT(eigenSolveMs, 0.0);
+    EXPECT_TRUE(std::isfinite(sparseResidual));
+    EXPECT_TRUE(std::isfinite(eigenResidual));
+    EXPECT_LE(sparseResidual, eigenResidual * residualFactor + 1e-6);
+
+    std::cout << "solve_case=" << rows << "x" << cols
+              << " rhs_cols=" << rhsCols
+              << " sparse_solve_ms=" << sparseSolveMs
+              << " eigen_solve_ms=" << eigenSolveMs
+              << " sparse_residual=" << sparseResidual
+              << " eigen_residual=" << eigenResidual
+              << std::endl;
+}
+
 } // namespace
 
 TEST(SparseQRPerformanceTests, Small_80x60) {
@@ -261,77 +293,25 @@ TEST(SparseQRPerformanceTests, XLarge_1000x700) {
 }
 
 TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_300x200) {
-    const size_t rows = 300;
-    const size_t cols = 200;
-    const size_t rhsCols = 4;
-    const double density = 0.03;
-    const int repeats = 3;
-    const uint32_t seedA = 2026u;
-    const uint32_t seedB = 2027u;
-
-    Matrix<double> denseA = BuildSparseLikeDense(rows, cols, density, seedA);
-    SparseMatrix<double> sparseA(denseA);
-    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparseA);
-    Matrix<double> b = BuildDenseRhs(rows, rhsCols, seedB);
-
-    Matrix<double> xSparse;
-    Matrix<double> xEigen;
-
-    const double sparseSolveMs = TimeSparseSolveMs(sparseA, b, repeats, xSparse);
-    const double eigenSolveMs = TimeEigenSparseSolveMs(eigenA, b, repeats, xEigen);
-
-    const double sparseResidual = ResidualNorm(denseA, xSparse, b);
-    const double eigenResidual = ResidualNorm(denseA, xEigen, b);
-
-    EXPECT_GT(sparseSolveMs, 0.0);
-    EXPECT_GT(eigenSolveMs, 0.0);
-    EXPECT_TRUE(std::isfinite(sparseResidual));
-    EXPECT_TRUE(std::isfinite(eigenResidual));
-    EXPECT_LE(sparseResidual, eigenResidual * 100.0 + 1e-6);
-
-    std::cout << "solve_case=300x200"
-              << " rhs_cols=" << rhsCols
-              << " sparse_solve_ms=" << sparseSolveMs
-              << " eigen_solve_ms=" << eigenSolveMs
-              << " sparse_residual=" << sparseResidual
-              << " eigen_residual=" << eigenResidual
-              << std::endl;
+    RunSolveCase(300, 200, 4, 0.03, 3, 2026u, 2027u, 100.0);
 }
 
 TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_500x350) {
-    const size_t rows = 500;
-    const size_t cols = 350;
-    const size_t rhsCols = 3;
-    const double density = 0.02;
-    const int repeats = 2;
-    const uint32_t seedA = 99u;
-    const uint32_t seedB = 100u;
+    RunSolveCase(500, 350, 3, 0.02, 2, 99u, 100u, 150.0);
+}
 
-    Matrix<double> denseA = BuildSparseLikeDense(rows, cols, density, seedA);
-    SparseMatrix<double> sparseA(denseA);
-    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparseA);
-    Matrix<double> b = BuildDenseRhs(rows, rhsCols, seedB);
+TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_700x500) {
+    RunSolveCase(700, 500, 3, 0.015, 1, 555u, 556u, 150.0);
+}
 
-    Matrix<double> xSparse;
-    Matrix<double> xEigen;
+TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_1000x700) {
+    RunSolveCase(1000, 700, 2, 0.01, 1, 12345u, 12346u, 200.0);
+}
 
-    const double sparseSolveMs = TimeSparseSolveMs(sparseA, b, repeats, xSparse);
-    const double eigenSolveMs = TimeEigenSparseSolveMs(eigenA, b, repeats, xEigen);
+TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_2000x1400) {
+    RunSolveCase(2000, 1400, 2, 0.005, 1, 22222u, 22223u, 250.0);
+}
 
-    const double sparseResidual = ResidualNorm(denseA, xSparse, b);
-    const double eigenResidual = ResidualNorm(denseA, xEigen, b);
-
-    EXPECT_GT(sparseSolveMs, 0.0);
-    EXPECT_GT(eigenSolveMs, 0.0);
-    EXPECT_TRUE(std::isfinite(sparseResidual));
-    EXPECT_TRUE(std::isfinite(eigenResidual));
-    EXPECT_LE(sparseResidual, eigenResidual * 150.0 + 1e-6);
-
-    std::cout << "solve_case=500x350"
-              << " rhs_cols=" << rhsCols
-              << " sparse_solve_ms=" << sparseSolveMs
-              << " eigen_solve_ms=" << eigenSolveMs
-              << " sparse_residual=" << sparseResidual
-              << " eigen_residual=" << eigenResidual
-              << std::endl;
+TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_3000x2000) {
+    RunSolveCase(3000, 2000, 1, 0.003, 1, 33333u, 33334u, 300.0);
 }
