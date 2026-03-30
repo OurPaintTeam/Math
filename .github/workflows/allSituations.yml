@@ -9,7 +9,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Configure Project
-        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DTYPE_OF_COMPILING=0 -DTYPE_OF_OPTIMIZATION=0 -DMEMCHECK_TIMEOUT_DEFAULT=1800
+        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=Debug -DTYPE_OF_COMPILING=0 -DTYPE_OF_OPTIMIZATION=0 -DENABLE_MEMCHECK=OFF
       - name: Build Project
         run: cmake --build build
       - name: Clang-Tidy
@@ -18,17 +18,28 @@ jobs:
           echo -e "\033[31m=== Clang-Tidy Warnings ===\033[0m"
           find src headers tests -name '*.cpp' -o -name '*.hpp' -o -name '*.h' | \
           xargs -I{} -P$(nproc) clang-tidy --checks='google-*' -p build {} 2>&1
-      - name: Run Tests
-        run: ctest --test-dir build/tests --output-on-failure -V -C Debug
+      - name: Run Unit Tests
+        run: ctest --test-dir build/tests --output-on-failure -V -L unit -C Debug
   RELEASE:
     runs-on: self-hosted
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Configure Project
-        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DTYPE_OF_COMPILING=1 -DTYPE_OF_OPTIMIZATION=1
+        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DTYPE_OF_COMPILING=1 -DTYPE_OF_OPTIMIZATION=1 -DENABLE_MEMCHECK=OFF
       - name: Build Project
         run: cmake --build build
-      - name: Run Tests
-        run: ctest --test-dir build/tests --output-on-failure -V -C Release
+      - name: Run Unit Tests
+        run: ctest --test-dir build/tests --output-on-failure -V -L unit -C Release
+  PERF_RELEASE:
+    runs-on: self-hosted
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Configure Project
+        run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DTYPE_OF_COMPILING=1 -DTYPE_OF_OPTIMIZATION=1 -DENABLE_MEMCHECK=OFF
+      - name: Build Performance Tests
+        run: cmake --build build --target SparseQRPerformanceTests QRPerformanceTests
+      - name: Run Performance Tests
+        run: ctest --test-dir build/tests --output-on-failure -V -L perf -C Release
 

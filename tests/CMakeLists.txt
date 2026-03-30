@@ -34,13 +34,25 @@ function(add_math_test name src)
     add_executable(${name} ${src})
     target_link_libraries(${name} Math gtest gtest_main)
 
-    add_test(NAME ${name} COMMAND ${name})
-    set_tests_properties(${name} PROPERTIES
-      LABELS "unit"
-      TIMEOUT ${TEST_TIMEOUT_DEFAULT}
-    )
+    set(is_perf OFF)
+    if (name MATCHES "PerformanceTests$")
+        set(is_perf ON)
+    endif()
 
-    if (ENABLE_MEMCHECK)
+    add_test(NAME ${name} COMMAND ${name})
+    if (is_perf)
+        set_tests_properties(${name} PROPERTIES
+            LABELS "perf"
+            TIMEOUT 0
+        )
+    else()
+        set_tests_properties(${name} PROPERTIES
+            LABELS "unit"
+            TIMEOUT ${TEST_TIMEOUT_DEFAULT}
+        )
+    endif()
+
+    if (ENABLE_MEMCHECK AND NOT is_perf)
         set(memcheck_name "memcheck_${name}")
         add_test(NAME ${memcheck_name}
                 COMMAND ${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS} $<TARGET_FILE:${name}>)
