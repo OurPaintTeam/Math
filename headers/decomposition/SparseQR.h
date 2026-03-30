@@ -23,6 +23,9 @@ public:
     friend bool operator!=(const SparseQR& A, const SparseQR& B);
 
     void qr();
+    Matrix<> solve(const Matrix<>& b, double damping = 1e-8) const;
+    Matrix<> pseudoInverse(double damping = 1e-8) const;
+    size_t rank(double tol = -1.0) const;
 
     SparseMatrix<> A() const;
     Matrix<> Q() const;

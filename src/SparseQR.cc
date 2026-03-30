@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -162,6 +163,56 @@ void SparseQR::qr() {
             _Q(i, j) = qcol[i];
         }
     }
+}
+
+Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
+    if (_Q.rows_size() == 0 || _R.rows_size() == 0) {
+        throw std::runtime_error("Call qr() before solve().");
+    }
+    if (b.rows_size() != _A.rows_size()) {
+        throw std::invalid_argument("Right-hand side rows must match A rows.");
+    }
+    return pseudoInverse(damping) * b;
+}
+
+Matrix<> SparseQR::pseudoInverse(double damping) const {
+    if (_Q.rows_size() == 0 || _R.rows_size() == 0) {
+        throw std::runtime_error("Call qr() before pseudoInverse().");
+    }
+    if (damping < 0.0) {
+        throw std::invalid_argument("damping must be non-negative.");
+    }
+    Matrix<> Rt = _R.transpose();
+    Matrix<> RtR = Rt * _R;
+    Matrix<> reg = Matrix<>::identity(RtR.rows_size(), RtR.cols_size()) * damping;
+    Matrix<> inv = (RtR + reg).inverse();
+    return inv * Rt * _Q.transpose();
+}
+
+size_t SparseQR::rank(double tol) const {
+    if (_R.rows_size() == 0 || _R.cols_size() == 0) {
+        throw std::runtime_error("Call qr() before rank().");
+    }
+    const size_t min_dim = std::min(_R.rows_size(), _R.cols_size());
+    double max_diag = 0.0;
+    for (size_t i = 0; i < min_dim; ++i) {
+        max_diag = std::max(max_diag, std::abs(_R(i, i)));
+    }
+    if (max_diag == 0.0) {
+        return 0;
+    }
+    double threshold = tol;
+    if (threshold < 0.0) {
+        const double eps = std::numeric_limits<double>::epsilon();
+        threshold = eps * std::max(_A.rows_size(), _A.cols_size()) * max_diag;
+    }
+    size_t r = 0;
+    for (size_t i = 0; i < min_dim; ++i) {
+        if (std::abs(_R(i, i)) > threshold) {
+            ++r;
+        }
+    }
+    return r;
 }
 
 SparseMatrix<> SparseQR::A() const {
