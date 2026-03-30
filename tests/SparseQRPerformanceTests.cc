@@ -81,6 +81,35 @@ Matrix<double> DenseFromEigen(const Eigen::MatrixXd& matrix) {
     return result;
 }
 
+Eigen::MatrixXd EigenFromDense(const Matrix<double>& matrix) {
+    Eigen::MatrixXd result(
+        static_cast<int>(matrix.rows_size()),
+        static_cast<int>(matrix.cols_size()));
+    for (int i = 0; i < result.rows(); ++i) {
+        for (int j = 0; j < result.cols(); ++j) {
+            result(i, j) = matrix(static_cast<size_t>(i), static_cast<size_t>(j));
+        }
+    }
+    return result;
+}
+
+Matrix<double> BuildDenseRhs(size_t rows, size_t rhsCols, uint32_t seed) {
+    Matrix<double> b(rows, rhsCols);
+    std::mt19937 gen(seed);
+    std::uniform_real_distribution<double> val(-3.0, 3.0);
+    for (size_t i = 0; i < rows; ++i) {
+        for (size_t j = 0; j < rhsCols; ++j) {
+            b(i, j) = val(gen);
+        }
+    }
+    return b;
+}
+
+double ResidualNorm(const Matrix<double>& A, const Matrix<double>& x, const Matrix<double>& b) {
+    Matrix<double> r = A * x - b;
+    return r.norm();
+}
+
 double TimeDenseQrMs(const Matrix<double>& A, int repeats, Matrix<double>& q, Matrix<double>& r) {
     auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < repeats; ++i) {
@@ -116,10 +145,31 @@ double TimeEigenSparseQrMs(const Eigen::SparseMatrix<double>& A, int repeats, Ma
         Eigen::MatrixXd q = qr.matrixQ() * thinIdentity;
         Eigen::MatrixXd r = Eigen::MatrixXd(qr.matrixR()).topRows(thin_cols);
 
-        // Время таймера должно включать только извлечение Q/R,
-        // а плотную реконструкцию оставим на сравнение вне тайминга.
         qOut = DenseFromEigen(q);
         rOut = DenseFromEigen(r);
+    }
+    auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+double TimeSparseSolveMs(const SparseMatrix<double>& A, const Matrix<double>& b, int repeats, Matrix<double>& xOut) {
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < repeats; ++i) {
+        SparseQR qr(A);
+        qr.qr();
+        xOut = qr.solve(b);
+    }
+    auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
+double TimeEigenSparseSolveMs(const Eigen::SparseMatrix<double>& A, const Matrix<double>& b, int repeats, Matrix<double>& xOut) {
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < repeats; ++i) {
+        Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr;
+        qr.compute(A);
+        Eigen::MatrixXd x = qr.solve(EigenFromDense(b));
+        xOut = DenseFromEigen(x);
     }
     auto end = std::chrono::steady_clock::now();
     return std::chrono::duration<double, std::milli>(end - start).count();
@@ -151,8 +201,6 @@ BenchResult RunCase(size_t rows, size_t cols, double density, int repeats, uint3
     EXPECT_TRUE(DenseApproxEqual(denseQ * denseR, dense, 1e-6));
     EXPECT_TRUE(DenseApproxEqual(sparseQ * sparseR, dense, 1e-6));
 
-    // Для Eigen реконструкция включает обратную перестановку столбцов.
-    // Она делается отдельно от тайминга для корректного сравнения скоростей.
     {
         Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr;
         qr.compute(eigenSparse);
@@ -210,4 +258,80 @@ TEST(SparseQRPerformanceTests, Large_700x500) {
 
 TEST(SparseQRPerformanceTests, XLarge_1000x700) {
     RunCase(1000, 700, 0.01, 1, 12345u);
+}
+
+TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_300x200) {
+    const size_t rows = 300;
+    const size_t cols = 200;
+    const size_t rhsCols = 4;
+    const double density = 0.03;
+    const int repeats = 3;
+    const uint32_t seedA = 2026u;
+    const uint32_t seedB = 2027u;
+
+    Matrix<double> denseA = BuildSparseLikeDense(rows, cols, density, seedA);
+    SparseMatrix<double> sparseA(denseA);
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparseA);
+    Matrix<double> b = BuildDenseRhs(rows, rhsCols, seedB);
+
+    Matrix<double> xSparse;
+    Matrix<double> xEigen;
+
+    const double sparseSolveMs = TimeSparseSolveMs(sparseA, b, repeats, xSparse);
+    const double eigenSolveMs = TimeEigenSparseSolveMs(eigenA, b, repeats, xEigen);
+
+    const double sparseResidual = ResidualNorm(denseA, xSparse, b);
+    const double eigenResidual = ResidualNorm(denseA, xEigen, b);
+
+    EXPECT_GT(sparseSolveMs, 0.0);
+    EXPECT_GT(eigenSolveMs, 0.0);
+    EXPECT_TRUE(std::isfinite(sparseResidual));
+    EXPECT_TRUE(std::isfinite(eigenResidual));
+    EXPECT_LE(sparseResidual, eigenResidual * 100.0 + 1e-6);
+
+    std::cout << "solve_case=300x200"
+              << " rhs_cols=" << rhsCols
+              << " sparse_solve_ms=" << sparseSolveMs
+              << " eigen_solve_ms=" << eigenSolveMs
+              << " sparse_residual=" << sparseResidual
+              << " eigen_residual=" << eigenResidual
+              << std::endl;
+}
+
+TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_500x350) {
+    const size_t rows = 500;
+    const size_t cols = 350;
+    const size_t rhsCols = 3;
+    const double density = 0.02;
+    const int repeats = 2;
+    const uint32_t seedA = 99u;
+    const uint32_t seedB = 100u;
+
+    Matrix<double> denseA = BuildSparseLikeDense(rows, cols, density, seedA);
+    SparseMatrix<double> sparseA(denseA);
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparseA);
+    Matrix<double> b = BuildDenseRhs(rows, rhsCols, seedB);
+
+    Matrix<double> xSparse;
+    Matrix<double> xEigen;
+
+    const double sparseSolveMs = TimeSparseSolveMs(sparseA, b, repeats, xSparse);
+    const double eigenSolveMs = TimeEigenSparseSolveMs(eigenA, b, repeats, xEigen);
+
+    const double sparseResidual = ResidualNorm(denseA, xSparse, b);
+    const double eigenResidual = ResidualNorm(denseA, xEigen, b);
+
+    EXPECT_GT(sparseSolveMs, 0.0);
+    EXPECT_GT(eigenSolveMs, 0.0);
+    EXPECT_TRUE(std::isfinite(sparseResidual));
+    EXPECT_TRUE(std::isfinite(eigenResidual));
+    EXPECT_LE(sparseResidual, eigenResidual * 150.0 + 1e-6);
+
+    std::cout << "solve_case=500x350"
+              << " rhs_cols=" << rhsCols
+              << " sparse_solve_ms=" << sparseSolveMs
+              << " eigen_solve_ms=" << eigenSolveMs
+              << " sparse_residual=" << sparseResidual
+              << " eigen_residual=" << eigenResidual
+              << std::endl;
 }

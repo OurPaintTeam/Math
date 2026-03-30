@@ -3,6 +3,9 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include <Eigen/OrderingMethods>
+#include <Eigen/Sparse>
+#include <Eigen/SparseQR>
 
 #include "Matrix.h"
 #include "SparseMatrix.h"
@@ -57,6 +60,52 @@ Matrix<double> BuildSparseLikeDense(size_t rows, size_t cols, double density, ui
         }
     }
 
+    return result;
+}
+
+double ResidualNorm(const Matrix<double>& A, const Matrix<double>& x, const Matrix<double>& b) {
+    Matrix<double> r = A * x - b;
+    return r.norm();
+}
+
+Eigen::SparseMatrix<double> ToEigenSparse(const SparseMatrix<double>& matrix) {
+    Eigen::SparseMatrix<double> result(
+        static_cast<int>(matrix.rows_size()),
+        static_cast<int>(matrix.cols_size()));
+    std::vector<Eigen::Triplet<double>> triplets;
+    triplets.reserve(matrix.nonZeros());
+    for (size_t row = 0; row < matrix.rows_size(); ++row) {
+        for (SparseMatrix<double>::InnerIterator it(matrix, row); it; ++it) {
+            triplets.emplace_back(
+                static_cast<int>(it.row()),
+                static_cast<int>(it.col()),
+                it.value());
+        }
+    }
+    result.setFromTriplets(triplets.begin(), triplets.end());
+    result.makeCompressed();
+    return result;
+}
+
+Eigen::MatrixXd EigenFromDense(const Matrix<double>& matrix) {
+    Eigen::MatrixXd result(
+        static_cast<int>(matrix.rows_size()),
+        static_cast<int>(matrix.cols_size()));
+    for (int i = 0; i < result.rows(); ++i) {
+        for (int j = 0; j < result.cols(); ++j) {
+            result(i, j) = matrix(static_cast<size_t>(i), static_cast<size_t>(j));
+        }
+    }
+    return result;
+}
+
+Matrix<double> DenseFromEigen(const Eigen::MatrixXd& matrix) {
+    Matrix<double> result(static_cast<size_t>(matrix.rows()), static_cast<size_t>(matrix.cols()));
+    for (int i = 0; i < matrix.rows(); ++i) {
+        for (int j = 0; j < matrix.cols(); ++j) {
+            result(static_cast<size_t>(i), static_cast<size_t>(j)) = matrix(i, j);
+        }
+    }
     return result;
 }
 
@@ -158,4 +207,42 @@ TEST(SparseQRTests, randomSparseMatricesDecomposition) {
         Matrix<double> dense = BuildSparseLikeDense(7, 5, 0.28, seed);
         CheckFactorization(dense, 1e-7);
     }
+}
+
+TEST(SparseQRTests, solveLeastSquaresComparedToEigen) {
+    Matrix<double> dense = BuildSparseLikeDense(120, 80, 0.06, 77u);
+    SparseMatrix<double> sparse(dense);
+    Matrix<double> b(120, 2);
+    for (size_t i = 0; i < b.rows_size(); ++i) {
+        b(i, 0) = std::sin(static_cast<double>(i) * 0.1);
+        b(i, 1) = std::cos(static_cast<double>(i) * 0.2);
+    }
+
+    SparseQR qr(sparse);
+    qr.qr();
+    Matrix<double> xSparse = qr.solve(b);
+    double sparseResidual = ResidualNorm(dense, xSparse, b);
+
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparse);
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> eigenQr;
+    eigenQr.compute(eigenA);
+    Matrix<double> xEigen = DenseFromEigen(eigenQr.solve(EigenFromDense(b)));
+    double eigenResidual = ResidualNorm(dense, xEigen, b);
+
+    EXPECT_TRUE(std::isfinite(sparseResidual));
+    EXPECT_TRUE(std::isfinite(eigenResidual));
+    EXPECT_LE(sparseResidual, eigenResidual * 100.0 + 1e-6);
+}
+
+TEST(SparseQRTests, rankEstimationForDependentColumns) {
+    Matrix<double> dense = {
+        {1.0, 2.0, 3.0},
+        {2.0, 4.0, 6.0},
+        {0.0, 1.0, 1.0},
+        {0.0, 2.0, 2.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+    EXPECT_EQ(qr.rank(), 2u);
 }
