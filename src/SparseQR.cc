@@ -17,12 +17,13 @@ SparseQR::SparseQR(const SparseMatrix<>& A) {
 
 SparseQR::SparseQR(const SparseQR& other)
     : _A(other._A), _R(other._R), _ref_ptr(other._ref_ptr), _ref_idx(other._ref_idx),
-      _ref_val(other._ref_val), _ref_beta(other._ref_beta) {}
+      _ref_val(other._ref_val), _ref_beta(other._ref_beta), _perm(other._perm),
+      _perm_inv(other._perm_inv) {}
 
 SparseQR::SparseQR(SparseQR&& other) noexcept
     : _A(std::move(other._A)), _R(std::move(other._R)), _ref_ptr(std::move(other._ref_ptr)),
-      _ref_idx(std::move(other._ref_idx)), _ref_val(std::move(other._ref_val)),
-      _ref_beta(std::move(other._ref_beta)) {}
+      _ref_idx(std::move(other._ref_idx)), _ref_val(std::move(other._ref_val)), _ref_beta(std::move(other._ref_beta)),
+      _perm(std::move(other._perm)), _perm_inv(std::move(other._perm_inv)) {}
 
 SparseQR& SparseQR::operator=(const SparseQR& other) {
     SparseQR temp(other);
@@ -32,6 +33,8 @@ SparseQR& SparseQR::operator=(const SparseQR& other) {
     std::swap(_ref_idx, temp._ref_idx);
     std::swap(_ref_val, temp._ref_val);
     std::swap(_ref_beta, temp._ref_beta);
+    std::swap(_perm, temp._perm);
+    std::swap(_perm_inv, temp._perm_inv);
     return *this;
 }
 
@@ -43,6 +46,8 @@ SparseQR& SparseQR::operator=(SparseQR&& other) noexcept {
     std::swap(_ref_idx, temp._ref_idx);
     std::swap(_ref_val, temp._ref_val);
     std::swap(_ref_beta, temp._ref_beta);
+    std::swap(_perm, temp._perm);
+    std::swap(_perm_inv, temp._perm_inv);
     return *this;
 }
 
@@ -59,10 +64,31 @@ void SparseQR::qr() {
     const size_t n = _A.cols_size();
     const size_t min_mn = std::min(m, n);
 
+    std::vector<size_t> colCounts(n, 0);
+    for (size_t i = 0; i < m; ++i) {
+        for (SparseMatrix<>::InnerIterator it(_A, i); it; ++it) {
+            ++colCounts[it.col()];
+        }
+    }
+    _perm.resize(n);
+    for (size_t j = 0; j < n; ++j) {
+        _perm[j] = j;
+    }
+    std::sort(_perm.begin(), _perm.end(), [&colCounts](size_t a, size_t b) {
+        if (colCounts[a] != colCounts[b]) {
+            return colCounts[a] < colCounts[b];
+        }
+        return a < b;
+    });
+    _perm_inv.resize(n);
+    for (size_t j = 0; j < n; ++j) {
+        _perm_inv[_perm[j]] = j;
+    }
+
     std::vector<double> data(m * n, 0.0);
     for (size_t i = 0; i < m; ++i) {
         for (SparseMatrix<>::InnerIterator it(_A, i); it; ++it) {
-            data[it.col() * m + i] = it.value();
+            data[_perm_inv[it.col()] * m + i] = it.value();
         }
     }
     _ref_ptr.assign(min_mn + 1, 0);
@@ -153,7 +179,15 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
                 yHead(i, rhs) = y(i, rhs);
             }
         }
-        return solveUpperTriangular(yHead, damping);
+        Matrix<> z = solveUpperTriangular(yHead, damping);
+        Matrix<> x(n, b.cols_size());
+        for (size_t j = 0; j < n; ++j) {
+            const size_t orig = _perm[j];
+            for (size_t rhs = 0; rhs < b.cols_size(); ++rhs) {
+                x(orig, rhs) = z(j, rhs);
+            }
+        }
+        return x;
     }
     return pseudoInverse(damping) * b;
 }
@@ -169,7 +203,15 @@ Matrix<> SparseQR::pseudoInverse(double damping) const {
     Matrix<> RtR = Rt * _R;
     Matrix<> reg = Matrix<>::identity(RtR.rows_size(), RtR.cols_size()) * damping;
     Matrix<> inv = (RtR + reg).inverse();
-    return inv * Rt * Q().transpose();
+    Matrix<> pinvPerm = inv * Rt * Q().transpose();
+    Matrix<> pinv(_A.cols_size(), pinvPerm.cols_size());
+    for (size_t j = 0; j < _A.cols_size(); ++j) {
+        const size_t orig = _perm[j];
+        for (size_t col = 0; col < pinvPerm.cols_size(); ++col) {
+            pinv(orig, col) = pinvPerm(j, col);
+        }
+    }
+    return pinv;
 }
 
 size_t SparseQR::rank(double tol) const {

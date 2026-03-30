@@ -13,6 +13,8 @@ private:
     std::vector<size_t> _ref_idx;
     std::vector<double> _ref_val;
     std::vector<double> _ref_beta;
+    std::vector<size_t> _perm;
+    std::vector<size_t> _perm_inv;
 
     Matrix<> applyQ(const Matrix<>& B) const;
     Matrix<> applyQt(const Matrix<>& B) const;
