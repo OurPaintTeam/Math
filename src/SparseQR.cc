@@ -145,18 +145,21 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
     }
     const size_t m = _A.rows_size();
     const size_t n = _A.cols_size();
-    const size_t k = std::min(m, n);
     const size_t nrhs = b.cols_size();
-
     Matrix<> y = applyQt(b);
-    Matrix<> x(n, nrhs);
-
-    if (n <= k) {
+    if (m >= n) {
+        Matrix<> yHead(n, nrhs);
+        for (size_t i = 0; i < n; ++i) {
+            for (size_t rhs = 0; rhs < nrhs; ++rhs) {
+                yHead(i, rhs) = y(i, rhs);
+            }
+        }
+        Matrix<> x(n, nrhs);
         const double diag_tol = std::max(damping, 1e-12);
         for (size_t rhs = 0; rhs < nrhs; ++rhs) {
             for (size_t ii = n; ii > 0; --ii) {
                 const size_t i = ii - 1;
-                double sum = y(i, rhs);
+                double sum = yHead(i, rhs);
                 for (size_t j = i + 1; j < n; ++j) {
                     sum -= _R(i, j) * x(j, rhs);
                 }
@@ -170,12 +173,7 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
         }
         return x;
     }
-
-    Matrix<> Rt = _R.transpose();
-    Matrix<> RtR = Rt * _R;
-    Matrix<> reg = Matrix<>::identity(RtR.rows_size(), RtR.cols_size()) * damping;
-    Matrix<> rhs = Rt * y;
-    return (RtR + reg).inverse() * rhs;
+    return pseudoInverse(damping) * b;
 }
 
 Matrix<> SparseQR::pseudoInverse(double damping) const {
