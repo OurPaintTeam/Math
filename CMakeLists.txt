@@ -23,29 +23,140 @@ include_directories(${eigen_SOURCE_DIR})
 set(EIGEN_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(EIGEN_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
 
-add_library(Math
-        src/LevenbergMarquardtSolver.cc
-        src/QR.cc
-        src/SparseQR.cc
-        src/Function.cc
-        src/ErrorFunctions.cc
-        src/GradientOptimizer.cc
-        src/NewtonOptimizer.cc
-        src/NewtonGaussSolver.cc
-        src/StochasticGradientOptimizer.cc
-        src/AdamOptimizer.cc
+set(MATH_CORE_SOURCES
+        src/core/Function.cc
+        src/core/ErrorFunctions.cc
 )
+
+set(MATH_DECOMPOSITION_SOURCES
+        src/decomposition/QR.cc
+        src/decomposition/SparseQR.cc
+)
+
+set(MATH_CORE_HEADERS
+        headers/core/Function.h
+        headers/core/ErrorFunction.h
+)
+
+set(MATH_LINEAR_ALGEBRA_HEADERS
+        headers/linear_algebra/Matrix.h
+        headers/linear_algebra/SparseMatrix.h
+)
+
+set(MATH_DECOMPOSITION_HEADERS
+        headers/decomposition/QR.h
+        headers/decomposition/SparseQR.h
+)
+
+set(MATH_GRAPH_HEADERS
+        headers/graph/Graph.h
+        headers/graph/GraphObjects.h
+        headers/graph/InheritanceGraph.h
+        headers/graph/Politicians.h
+)
+
+set(MATH_OPTIMIZER_BASE_HEADERS
+        headers/optimizers/base/Optimizer.h
+)
+
+set(MATH_MATRIX_OPTIMIZER_SOURCES
+        src/optimizers/matrix/GradientOptimizer.cc
+        src/optimizers/matrix/NewtonOptimizer.cc
+        src/optimizers/matrix/NewtonGaussSolver.cc
+        src/optimizers/matrix/LevenbergMarquardtSolver.cc
+)
+
+set(MATH_MATRIX_OPTIMIZER_HEADERS
+        headers/optimizers/matrix/MatrixOptimizer.h
+        headers/optimizers/matrix/GradientOptimizer.h
+        headers/optimizers/matrix/NewtonOptimizer.h
+        headers/optimizers/matrix/NewtonGaussSolver.h
+        headers/optimizers/matrix/LevenbergMarquardtSolver.h
+)
+
+set(MATH_EIGEN_OPTIMIZER_SOURCES
+        src/optimizers/eigen/StochasticGradientOptimizer.cc
+        src/optimizers/eigen/AdamOptimizer.cc
+)
+
+set(MATH_EIGEN_OPTIMIZER_HEADERS
+        headers/optimizers/eigen/EigenOptimizer.h
+        headers/optimizers/eigen/AdamOptimizer.h
+        headers/optimizers/eigen/StochasticGradientOptimizer.h
+        headers/optimizers/eigen/LMForTest.h
+        headers/optimizers/eigen/LMWithSparse.h
+)
+
+set(MATH_TASK_BASE_HEADERS
+        headers/tasks/base/Task.h
+)
+
+set(MATH_MATRIX_TASK_HEADERS
+        headers/tasks/matrix/TaskMatrix.h
+        headers/tasks/matrix/TaskF.h
+        headers/tasks/matrix/LSMTask.h
+)
+
+set(MATH_EIGEN_TASK_HEADERS
+        headers/tasks/eigen/TaskEigen.h
+        headers/tasks/eigen/LSMFORLMTask.h
+)
+
+add_library(Math
+        ${MATH_CORE_SOURCES}
+        ${MATH_DECOMPOSITION_SOURCES}
+        ${MATH_MATRIX_OPTIMIZER_SOURCES}
+        ${MATH_EIGEN_OPTIMIZER_SOURCES}
+)
+
+target_sources(Math PRIVATE
+        ${MATH_CORE_HEADERS}
+        ${MATH_LINEAR_ALGEBRA_HEADERS}
+        ${MATH_DECOMPOSITION_HEADERS}
+        ${MATH_GRAPH_HEADERS}
+        ${MATH_OPTIMIZER_BASE_HEADERS}
+        ${MATH_MATRIX_OPTIMIZER_HEADERS}
+        ${MATH_EIGEN_OPTIMIZER_HEADERS}
+        ${MATH_TASK_BASE_HEADERS}
+        ${MATH_MATRIX_TASK_HEADERS}
+        ${MATH_EIGEN_TASK_HEADERS}
+)
+
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/src" PREFIX "Source Files" FILES
+        ${MATH_CORE_SOURCES}
+        ${MATH_DECOMPOSITION_SOURCES}
+        ${MATH_MATRIX_OPTIMIZER_SOURCES}
+        ${MATH_EIGEN_OPTIMIZER_SOURCES}
+)
+
+source_group(TREE "${CMAKE_CURRENT_SOURCE_DIR}/headers" PREFIX "Header Files" FILES
+        ${MATH_CORE_HEADERS}
+        ${MATH_LINEAR_ALGEBRA_HEADERS}
+        ${MATH_DECOMPOSITION_HEADERS}
+        ${MATH_GRAPH_HEADERS}
+        ${MATH_OPTIMIZER_BASE_HEADERS}
+        ${MATH_MATRIX_OPTIMIZER_HEADERS}
+        ${MATH_EIGEN_OPTIMIZER_HEADERS}
+        ${MATH_TASK_BASE_HEADERS}
+        ${MATH_MATRIX_TASK_HEADERS}
+        ${MATH_EIGEN_TASK_HEADERS}
+)
+
 target_include_directories(Math
     PUBLIC
         headers
+        headers/core
+        headers/linear_algebra
         headers/optimizers
-        headers/optimizers/MatrixOptimizers
-        headers/optimizers/EigenOptimizers
+        headers/optimizers/base
+        headers/optimizers/matrix
+        headers/optimizers/eigen
         headers/decomposition
         headers/graph
-        headers/Tasks
-        headers/Tasks/Matrix
-        headers/Tasks/Eigen
+        headers/tasks
+        headers/tasks/base
+        headers/tasks/matrix
+        headers/tasks/eigen
 )
 
 target_link_libraries(Math
