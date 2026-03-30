@@ -16,6 +16,7 @@ private:
 
     Matrix<> applyQ(const Matrix<>& B) const;
     Matrix<> applyQt(const Matrix<>& B) const;
+    Matrix<> solveUpperTriangular(const Matrix<>& rhs, double damping) const;
 
 public:
     explicit SparseQR(const SparseMatrix<>& A);

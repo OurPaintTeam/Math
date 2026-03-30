@@ -145,33 +145,15 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
     }
     const size_t m = _A.rows_size();
     const size_t n = _A.cols_size();
-    const size_t nrhs = b.cols_size();
     Matrix<> y = applyQt(b);
     if (m >= n) {
-        Matrix<> yHead(n, nrhs);
+        Matrix<> yHead(n, b.cols_size());
         for (size_t i = 0; i < n; ++i) {
-            for (size_t rhs = 0; rhs < nrhs; ++rhs) {
+            for (size_t rhs = 0; rhs < b.cols_size(); ++rhs) {
                 yHead(i, rhs) = y(i, rhs);
             }
         }
-        Matrix<> x(n, nrhs);
-        const double diag_tol = std::max(damping, 1e-12);
-        for (size_t rhs = 0; rhs < nrhs; ++rhs) {
-            for (size_t ii = n; ii > 0; --ii) {
-                const size_t i = ii - 1;
-                double sum = yHead(i, rhs);
-                for (size_t j = i + 1; j < n; ++j) {
-                    sum -= _R(i, j) * x(j, rhs);
-                }
-                double d = _R(i, i);
-                if (std::abs(d) < diag_tol) {
-                    if (d >= 0.0) d += diag_tol;
-                    else d -= diag_tol;
-                }
-                x(i, rhs) = sum / d;
-            }
-        }
-        return x;
+        return solveUpperTriangular(yHead, damping);
     }
     return pseudoInverse(damping) * b;
 }
@@ -275,6 +257,33 @@ Matrix<> SparseQR::applyQt(const Matrix<>& B) const {
         }
     }
     return result;
+}
+
+Matrix<> SparseQR::solveUpperTriangular(const Matrix<>& rhs, double damping) const {
+    if (_R.rows_size() == 0 || _R.cols_size() == 0) {
+        throw std::runtime_error("Call qr() before solveUpperTriangular().");
+    }
+    if (rhs.rows_size() != _A.cols_size()) {
+        throw std::invalid_argument("solveUpperTriangular: right-hand side rows must match A cols.");
+    }
+    Matrix<> x(_A.cols_size(), rhs.cols_size());
+    const double diag_tol = std::max(damping, 1e-12);
+    for (size_t rhsCol = 0; rhsCol < rhs.cols_size(); ++rhsCol) {
+        for (size_t ii = _A.cols_size(); ii > 0; --ii) {
+            const size_t i = ii - 1;
+            double sum = rhs(i, rhsCol);
+            for (size_t j = i + 1; j < _A.cols_size(); ++j) {
+                sum -= _R(i, j) * x(j, rhsCol);
+            }
+            double d = _R(i, i);
+            if (std::abs(d) < diag_tol) {
+                if (d >= 0.0) d += diag_tol;
+                else d -= diag_tol;
+            }
+            x(i, rhsCol) = sum / d;
+        }
+    }
+    return x;
 }
 
 Matrix<> SparseQR::Q() const {
