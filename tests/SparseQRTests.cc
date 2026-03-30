@@ -63,6 +63,39 @@ Matrix<double> BuildSparseLikeDense(size_t rows, size_t cols, double density, ui
     return result;
 }
 
+std::vector<size_t> ColumnOrdering(const Matrix<double>& dense) {
+    std::vector<size_t> counts(dense.cols_size(), 0);
+    for (size_t i = 0; i < dense.rows_size(); ++i) {
+        for (size_t j = 0; j < dense.cols_size(); ++j) {
+            if (dense(i, j) != 0.0) {
+                ++counts[j];
+            }
+        }
+    }
+    std::vector<size_t> perm(dense.cols_size());
+    for (size_t j = 0; j < dense.cols_size(); ++j) {
+        perm[j] = j;
+    }
+    std::sort(perm.begin(), perm.end(), [&counts](size_t a, size_t b) {
+        if (counts[a] != counts[b]) {
+            return counts[a] < counts[b];
+        }
+        return a < b;
+    });
+    return perm;
+}
+
+Matrix<double> ApplyColumnOrdering(const Matrix<double>& dense) {
+    std::vector<size_t> perm = ColumnOrdering(dense);
+    Matrix<double> ordered(dense.rows_size(), dense.cols_size());
+    for (size_t j = 0; j < dense.cols_size(); ++j) {
+        for (size_t i = 0; i < dense.rows_size(); ++i) {
+            ordered(i, j) = dense(i, perm[j]);
+        }
+    }
+    return ordered;
+}
+
 double ResidualNorm(const Matrix<double>& A, const Matrix<double>& x, const Matrix<double>& b) {
     Matrix<double> r = A * x - b;
     return r.norm();
@@ -115,8 +148,9 @@ void CheckFactorization(const Matrix<double>& dense, double eps = 1e-8) {
     qr.qr();
 
     Matrix<double> restored = qr.Q() * qr.R();
+    Matrix<double> ordered = ApplyColumnOrdering(dense);
 
-    EXPECT_TRUE(DenseApproxEqual(restored, dense, eps));
+    EXPECT_TRUE(DenseApproxEqual(restored, ordered, eps));
     EXPECT_TRUE(IsOrthonormal(qr.Q(), eps));
     EXPECT_TRUE(IsUpperTriangular(qr.R(), eps));
 }

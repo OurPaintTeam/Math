@@ -49,6 +49,39 @@ Matrix<double> BuildSparseLikeDense(size_t rows, size_t cols, double density, ui
     return result;
 }
 
+std::vector<size_t> ColumnOrdering(const Matrix<double>& dense) {
+    std::vector<size_t> counts(dense.cols_size(), 0);
+    for (size_t i = 0; i < dense.rows_size(); ++i) {
+        for (size_t j = 0; j < dense.cols_size(); ++j) {
+            if (dense(i, j) != 0.0) {
+                ++counts[j];
+            }
+        }
+    }
+    std::vector<size_t> perm(dense.cols_size());
+    for (size_t j = 0; j < dense.cols_size(); ++j) {
+        perm[j] = j;
+    }
+    std::sort(perm.begin(), perm.end(), [&counts](size_t a, size_t b) {
+        if (counts[a] != counts[b]) {
+            return counts[a] < counts[b];
+        }
+        return a < b;
+    });
+    return perm;
+}
+
+Matrix<double> ApplyColumnOrdering(const Matrix<double>& dense) {
+    std::vector<size_t> perm = ColumnOrdering(dense);
+    Matrix<double> ordered(dense.rows_size(), dense.cols_size());
+    for (size_t j = 0; j < dense.cols_size(); ++j) {
+        for (size_t i = 0; i < dense.rows_size(); ++i) {
+            ordered(i, j) = dense(i, perm[j]);
+        }
+    }
+    return ordered;
+}
+
 Eigen::SparseMatrix<double> ToEigenSparse(const SparseMatrix<double>& matrix) {
     Eigen::SparseMatrix<double> result(
         static_cast<int>(matrix.rows_size()),
@@ -183,6 +216,7 @@ struct BenchResult {
 
 BenchResult RunCase(size_t rows, size_t cols, double density, int repeats, uint32_t seed) {
     Matrix<double> dense = BuildSparseLikeDense(rows, cols, density, seed);
+    Matrix<double> orderedDense = ApplyColumnOrdering(dense);
     SparseMatrix<double> sparse(dense);
     Eigen::SparseMatrix<double> eigenSparse = ToEigenSparse(sparse);
 
@@ -199,7 +233,7 @@ BenchResult RunCase(size_t rows, size_t cols, double density, int repeats, uint3
     const double eigenMs = TimeEigenSparseQrMs(eigenSparse, repeats, eigenQ, eigenR);
 
     EXPECT_TRUE(DenseApproxEqual(denseQ * denseR, dense, 1e-6));
-    EXPECT_TRUE(DenseApproxEqual(sparseQ * sparseR, dense, 1e-6));
+    EXPECT_TRUE(DenseApproxEqual(sparseQ * sparseR, orderedDense, 1e-6));
 
     {
         Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr;
