@@ -9,20 +9,30 @@ TEST(OptimizerTest, Rosenbrock){
     Variable* x = new Variable(&x_value);
     Variable* y = new Variable(&y_value);
     Constant* a_constant = new Constant(a);
-    Function* term1 = new Power(new Subtraction(a_constant, x), new Constant(2.0));
+    Function* term1 = new Power(new Subtraction(a_constant, x->clone()), new Constant(2.0));
     Constant* b_constant = new Constant(b);
-    Function* x_squared = new Power(x, new Constant(2.0));
-    Function* term2 = new Multiplication(b_constant, new Power(new Subtraction(y, x_squared), new Constant(2.0)));
+    Function* x_squared = new Power(x->clone(), new Constant(2.0));
+    Function* term2 = new Multiplication(
+        b_constant,
+        new Power(new Subtraction(y->clone(), x_squared), new Constant(2.0))
+    );
     Function* rosenbrock = new Addition(term1, term2);
 
     std::vector<Variable*> variables = {x, y};
-    TaskF task(rosenbrock, variables);
-    NewtonOptimizer optimizer(1000); // maxIterations=1000
-    optimizer.setTask(&task);
-    optimizer.optimize();
-    std::vector<double> result = optimizer.getResult();
-    bool converged = optimizer.isConverged();
-    double finalError = optimizer.getCurrentError();
+    std::vector<double> result;
+    bool converged = false;
+    double finalError = 0.0;
+    {
+        TaskF task(rosenbrock, variables);
+        NewtonOptimizer optimizer(1000); // maxIterations=1000
+        optimizer.setTask(&task);
+        optimizer.optimize();
+        result = optimizer.getResult();
+        converged = optimizer.isConverged();
+        finalError = optimizer.getCurrentError();
+    }
+    delete x;
+    delete y;
     EXPECT_TRUE(converged);
     EXPECT_NEAR(result[0], 1.0, 1e-2);
     EXPECT_NEAR(result[1], 1.0, 1e-2);
@@ -33,18 +43,28 @@ TEST(OptimizerTest, Himmelblau){
     double y_value = 0.0;
     Variable* x = new Variable(&x_value);
     Variable* y = new Variable(&y_value);
-    Function* x_squared = new Power(x, new Constant(2.0));
-    Function* term1 = new Power(new Subtraction(new Addition(x_squared, y), new Constant(11.0)), new Constant(2.0));
-    Function* y_squared = new Power(y, new Constant(2.0));
-    Function* term2 = new Power(new Subtraction(new Addition(x, y_squared), new Constant(7.0)), new Constant(2.0));
+    Function* x_squared = new Power(x->clone(), new Constant(2.0));
+    Function* term1 = new Power(
+        new Subtraction(new Addition(x_squared, y->clone()), new Constant(11.0)),
+        new Constant(2.0)
+    );
+    Function* y_squared = new Power(y->clone(), new Constant(2.0));
+    Function* term2 = new Power(
+        new Subtraction(new Addition(x->clone(), y_squared), new Constant(7.0)),
+        new Constant(2.0)
+    );
     Function* himmelblau = new Addition(term1, term2);
     std::vector<Variable*> variables = {x, y};
-    TaskF task(himmelblau, variables);
-    NewtonOptimizer optimizer(1000); // maxIterations=1000
-    optimizer.setTask(&task);
-    optimizer.optimize();
-    std::vector<double> result = optimizer.getResult();
-    bool converged = optimizer.isConverged();
+    bool converged = false;
+    {
+        TaskF task(himmelblau, variables);
+        NewtonOptimizer optimizer(1000); // maxIterations=1000
+        optimizer.setTask(&task);
+        optimizer.optimize();
+        converged = optimizer.isConverged();
+    }
+    delete x;
+    delete y;
     EXPECT_TRUE(converged);
 }
 
@@ -65,10 +85,10 @@ TEST(OptimizerTest, PerpendicularityTest) {
     Variable* y4 = new Variable(&y4_value);
 
     // Define the vectors representing the two line segments
-    Function* segment1_x = new Subtraction(x2, x1); // x2 - x1
-    Function* segment1_y = new Subtraction(y2, y1); // y2 - y1
-    Function* segment2_x = new Subtraction(x4, x3); // x4 - x3
-    Function* segment2_y = new Subtraction(y4, y3); // y4 - y3
+    Function* segment1_x = new Subtraction(x2->clone(), x1->clone()); // x2 - x1
+    Function* segment1_y = new Subtraction(y2->clone(), y1->clone()); // y2 - y1
+    Function* segment2_x = new Subtraction(x4->clone(), x3->clone()); // x4 - x3
+    Function* segment2_y = new Subtraction(y4->clone(), y3->clone()); // y4 - y3
 
     // Perpendicularity condition: dot product of the two vectors should be 0
     Function* dot_product = new Addition(
@@ -81,16 +101,28 @@ TEST(OptimizerTest, PerpendicularityTest) {
 
     // Define the task with the error function and the variables
     std::vector<Variable*> variables = {x1, y1, x2, y2, x3, y3, x4, y4};
-    TaskF task(error, variables);
+    std::vector<double> result;
+    bool converged = false;
+    {
+        TaskF task(error, variables);
 
-    // Initialize optimizer and run optimization
-    NewtonOptimizer optimizer(1000); // maxIterations=1000
-    optimizer.setTask(&task);
-    optimizer.optimize();
+        // Initialize optimizer and run optimization
+        NewtonOptimizer optimizer(1000); // maxIterations=1000
+        optimizer.setTask(&task);
+        optimizer.optimize();
 
-    // Get the result and check for convergence
-    std::vector<double> result = optimizer.getResult();
-    bool converged = optimizer.isConverged();
+        // Get the result and check for convergence
+        result = optimizer.getResult();
+        converged = optimizer.isConverged();
+    }
+    delete x1;
+    delete y1;
+    delete x2;
+    delete y2;
+    delete x3;
+    delete y3;
+    delete x4;
+    delete y4;
 
     // Expect the optimizer to have converged
     EXPECT_TRUE(converged);
