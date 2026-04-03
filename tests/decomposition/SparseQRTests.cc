@@ -413,3 +413,24 @@ TEST(SparseQRTests, solveRejectsRankDeficientSystemsExplicitly) {
         EXPECT_NE(std::string(err.what()).find("rank-deficient"), std::string::npos);
     }
 }
+
+TEST(SparseQRTests, pseudoInverseTallFullRankHasExpectedShapeAndAction) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0},
+        {0.0, 3.0, 0.0},
+        {4.0, 0.0, 5.0},
+        {0.0, 6.0, 1.0},
+        {1.0, 2.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> pinv = qr.pseudoInverse(0.0);
+    EXPECT_EQ(pinv.rows_size(), dense.cols_size());
+    EXPECT_EQ(pinv.cols_size(), dense.rows_size());
+
+    Matrix<double> leftIdentity = pinv * dense;
+    Matrix<double> expected = Matrix<double>::identity(dense.cols_size(), dense.cols_size());
+    EXPECT_TRUE(DenseApproxEqual(leftIdentity, expected, 1e-8));
+}
