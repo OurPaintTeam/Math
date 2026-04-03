@@ -1,5 +1,6 @@
 #include <cmath>
 #include <random>
+#include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -268,6 +269,56 @@ TEST(SparseQRTests, solveLeastSquaresComparedToEigen) {
     EXPECT_LE(sparseResidual, eigenResidual * 100.0 + 1e-6);
 }
 
+TEST(SparseQRTests, solveSquareFullRankSystem) {
+    Matrix<double> dense = {
+        {4.0, 1.0, 0.0},
+        {0.0, 3.0, -1.0},
+        {2.0, 0.0, 5.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> xExpected(3, 1);
+    xExpected(0, 0) = 1.5;
+    xExpected(1, 0) = -2.0;
+    xExpected(2, 0) = 0.5;
+    Matrix<double> b = dense * xExpected;
+    Matrix<double> x = qr.solve(b, 0.0);
+
+    EXPECT_TRUE(DenseApproxEqual(x, xExpected, 1e-10));
+    EXPECT_EQ(qr.rank(), 3u);
+    EXPECT_TRUE(IsUpperTriangular(qr.R(), 1e-10));
+}
+
+TEST(SparseQRTests, solveTallFullRankSystemAndThinQ) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0},
+        {0.0, 3.0, 0.0},
+        {4.0, 0.0, 5.0},
+        {0.0, 6.0, 1.0},
+        {1.0, 2.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> q = qr.Q();
+    EXPECT_EQ(q.rows_size(), dense.rows_size());
+    EXPECT_EQ(q.cols_size(), std::min(dense.rows_size(), dense.cols_size()));
+    EXPECT_TRUE(IsOrthonormal(q, 1e-10));
+
+    Matrix<double> xExpected(3, 1);
+    xExpected(0, 0) = 1.0;
+    xExpected(1, 0) = -2.0;
+    xExpected(2, 0) = 3.0;
+    Matrix<double> b = dense * xExpected;
+    Matrix<double> x = qr.solve(b, 0.0);
+
+    EXPECT_TRUE(DenseApproxEqual(x, xExpected, 1e-9));
+    EXPECT_EQ(qr.rank(), dense.cols_size());
+}
+
 TEST(SparseQRTests, rankEstimationForDependentColumns) {
     Matrix<double> dense = {
         {1.0, 2.0, 3.0},
@@ -279,4 +330,86 @@ TEST(SparseQRTests, rankEstimationForDependentColumns) {
     SparseQR qr(sparse);
     qr.qr();
     EXPECT_EQ(qr.rank(), 2u);
+}
+
+TEST(SparseQRTests, scaleAwareThresholdMatchesEigenAndTolCanOverride) {
+    Matrix<double> dense = {
+        {1.0e10, 1.0e10},
+        {0.0, 1.0e-8},
+        {0.0, 0.0},
+        {0.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparse);
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> eigenQr;
+    eigenQr.compute(eigenA);
+
+    EXPECT_EQ(qr.rank(), static_cast<size_t>(eigenQr.rank()));
+    EXPECT_EQ(qr.rank(), 1u);
+    EXPECT_EQ(qr.rank(1e-12), 2u);
+    EXPECT_LT(std::abs(qr.R()(1, 1)), 1e-6);
+}
+
+TEST(SparseQRTests, setPivotThresholdControlsNumericalRank) {
+    Matrix<double> dense = {
+        {1.0, 1.0},
+        {0.0, 1.0e-6},
+        {0.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.setPivotThreshold(1.0e-5);
+    qr.qr();
+
+    EXPECT_EQ(qr.rank(), 1u);
+    EXPECT_EQ(qr.rank(1.0e-7), 2u);
+}
+
+TEST(SparseQRTests, solveRejectsUnderdeterminedSystemsExplicitly) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0},
+        {0.0, 3.0, 4.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> b(2, 1);
+    b(0, 0) = 1.0;
+    b(1, 0) = 2.0;
+
+    try {
+        (void)qr.solve(b, 0.0);
+        FAIL() << "Expected solve() to reject underdetermined systems.";
+    } catch (const std::runtime_error& err) {
+        EXPECT_NE(std::string(err.what()).find("pseudoInverse"), std::string::npos);
+    }
+}
+
+TEST(SparseQRTests, solveRejectsRankDeficientSystemsExplicitly) {
+    Matrix<double> dense = {
+        {1.0, 2.0, 3.0},
+        {2.0, 4.0, 6.0},
+        {0.0, 1.0, 1.0},
+        {0.0, 2.0, 2.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> b(4, 1);
+    b(0, 0) = 1.0;
+    b(1, 0) = 2.0;
+    b(2, 0) = 3.0;
+    b(3, 0) = 4.0;
+
+    try {
+        (void)qr.solve(b, 0.0);
+        FAIL() << "Expected solve() to reject rank-deficient systems.";
+    } catch (const std::runtime_error& err) {
+        EXPECT_NE(std::string(err.what()).find("rank-deficient"), std::string::npos);
+    }
 }

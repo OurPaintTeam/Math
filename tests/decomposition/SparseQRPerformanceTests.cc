@@ -167,6 +167,18 @@ double TimeSparseQrMs(const SparseMatrix<double>& A, int repeats, Matrix<double>
     return std::chrono::duration<double, std::milli>(end - start).count();
 }
 
+double TimeSparseQrReuseMs(const SparseMatrix<double>& A, int repeats, Matrix<double>& q, Matrix<double>& r) {
+    SparseQR qr(A);
+    auto start = std::chrono::steady_clock::now();
+    for (int i = 0; i < repeats; ++i) {
+        qr.qr();
+        q = qr.Q();
+        r = qr.R();
+    }
+    auto end = std::chrono::steady_clock::now();
+    return std::chrono::duration<double, std::milli>(end - start).count();
+}
+
 double TimeEigenSparseQrMs(const Eigen::SparseMatrix<double>& A, int repeats, Matrix<double>& qOut, Matrix<double>& rOut) {
     auto start = std::chrono::steady_clock::now();
     for (int i = 0; i < repeats; ++i) {
@@ -348,4 +360,25 @@ TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_2000x1400) {
 
 TEST(SparseQRPerformanceTests, SolveComparison_LeastSquares_3000x2000) {
     RunSolveCase(3000, 2000, 1, 0.003, 1, 33333u, 33334u, 300.0);
+}
+
+TEST(SparseQRPerformanceTests, ReuseStructuralAnalysis_1000x700) {
+    Matrix<double> dense = BuildSparseLikeDense(1000, 700, 0.01, 12345u);
+    SparseMatrix<double> sparse(dense);
+    Matrix<double> freshQ;
+    Matrix<double> freshR;
+    Matrix<double> reuseQ;
+    Matrix<double> reuseR;
+
+    const double freshMs = TimeSparseQrMs(sparse, 3, freshQ, freshR);
+    const double reuseMs = TimeSparseQrReuseMs(sparse, 3, reuseQ, reuseR);
+
+    EXPECT_TRUE(DenseApproxEqual(freshQ * freshR, reuseQ * reuseR, 1e-6));
+    EXPECT_GT(freshMs, 0.0);
+    EXPECT_GT(reuseMs, 0.0);
+
+    std::cout << "reuse_case=1000x700"
+              << " fresh_sparse_qr_ms=" << freshMs
+              << " reused_sparse_qr_ms=" << reuseMs
+              << std::endl;
 }
