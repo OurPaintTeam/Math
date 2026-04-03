@@ -8,7 +8,7 @@
 class SparseQR {
 private:
     SparseMatrix<> _A;
-    Matrix<> _R;
+    SparseMatrix<> _R_sparse;
     size_t _m = 0;
     size_t _n = 0;
     size_t _min_mn = 0;
@@ -34,6 +34,18 @@ private:
     void preprocessProblem();
     void analyzeStructure();
     void factorizeNumeric();
+    SparseMatrix<> buildPermutedWorkspace() const;
+    SparseMatrix<> buildSparseR(const SparseMatrix<>& workspace) const;
+    void updateColumnRowIndex(std::vector<std::vector<size_t>>& column_rows,
+                              size_t row,
+                              const std::vector<size_t>& old_idx,
+                              const std::vector<size_t>& new_idx) const;
+    void collectAffectedRows(const std::vector<std::vector<size_t>>& column_rows,
+                             const std::vector<size_t>& support,
+                             size_t min_row,
+                             std::vector<size_t>& marks,
+                             size_t stamp,
+                             std::vector<size_t>& affected_rows) const;
     Matrix<> applyQ(const Matrix<>& B) const;
     Matrix<> applyQt(const Matrix<>& B) const;
     Matrix<> solveUpperTriangular(const Matrix<>& rhs, size_t effective_rank) const;
