@@ -84,6 +84,13 @@ public:
 
     std::vector<T> getRow(const iterator_type& rowI) const;
     std::vector<T> getCol(const iterator_type& colI) const;
+    void getRowEntries(size_type row,
+                       std::vector<size_type>& cols,
+                       std::vector<T>& values,
+                       size_type start_col = 0) const;
+    void replaceRow(size_type row,
+                    const std::vector<size_type>& cols,
+                    const std::vector<T>& values);
 
     SparseMatrix getSubmatrix(size_type start_row, size_type start_col,
                               size_type num_rows, size_type num_cols) const;
@@ -391,6 +398,71 @@ inline std::vector<T> SparseMatrix<T>::getCol(const iterator_type& colI) const {
             result[i] = values_[static_cast<size_type>(it - inner_.begin())];
     }
     return result;
+}
+
+template <Arithmetic T>
+inline void SparseMatrix<T>::getRowEntries(
+    size_type row,
+    std::vector<size_type>& cols,
+    std::vector<T>& values,
+    size_type start_col) const
+{
+    if (row >= rows_ || start_col > cols_)
+        throw std::out_of_range("Index out of range");
+
+    auto begin = inner_.begin() + static_cast<std::ptrdiff_t>(outer_[row]);
+    auto end = inner_.begin() + static_cast<std::ptrdiff_t>(outer_[row + 1]);
+    auto start = std::lower_bound(begin, end, start_col);
+    auto pos = static_cast<size_type>(start - inner_.begin());
+    auto finish = outer_[row + 1];
+
+    cols.assign(inner_.begin() + static_cast<std::ptrdiff_t>(pos),
+                inner_.begin() + static_cast<std::ptrdiff_t>(finish));
+    values.assign(values_.begin() + static_cast<std::ptrdiff_t>(pos),
+                  values_.begin() + static_cast<std::ptrdiff_t>(finish));
+}
+
+template <Arithmetic T>
+inline void SparseMatrix<T>::replaceRow(
+    size_type row,
+    const std::vector<size_type>& cols,
+    const std::vector<T>& values)
+{
+    if (row >= rows_)
+        throw std::out_of_range("Index out of range");
+    if (cols.size() != values.size())
+        throw std::invalid_argument("replaceRow: column/value sizes must match");
+
+    for (size_type i = 0; i < cols.size(); ++i) {
+        if (cols[i] >= cols_)
+            throw std::out_of_range("replaceRow: column index out of range");
+        if (i > 0 && cols[i - 1] >= cols[i])
+            throw std::invalid_argument("replaceRow: column indices must be strictly increasing");
+    }
+
+    const size_type old_begin = outer_[row];
+    const size_type old_end = outer_[row + 1];
+    const size_type old_size = old_end - old_begin;
+    const size_type new_size = cols.size();
+
+    values_.erase(values_.begin() + static_cast<std::ptrdiff_t>(old_begin),
+                  values_.begin() + static_cast<std::ptrdiff_t>(old_end));
+    inner_.erase(inner_.begin() + static_cast<std::ptrdiff_t>(old_begin),
+                 inner_.begin() + static_cast<std::ptrdiff_t>(old_end));
+
+    values_.insert(values_.begin() + static_cast<std::ptrdiff_t>(old_begin),
+                   values.begin(), values.end());
+    inner_.insert(inner_.begin() + static_cast<std::ptrdiff_t>(old_begin),
+                  cols.begin(), cols.end());
+
+    if (new_size == old_size)
+        return;
+
+    const bool grows = new_size > old_size;
+    const size_type delta = grows ? (new_size - old_size) : (old_size - new_size);
+    for (size_type i = row + 1; i <= rows_; ++i) {
+        outer_[i] = grows ? (outer_[i] + delta) : (outer_[i] - delta);
+    }
 }
 
 template <Arithmetic T>
