@@ -239,6 +239,40 @@ TEST(SparseMatrixTests, replaceRowSupportsFillInAndShrink) {
     EXPECT_TRUE(DenseEqual(A.toDense(), expected));
 }
 
+TEST(SparseMatrixTests, mutableRowModeSupportsLocalRowSwapsAndCompression) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0, 0.0},
+        {0.0, 3.0, 0.0, 4.0},
+        {5.0, 0.0, 6.0, 0.0}
+    };
+    SparseMatrix<> A(dense);
+    A.makeRowMutable();
+
+    const auto& row_idx = A.rowIndices(1);
+    const auto& row_val = A.rowValues(1);
+    ASSERT_EQ(row_idx.size(), 2u);
+    EXPECT_EQ(row_idx[0], 1u);
+    EXPECT_EQ(row_idx[1], 3u);
+    EXPECT_DOUBLE_EQ(row_val[0], 3.0);
+    EXPECT_DOUBLE_EQ(row_val[1], 4.0);
+
+    std::vector<size_t> new_idx = {0, 2, 3};
+    std::vector<double> new_val = {-1.0, 7.0, 8.0};
+    A.swapRowBuffers(1, new_idx, new_val);
+    EXPECT_TRUE(new_idx.size() == 2u && new_idx[0] == 1u && new_idx[1] == 3u);
+
+    Matrix<double> expected = {
+        {1.0, 0.0, 2.0, 0.0},
+        {-1.0, 0.0, 7.0, 8.0},
+        {5.0, 0.0, 6.0, 0.0}
+    };
+    EXPECT_TRUE(DenseEqual(A.toDense(), expected));
+
+    A.compressRowMutable();
+    EXPECT_TRUE(DenseEqual(A.toDense(), expected));
+    EXPECT_DOUBLE_EQ(A(1, 2), 7.0);
+}
+
 TEST(SparseMatrixTests, sparseDenseProducts) {
     Matrix<double> A_dense = {
         {1.0, 0.0, 2.0},
