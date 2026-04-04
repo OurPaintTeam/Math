@@ -9,146 +9,35 @@
 
 namespace {
 
-double sumSquared(const std::vector<double>& values) {
-    double sum = 0.0;
-    for (double value : values) {
-        sum += value * value;
+size_t findRoot(size_t index, std::vector<size_t>& parent) {
+    size_t p = parent[index];
+    size_t gp = parent[p];
+    while (gp != p) {
+        parent[index] = gp;
+        index = gp;
+        p = parent[index];
+        gp = parent[p];
     }
-    return sum;
+    return p;
 }
 
-double sparseDot(
-    const std::vector<size_t>& lhs_idx,
-    const std::vector<double>& lhs_val,
-    const std::vector<size_t>& rhs_idx,
-    const std::vector<double>& rhs_val)
+void appendReachPath(
+    size_t start,
+    size_t column,
+    const std::vector<size_t>& etree,
+    std::vector<size_t>& marks,
+    size_t stamp,
+    std::vector<size_t>& reach)
 {
-    double dot = 0.0;
-    size_t lhs_pos = 0;
-    size_t rhs_pos = 0;
-    while (lhs_pos < lhs_idx.size() && rhs_pos < rhs_idx.size()) {
-        if (lhs_idx[lhs_pos] < rhs_idx[rhs_pos]) {
-            ++lhs_pos;
-        } else if (lhs_idx[lhs_pos] > rhs_idx[rhs_pos]) {
-            ++rhs_pos;
-        } else {
-            dot += lhs_val[lhs_pos] * rhs_val[rhs_pos];
-            ++lhs_pos;
-            ++rhs_pos;
-        }
+    const size_t begin = reach.size();
+    while (start < marks.size() && start < column && marks[start] != stamp) {
+        reach.push_back(start);
+        marks[start] = stamp;
+        start = etree[start];
     }
-    return dot;
-}
-
-void buildUpdatedRow(
-    const std::vector<size_t>& row_idx,
-    const std::vector<double>& row_val,
-    const std::vector<size_t>& reflector_idx,
-    const std::vector<double>& reflector_val,
-    double scale,
-    double drop_tolerance,
-    std::vector<size_t>& out_idx,
-    std::vector<double>& out_val)
-{
-    out_idx.clear();
-    out_val.clear();
-    out_idx.reserve(row_idx.size() + reflector_idx.size());
-    out_val.reserve(row_val.size() + reflector_val.size());
-
-    size_t row_pos = 0;
-    size_t ref_pos = 0;
-    while (row_pos < row_idx.size() || ref_pos < reflector_idx.size()) {
-        size_t idx = 0;
-        double value = 0.0;
-        if (ref_pos == reflector_idx.size()
-            || (row_pos < row_idx.size() && row_idx[row_pos] < reflector_idx[ref_pos])) {
-            idx = row_idx[row_pos];
-            value = row_val[row_pos];
-            ++row_pos;
-        } else if (row_pos == row_idx.size() || reflector_idx[ref_pos] < row_idx[row_pos]) {
-            idx = reflector_idx[ref_pos];
-            value = -scale * reflector_val[ref_pos];
-            ++ref_pos;
-        } else {
-            idx = row_idx[row_pos];
-            value = row_val[row_pos] - scale * reflector_val[ref_pos];
-            ++row_pos;
-            ++ref_pos;
-        }
-
-        if (std::abs(value) > drop_tolerance) {
-            out_idx.push_back(idx);
-            out_val.push_back(value);
-        }
-    }
-}
-
-void buildDiagonalizedRow(
-    const std::vector<size_t>& row_idx,
-    const std::vector<double>& row_val,
-    size_t diagonal,
-    double diagonal_value,
-    double drop_tolerance,
-    std::vector<size_t>& out_idx,
-    std::vector<double>& out_val)
-{
-    out_idx.clear();
-    out_val.clear();
-    out_idx.reserve(row_idx.size());
-    out_val.reserve(row_val.size());
-
-    for (size_t pos = 0; pos < row_idx.size(); ++pos) {
-        if (row_idx[pos] >= diagonal) {
-            break;
-        }
-        if (std::abs(row_val[pos]) > drop_tolerance) {
-            out_idx.push_back(row_idx[pos]);
-            out_val.push_back(row_val[pos]);
-        }
-    }
-
-    if (std::abs(diagonal_value) > drop_tolerance) {
-        out_idx.push_back(diagonal);
-        out_val.push_back(diagonal_value);
-    }
-}
-
-SparseMatrix<> buildPermutedWorkspace(
-    const SparseMatrix<>& input,
-    const std::vector<size_t>& perm_inv)
-{
-    std::vector<Triplet<double>> triplets;
-    triplets.reserve(input.nonZeros());
-    for (size_t row = 0; row < input.rows_size(); ++row) {
-        for (SparseMatrix<>::InnerIterator it(input, row); it; ++it) {
-            triplets.emplace_back(perm_inv[it.col()], row, it.value());
-        }
-    }
-
-    SparseMatrix<> workspace(input.cols_size(), input.rows_size());
-    workspace.setFromTriplets(triplets.begin(), triplets.end());
-    return workspace;
-}
-
-SparseMatrix<> buildSparseR(const SparseMatrix<>& workspace, size_t min_mn) {
-    SparseMatrix<> result(min_mn, workspace.rows_size());
-    if (min_mn == 0) {
-        return result;
-    }
-
-    std::vector<Triplet<double>> triplets;
-    triplets.reserve(workspace.nonZeros());
-    for (size_t col = 0; col < workspace.rows_size(); ++col) {
-        for (SparseMatrix<>::InnerIterator it(workspace, col); it; ++it) {
-            const size_t row = it.col();
-            if (row >= min_mn || row > col || it.value() == 0.0) {
-                continue;
-            }
-            triplets.emplace_back(row, col, it.value());
-        }
-    }
-    result.setFromTriplets(triplets.begin(), triplets.end());
-    return result;
+    std::reverse(
+        reach.begin() + static_cast<std::ptrdiff_t>(begin),
+        reach.end());
 }
 
 } // namespace
@@ -167,6 +56,8 @@ SparseQR::SparseQR(const SparseQR& other)
       _ref_ptr(other._ref_ptr), _ref_idx(other._ref_idx), _ref_val(other._ref_val),
       _ref_beta(other._ref_beta), _col_counts(other._col_counts), _zero_cols(other._zero_cols),
       _active_cols(other._active_cols), _perm(other._perm), _perm_inv(other._perm_inv),
+      _workspace_outer(other._workspace_outer), _workspace_inner(other._workspace_inner),
+      _workspace_val(other._workspace_val), _etree(other._etree), _first_row_elt(other._first_row_elt),
       _use_default_threshold(other._use_default_threshold), _preprocessed(other._preprocessed),
       _analyzed(other._analyzed) {}
 
@@ -179,6 +70,9 @@ SparseQR::SparseQR(SparseQR&& other) noexcept
       _ref_beta(std::move(other._ref_beta)), _col_counts(std::move(other._col_counts)),
       _zero_cols(std::move(other._zero_cols)), _active_cols(std::move(other._active_cols)),
       _perm(std::move(other._perm)), _perm_inv(std::move(other._perm_inv)),
+      _workspace_outer(std::move(other._workspace_outer)), _workspace_inner(std::move(other._workspace_inner)),
+      _workspace_val(std::move(other._workspace_val)), _etree(std::move(other._etree)),
+      _first_row_elt(std::move(other._first_row_elt)),
       _use_default_threshold(other._use_default_threshold), _preprocessed(other._preprocessed),
       _analyzed(other._analyzed) {}
 
@@ -202,6 +96,11 @@ SparseQR& SparseQR::operator=(const SparseQR& other) {
     std::swap(_active_cols, temp._active_cols);
     std::swap(_perm, temp._perm);
     std::swap(_perm_inv, temp._perm_inv);
+    std::swap(_workspace_outer, temp._workspace_outer);
+    std::swap(_workspace_inner, temp._workspace_inner);
+    std::swap(_workspace_val, temp._workspace_val);
+    std::swap(_etree, temp._etree);
+    std::swap(_first_row_elt, temp._first_row_elt);
     std::swap(_use_default_threshold, temp._use_default_threshold);
     std::swap(_preprocessed, temp._preprocessed);
     std::swap(_analyzed, temp._analyzed);
@@ -228,6 +127,11 @@ SparseQR& SparseQR::operator=(SparseQR&& other) noexcept {
     std::swap(_active_cols, temp._active_cols);
     std::swap(_perm, temp._perm);
     std::swap(_perm_inv, temp._perm_inv);
+    std::swap(_workspace_outer, temp._workspace_outer);
+    std::swap(_workspace_inner, temp._workspace_inner);
+    std::swap(_workspace_val, temp._workspace_val);
+    std::swap(_etree, temp._etree);
+    std::swap(_first_row_elt, temp._first_row_elt);
     std::swap(_use_default_threshold, temp._use_default_threshold);
     std::swap(_preprocessed, temp._preprocessed);
     std::swap(_analyzed, temp._analyzed);
@@ -291,105 +195,165 @@ void SparseQR::preprocessProblem() {
     _preprocessed = true;
 }
 
+void SparseQR::buildPermutedWorkspace() {
+    _workspace_outer.assign(_n + 1, 0);
+    for (size_t row = 0; row < _m; ++row) {
+        for (SparseMatrix<>::InnerIterator it(_A, row); it; ++it) {
+            ++_workspace_outer[_perm_inv[it.col()] + 1];
+        }
+    }
+    for (size_t col = 0; col < _n; ++col) {
+        _workspace_outer[col + 1] += _workspace_outer[col];
+    }
+
+    _workspace_inner.assign(_workspace_outer.back(), 0);
+    _workspace_val.assign(_workspace_outer.back(), 0.0);
+    std::vector<size_t> next(_workspace_outer);
+    for (size_t row = 0; row < _m; ++row) {
+        for (SparseMatrix<>::InnerIterator it(_A, row); it; ++it) {
+            const size_t col = _perm_inv[it.col()];
+            const size_t pos = next[col]++;
+            _workspace_inner[pos] = row;
+            _workspace_val[pos] = it.value();
+        }
+    }
+}
+
+void SparseQR::buildColumnEliminationTree() {
+    _first_row_elt.assign(_m, _n);
+    for (size_t row = 0; row < _min_mn; ++row) {
+        _first_row_elt[row] = row;
+    }
+    for (size_t col = 0; col < _n; ++col) {
+        for (size_t p = _workspace_outer[col]; p < _workspace_outer[col + 1]; ++p) {
+            const size_t row = _workspace_inner[p];
+            _first_row_elt[row] = std::min(_first_row_elt[row], col);
+        }
+    }
+
+    _etree.assign(_n, _n);
+    std::vector<size_t> root(_n, 0);
+    std::vector<size_t> parent(_n, 0);
+    for (size_t col = 0; col < _n; ++col) {
+        bool found_diag = col >= _m;
+        parent[col] = col;
+        size_t cset = col;
+        root[cset] = col;
+        _etree[col] = _n;
+
+        size_t p = _workspace_outer[col];
+        while (p < _workspace_outer[col + 1] || !found_diag) {
+            size_t row = col;
+            if (p < _workspace_outer[col + 1]) {
+                row = _workspace_inner[p];
+                ++p;
+            } else {
+                found_diag = true;
+            }
+            if (row == col) {
+                found_diag = true;
+            }
+
+            const size_t first = _first_row_elt[row];
+            if (first >= col) {
+                continue;
+            }
+
+            const size_t rset = findRoot(first, parent);
+            const size_t rroot = root[rset];
+            if (rroot != col) {
+                _etree[rroot] = col;
+                parent[cset] = rset;
+                cset = rset;
+                root[cset] = col;
+            }
+        }
+    }
+}
+
 void SparseQR::analyzeStructure() {
     preprocessProblem();
     if (_analyzed) {
         return;
     }
+
     _perm.clear();
     _perm.reserve(_n);
     for (size_t j : _zero_cols) {
         _perm.push_back(j);
     }
-    std::vector<size_t> orderedActive(_active_cols);
-    std::sort(orderedActive.begin(), orderedActive.end(), [this](size_t a, size_t b) {
+    std::vector<size_t> ordered_active(_active_cols);
+    std::sort(ordered_active.begin(), ordered_active.end(), [this](size_t a, size_t b) {
         if (_col_counts[a] != _col_counts[b]) {
             return _col_counts[a] < _col_counts[b];
         }
         return a < b;
     });
-    for (size_t j : orderedActive) {
+    for (size_t j : ordered_active) {
         _perm.push_back(j);
     }
+
     _perm_inv.resize(_n);
     for (size_t j = 0; j < _n; ++j) {
         _perm_inv[_perm[j]] = j;
     }
+
+    buildPermutedWorkspace();
+    buildColumnEliminationTree();
     _analyzed = true;
 }
 
-SparseMatrix<> SparseQR::buildPermutedWorkspace() const {
-    return ::buildPermutedWorkspace(_A, _perm_inv);
-}
-
-SparseMatrix<> SparseQR::buildSparseR(const SparseMatrix<>& workspace) const {
-    return ::buildSparseR(workspace, _min_mn);
-}
-
-void SparseQR::updateColumnRowIndex(
-    std::vector<std::vector<size_t>>& column_rows,
-    size_t row,
-    const std::vector<size_t>& old_idx,
-    const std::vector<size_t>& new_idx) const
-{
-    size_t old_pos = 0;
-    size_t new_pos = 0;
-    while (old_pos < old_idx.size() || new_pos < new_idx.size()) {
-        if (new_pos == new_idx.size()
-            || (old_pos < old_idx.size() && old_idx[old_pos] < new_idx[new_pos])) {
-            auto& rows = column_rows[old_idx[old_pos]];
-            auto it = std::lower_bound(rows.begin(), rows.end(), row);
-            if (it != rows.end() && *it == row) {
-                rows.erase(it);
-            }
-            ++old_pos;
-        } else if (old_pos == old_idx.size() || new_idx[new_pos] < old_idx[old_pos]) {
-            auto& rows = column_rows[new_idx[new_pos]];
-            auto it = std::lower_bound(rows.begin(), rows.end(), row);
-            if (it == rows.end() || *it != row) {
-                rows.insert(it, row);
-            }
-            ++new_pos;
-        } else {
-            ++old_pos;
-            ++new_pos;
-        }
-    }
-}
-
-void SparseQR::collectAffectedRows(
+SparseMatrix<> SparseQR::buildSparseR(
     const std::vector<std::vector<size_t>>& column_rows,
-    const std::vector<size_t>& support,
-    size_t min_row,
-    std::vector<size_t>& marks,
-    size_t stamp,
-    std::vector<size_t>& affected_rows) const
+    const std::vector<std::vector<double>>& column_values) const
 {
-    affected_rows.clear();
-    for (size_t col : support) {
-        for (size_t row : column_rows[col]) {
-            if (row <= min_row || marks[row] == stamp) {
+    if (_min_mn == 0) {
+        return SparseMatrix<>(0, _n);
+    }
+
+    std::vector<size_t> outer(_min_mn + 1, 0);
+    for (size_t col = 0; col < _n; ++col) {
+        for (size_t pos = 0; pos < column_rows[col].size(); ++pos) {
+            const size_t row = column_rows[col][pos];
+            if (row >= _min_mn || std::abs(column_values[col][pos]) == 0.0) {
                 continue;
             }
-            marks[row] = stamp;
-            affected_rows.push_back(row);
+            ++outer[row + 1];
         }
     }
-    std::sort(affected_rows.begin(), affected_rows.end());
+    for (size_t row = 0; row < _min_mn; ++row) {
+        outer[row + 1] += outer[row];
+    }
+
+    std::vector<size_t> inner(outer.back());
+    std::vector<double> values(outer.back());
+    std::vector<size_t> next(outer);
+    for (size_t col = 0; col < _n; ++col) {
+        for (size_t pos = 0; pos < column_rows[col].size(); ++pos) {
+            const size_t row = column_rows[col][pos];
+            const double value = column_values[col][pos];
+            if (row >= _min_mn || value == 0.0) {
+                continue;
+            }
+            const size_t out_pos = next[row]++;
+            inner[out_pos] = col;
+            values[out_pos] = value;
+        }
+    }
+
+    return SparseMatrix<>::fromCSR(
+        _min_mn,
+        _n,
+        std::move(values),
+        std::move(inner),
+        std::move(outer));
 }
 
 void SparseQR::factorizeNumeric() {
     if (!_analyzed) {
-        throw std::runtime_error("Call analyze() before factorizeNumeric().");
+        throw std::runtime_error("Call analyze() before factorize().");
     }
 
-    SparseMatrix<> workspace = buildPermutedWorkspace();
-    std::vector<std::vector<size_t>> column_rows(workspace.cols_size());
-    for (size_t row = 0; row < workspace.rows_size(); ++row) {
-        for (SparseMatrix<>::InnerIterator it(workspace, row); it; ++it) {
-            column_rows[it.col()].push_back(row);
-        }
-    }
     _ref_ptr.assign(_min_mn + 1, 0);
     _ref_idx.clear();
     _ref_val.clear();
@@ -398,92 +362,174 @@ void SparseQR::factorizeNumeric() {
     _numerical_rank = 0;
     _leading_numerical_rank = 0;
 
-    const double drop_tolerance = 64.0 * std::numeric_limits<double>::epsilon();
+    const double drop_tolerance = std::numeric_limits<double>::epsilon();
 
-    _ref_idx.reserve(workspace.nonZeros() + _min_mn);
-    _ref_val.reserve(workspace.nonZeros() + _min_mn);
+    std::vector<std::vector<size_t>> r_column_rows(_n);
+    std::vector<std::vector<double>> r_column_values(_n);
+    std::vector<double> accumulator(_m, 0.0);
+    std::vector<size_t> touched_rows;
+    std::vector<size_t> touched_marks(_m, 0);
+    std::vector<size_t> marks((std::max)(_m, _n), 0);
+    std::vector<size_t> reach;
+    std::vector<size_t> reflector_rows;
+    std::vector<double> reflector_values;
 
-    std::vector<size_t> row_idx;
-    std::vector<double> row_val;
-    std::vector<size_t> reflector_idx;
-    std::vector<double> reflector_val;
-    std::vector<size_t> updated_idx;
-    std::vector<double> updated_val;
-    std::vector<size_t> affected_rows;
-    std::vector<size_t> row_marks(_n, 0);
-    size_t mark_stamp = 1;
+    _ref_idx.reserve(_workspace_val.size() + _min_mn);
+    _ref_val.reserve(_workspace_val.size() + _min_mn);
+    reach.reserve(_min_mn);
+    touched_rows.reserve(_m);
 
     bool leading_block_is_full_rank = true;
-    for (size_t k = 0; k < _min_mn; ++k) {
-        workspace.getRowEntries(k, row_idx, row_val);
-        auto tail_begin = std::lower_bound(row_idx.begin(), row_idx.end(), k);
-        const size_t tail_offset = static_cast<size_t>(tail_begin - row_idx.begin());
+    size_t stamp = 1;
 
-        reflector_idx.assign(row_idx.begin() + static_cast<std::ptrdiff_t>(tail_offset), row_idx.end());
-        reflector_val.assign(row_val.begin() + static_cast<std::ptrdiff_t>(tail_offset), row_val.end());
-
-        const double sigma = sumSquared(reflector_val);
-        const double norm = std::sqrt(sigma);
-        const bool strong_pivot = norm > 0.0 && norm >= _factorization_threshold;
-        if (!strong_pivot) {
-            _ref_ptr[k + 1] = _ref_ptr[k];
-            leading_block_is_full_rank = false;
-            continue;
+    for (size_t col = 0; col < _n; ++col, ++stamp) {
+        reach.clear();
+        touched_rows.clear();
+        const size_t reach_stop = (col < _min_mn) ? col : _min_mn;
+        if (reach_stop < marks.size()) {
+            marks[reach_stop] = stamp;
+        }
+        if (col < _min_mn) {
+            touched_marks[col] = stamp;
+            touched_rows.push_back(col);
+            accumulator[col] = 0.0;
         }
 
-        double old_lead = 0.0;
-        if (!reflector_idx.empty() && reflector_idx.front() == k) {
-            old_lead = reflector_val.front();
+        const size_t col_begin = _workspace_outer[col];
+        const size_t col_end = _workspace_outer[col + 1];
+        bool found_diag = col >= _m;
+
+        size_t p = col_begin;
+        while (p < col_end || !found_diag) {
+            size_t row = col;
+            double value = 0.0;
+            if (p < col_end) {
+                row = _workspace_inner[p];
+                value = _workspace_val[p];
+                ++p;
+            } else {
+                found_diag = true;
+            }
+            if (row == col) {
+                found_diag = true;
+            }
+            if (touched_marks[row] != stamp) {
+                touched_marks[row] = stamp;
+                touched_rows.push_back(row);
+                accumulator[row] = 0.0;
+            }
+            accumulator[row] = value;
+
+            const size_t start = _first_row_elt[row];
+            if (start < _min_mn && start < col) {
+                appendReachPath(start, col, _etree, marks, stamp, reach);
+            }
         }
 
-        const double alpha = (old_lead >= 0.0) ? -norm : norm;
-        if (!reflector_idx.empty() && reflector_idx.front() == k) {
-            reflector_val.front() -= alpha;
-        } else {
-            reflector_idx.insert(reflector_idx.begin(), k);
-            reflector_val.insert(reflector_val.begin(), -alpha);
-        }
+        for (size_t ii = reach.size(); ii > 0; --ii) {
+            const size_t prev = reach[ii - 1];
+            const double beta = _ref_beta[prev];
+            if (beta == 0.0) {
+                continue;
+            }
 
-        const double vtv = sumSquared(reflector_val);
-        _ref_beta[k] = 2.0 / vtv;
-
-        _ref_idx.insert(_ref_idx.end(), reflector_idx.begin(), reflector_idx.end());
-        _ref_val.insert(_ref_val.end(), reflector_val.begin(), reflector_val.end());
-        _ref_ptr[k + 1] = _ref_idx.size();
-
-        buildDiagonalizedRow(row_idx, row_val, k, alpha, drop_tolerance, updated_idx, updated_val);
-        workspace.replaceRow(k, updated_idx, updated_val);
-        updateColumnRowIndex(column_rows, k, row_idx, updated_idx);
-
-        ++_numerical_rank;
-        if (leading_block_is_full_rank) {
-            ++_leading_numerical_rank;
-        }
-
-        collectAffectedRows(column_rows, reflector_idx, k, row_marks, mark_stamp, affected_rows);
-        ++mark_stamp;
-
-        for (size_t row = 0; row < affected_rows.size(); ++row) {
-            const size_t j = affected_rows[row];
-            workspace.getRowEntries(j, row_idx, row_val);
-
-            const double dot = sparseDot(row_idx, row_val, reflector_idx, reflector_val);
+            const size_t ref_begin = _ref_ptr[prev];
+            const size_t ref_end = _ref_ptr[prev + 1];
+            double dot = 0.0;
+            for (size_t p = ref_begin; p < ref_end; ++p) {
+                dot += _ref_val[p] * accumulator[_ref_idx[p]];
+            }
             if (std::abs(dot) <= drop_tolerance) {
                 continue;
             }
 
-            const double scale = _ref_beta[k] * dot;
-            buildUpdatedRow(
-                row_idx, row_val,
-                reflector_idx, reflector_val,
-                scale, drop_tolerance,
-                updated_idx, updated_val);
-            workspace.replaceRow(j, updated_idx, updated_val);
-            updateColumnRowIndex(column_rows, j, row_idx, updated_idx);
+            const double scale = beta * dot;
+            for (size_t p = ref_begin; p < ref_end; ++p) {
+                const size_t row = _ref_idx[p];
+                if (touched_marks[row] != stamp) {
+                    touched_marks[row] = stamp;
+                    touched_rows.push_back(row);
+                    accumulator[row] = 0.0;
+                }
+                accumulator[row] -= scale * _ref_val[p];
+            }
+        }
+
+        std::vector<size_t>& r_rows = r_column_rows[col];
+        std::vector<double>& r_values = r_column_values[col];
+        r_rows.clear();
+        r_values.clear();
+        const size_t r_limit = (col < _min_mn) ? col : _min_mn;
+        r_rows.reserve(touched_rows.size() + (col < _min_mn ? 1 : 0));
+        r_values.reserve(touched_rows.size() + (col < _min_mn ? 1 : 0));
+
+        for (size_t row : touched_rows) {
+            if (row >= r_limit) {
+                continue;
+            }
+            const double value = accumulator[row];
+            if (std::abs(value) > drop_tolerance) {
+                r_rows.push_back(row);
+                r_values.push_back(value);
+            }
+        }
+
+        if (col < _min_mn) {
+            double leading_value = accumulator[col];
+            double sqr_norm = 0.0;
+            reflector_rows.clear();
+            reflector_values.clear();
+            reflector_rows.reserve(touched_rows.size() + 1);
+            reflector_values.reserve(touched_rows.size() + 1);
+            reflector_rows.push_back(col);
+            reflector_values.push_back(leading_value);
+            for (size_t row : touched_rows) {
+                if (row <= col) {
+                    continue;
+                }
+                const double value = accumulator[row];
+                if (std::abs(value) <= drop_tolerance) {
+                    continue;
+                }
+                reflector_rows.push_back(row);
+                reflector_values.push_back(value);
+                sqr_norm += value * value;
+            }
+            const double norm = std::sqrt(leading_value * leading_value + sqr_norm);
+            if (norm > 0.0) {
+                const double alpha = (leading_value >= 0.0) ? -norm : norm;
+                reflector_values[0] = leading_value - alpha;
+                const double vtv = reflector_values[0] * reflector_values[0] + sqr_norm;
+                const double beta = (vtv == 0.0) ? 0.0 : 2.0 / vtv;
+                _ref_idx.insert(_ref_idx.end(), reflector_rows.begin(), reflector_rows.end());
+                _ref_val.insert(_ref_val.end(), reflector_values.begin(), reflector_values.end());
+                _ref_ptr[col + 1] = _ref_idx.size();
+                _ref_beta[col] = beta;
+                if (std::abs(alpha) > drop_tolerance) {
+                    r_rows.push_back(col);
+                    r_values.push_back(alpha);
+                }
+
+                if (norm >= _factorization_threshold) {
+                    ++_numerical_rank;
+                    if (leading_block_is_full_rank) {
+                        ++_leading_numerical_rank;
+                    }
+                } else {
+                    leading_block_is_full_rank = false;
+                }
+            } else {
+                _ref_ptr[col + 1] = _ref_ptr[col];
+                leading_block_is_full_rank = false;
+            }
+        }
+
+        for (size_t row : touched_rows) {
+            accumulator[row] = 0.0;
         }
     }
 
-    _R_sparse = buildSparseR(workspace);
+    _R_sparse = buildSparseR(r_column_rows, r_column_values);
 }
 
 void SparseQR::analyze() {
@@ -565,6 +611,13 @@ Matrix<> SparseQR::pseudoInverse(double damping) const {
     if (damping < 0.0) {
         throw std::invalid_argument("damping must be non-negative.");
     }
+    if (damping == 0.0 && _m >= _n && _numerical_rank == _n && _leading_numerical_rank == _numerical_rank) {
+        Matrix<> identity(_m, _m);
+        for (size_t i = 0; i < _m; ++i) {
+            identity(i, i) = 1.0;
+        }
+        return solve(identity, 0.0);
+    }
     Matrix<> denseR = R();
     Matrix<> q = Q();
     if (denseR.rows_size() != q.cols_size()) {
@@ -619,7 +672,9 @@ Matrix<> SparseQR::applyQ(const Matrix<>& B) const {
     for (size_t kk = _ref_beta.size(); kk > 0; --kk) {
         const size_t k = kk - 1;
         const double beta = _ref_beta[k];
-        if (beta == 0.0) continue;
+        if (beta == 0.0) {
+            continue;
+        }
         const size_t rstart = _ref_ptr[k];
         const size_t rend = _ref_ptr[k + 1];
         const size_t* ridx = _ref_idx.data() + rstart;
@@ -630,10 +685,12 @@ Matrix<> SparseQR::applyQ(const Matrix<>& B) const {
             for (size_t p = 0; p < rlen; ++p) {
                 dot += rval[p] * result(ridx[p], j);
             }
-            if (dot == 0.0) continue;
-            const double s = beta * dot;
+            if (dot == 0.0) {
+                continue;
+            }
+            const double scale = beta * dot;
             for (size_t p = 0; p < rlen; ++p) {
-                result(ridx[p], j) -= s * rval[p];
+                result(ridx[p], j) -= scale * rval[p];
             }
         }
     }
@@ -647,7 +704,9 @@ Matrix<> SparseQR::applyQt(const Matrix<>& B) const {
     Matrix<> result(B);
     for (size_t k = 0; k < _ref_beta.size(); ++k) {
         const double beta = _ref_beta[k];
-        if (beta == 0.0) continue;
+        if (beta == 0.0) {
+            continue;
+        }
         const size_t rstart = _ref_ptr[k];
         const size_t rend = _ref_ptr[k + 1];
         const size_t* ridx = _ref_idx.data() + rstart;
@@ -658,10 +717,12 @@ Matrix<> SparseQR::applyQt(const Matrix<>& B) const {
             for (size_t p = 0; p < rlen; ++p) {
                 dot += rval[p] * result(ridx[p], j);
             }
-            if (dot == 0.0) continue;
-            const double s = beta * dot;
+            if (dot == 0.0) {
+                continue;
+            }
+            const double scale = beta * dot;
             for (size_t p = 0; p < rlen; ++p) {
-                result(ridx[p], j) -= s * rval[p];
+                result(ridx[p], j) -= scale * rval[p];
             }
         }
     }
@@ -680,23 +741,23 @@ Matrix<> SparseQR::solveUpperTriangular(const Matrix<>& rhs, size_t effective_ra
     }
 
     Matrix<> x(effective_rank, rhs.cols_size());
-    for (size_t rhsCol = 0; rhsCol < rhs.cols_size(); ++rhsCol) {
+    for (size_t rhs_col = 0; rhs_col < rhs.cols_size(); ++rhs_col) {
         for (size_t ii = effective_rank; ii > 0; --ii) {
             const size_t i = ii - 1;
-            double sum = rhs(i, rhsCol);
+            double sum = rhs(i, rhs_col);
             double diagonal = 0.0;
             for (SparseMatrix<>::InnerIterator it(_R_sparse, i); it; ++it) {
                 if (it.col() == i) {
                     diagonal = it.value();
                 } else if (it.col() > i && it.col() < effective_rank) {
-                    sum -= it.value() * x(it.col(), rhsCol);
+                    sum -= it.value() * x(it.col(), rhs_col);
                 }
             }
             if (std::abs(diagonal) < _factorization_threshold) {
                 throw std::runtime_error(
                     "solveUpperTriangular: encountered a pivot below the numerical rank threshold.");
             }
-            x(i, rhsCol) = sum / diagonal;
+            x(i, rhs_col) = sum / diagonal;
         }
     }
     return x;

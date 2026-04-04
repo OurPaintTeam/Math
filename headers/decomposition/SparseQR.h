@@ -25,6 +25,11 @@ private:
     std::vector<size_t> _active_cols;
     std::vector<size_t> _perm;
     std::vector<size_t> _perm_inv;
+    std::vector<size_t> _workspace_outer;
+    std::vector<size_t> _workspace_inner;
+    std::vector<double> _workspace_val;
+    std::vector<size_t> _etree;
+    std::vector<size_t> _first_row_elt;
     bool _use_default_threshold = true;
     bool _preprocessed = false;
     bool _analyzed = false;
@@ -33,19 +38,11 @@ private:
     double resolvePivotThreshold() const;
     void preprocessProblem();
     void analyzeStructure();
+    void buildPermutedWorkspace();
+    void buildColumnEliminationTree();
     void factorizeNumeric();
-    SparseMatrix<> buildPermutedWorkspace() const;
-    SparseMatrix<> buildSparseR(const SparseMatrix<>& workspace) const;
-    void updateColumnRowIndex(std::vector<std::vector<size_t>>& column_rows,
-                              size_t row,
-                              const std::vector<size_t>& old_idx,
-                              const std::vector<size_t>& new_idx) const;
-    void collectAffectedRows(const std::vector<std::vector<size_t>>& column_rows,
-                             const std::vector<size_t>& support,
-                             size_t min_row,
-                             std::vector<size_t>& marks,
-                             size_t stamp,
-                             std::vector<size_t>& affected_rows) const;
+    SparseMatrix<> buildSparseR(const std::vector<std::vector<size_t>>& column_rows,
+                                const std::vector<std::vector<double>>& column_values) const;
     Matrix<> applyQ(const Matrix<>& B) const;
     Matrix<> applyQt(const Matrix<>& B) const;
     Matrix<> solveUpperTriangular(const Matrix<>& rhs, size_t effective_rank) const;
