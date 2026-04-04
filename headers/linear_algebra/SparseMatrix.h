@@ -4,6 +4,7 @@
 #include "Matrix.h"
 #include <algorithm>
 #include <numeric>
+#include <utility>
 
 template <Arithmetic T>
 struct Triplet {
@@ -91,6 +92,13 @@ public:
     void replaceRow(size_type row,
                     const std::vector<size_type>& cols,
                     const std::vector<T>& values);
+    void makeRowMutable();
+    const std::vector<size_type>& rowIndices(size_type row) const;
+    const std::vector<T>& rowValues(size_type row) const;
+    void swapRowBuffers(size_type row,
+                        std::vector<size_type>& cols,
+                        std::vector<T>& values);
+    void compressRowMutable();
 
     SparseMatrix getSubmatrix(size_type start_row, size_type start_col,
                               size_type num_rows, size_type num_cols) const;
@@ -121,6 +129,9 @@ private:
     std::vector<T> values_;
     std::vector<size_type> inner_;
     std::vector<size_type> outer_;
+    bool row_mutable_ = false;
+    std::vector<std::vector<size_type>> row_inner_;
+    std::vector<std::vector<T>> row_values_;
 };
 
 //////////////////////////////////////////////////////////////////////////// Constructors
@@ -155,6 +166,16 @@ template <Arithmetic T>
 inline T SparseMatrix<T>::operator()(iterator_type row, iterator_type col) const {
     if (row >= rows_ || col >= cols_)
         throw std::out_of_range("Index out of range");
+
+    if (row_mutable_) {
+        const auto& row_inner = row_inner_[row];
+        const auto& row_values = row_values_[row];
+        auto it = std::lower_bound(row_inner.begin(), row_inner.end(), col);
+        if (it != row_inner.end() && *it == col) {
+            return row_values[static_cast<size_type>(it - row_inner.begin())];
+        }
+        return T(0);
+    }
 
     auto start = inner_.begin() + static_cast<std::ptrdiff_t>(outer_[row]);
     auto end = inner_.begin() + static_cast<std::ptrdiff_t>(outer_[row + 1]);
@@ -410,6 +431,16 @@ inline void SparseMatrix<T>::getRowEntries(
     if (row >= rows_ || start_col > cols_)
         throw std::out_of_range("Index out of range");
 
+    if (row_mutable_) {
+        const auto& row_inner = row_inner_[row];
+        const auto& row_values = row_values_[row];
+        auto start = std::lower_bound(row_inner.begin(), row_inner.end(), start_col);
+        auto pos = static_cast<size_type>(start - row_inner.begin());
+        cols.assign(start, row_inner.end());
+        values.assign(row_values.begin() + static_cast<std::ptrdiff_t>(pos), row_values.end());
+        return;
+    }
+
     auto begin = inner_.begin() + static_cast<std::ptrdiff_t>(outer_[row]);
     auto end = inner_.begin() + static_cast<std::ptrdiff_t>(outer_[row + 1]);
     auto start = std::lower_bound(begin, end, start_col);
@@ -440,6 +471,12 @@ inline void SparseMatrix<T>::replaceRow(
             throw std::invalid_argument("replaceRow: column indices must be strictly increasing");
     }
 
+    if (row_mutable_) {
+        row_inner_[row] = cols;
+        row_values_[row] = values;
+        return;
+    }
+
     const size_type old_begin = outer_[row];
     const size_type old_end = outer_[row + 1];
     const size_type old_size = old_end - old_begin;
@@ -463,6 +500,104 @@ inline void SparseMatrix<T>::replaceRow(
     for (size_type i = row + 1; i <= rows_; ++i) {
         outer_[i] = grows ? (outer_[i] + delta) : (outer_[i] - delta);
     }
+}
+
+template <Arithmetic T>
+inline void SparseMatrix<T>::makeRowMutable() {
+    if (row_mutable_) {
+        return;
+    }
+
+    row_inner_.assign(rows_, {});
+    row_values_.assign(rows_, {});
+
+    for (size_type row = 0; row < rows_; ++row) {
+        const size_type begin = outer_[row];
+        const size_type end = outer_[row + 1];
+        row_inner_[row].assign(
+            inner_.begin() + static_cast<std::ptrdiff_t>(begin),
+            inner_.begin() + static_cast<std::ptrdiff_t>(end));
+        row_values_[row].assign(
+            values_.begin() + static_cast<std::ptrdiff_t>(begin),
+            values_.begin() + static_cast<std::ptrdiff_t>(end));
+    }
+
+    row_mutable_ = true;
+}
+
+template <Arithmetic T>
+inline const std::vector<typename SparseMatrix<T>::size_type>& SparseMatrix<T>::rowIndices(size_type row) const {
+    if (row >= rows_) {
+        throw std::out_of_range("Index out of range");
+    }
+    if (!row_mutable_) {
+        throw std::runtime_error("Call makeRowMutable() before rowIndices().");
+    }
+    return row_inner_[row];
+}
+
+template <Arithmetic T>
+inline const std::vector<T>& SparseMatrix<T>::rowValues(size_type row) const {
+    if (row >= rows_) {
+        throw std::out_of_range("Index out of range");
+    }
+    if (!row_mutable_) {
+        throw std::runtime_error("Call makeRowMutable() before rowValues().");
+    }
+    return row_values_[row];
+}
+
+template <Arithmetic T>
+inline void SparseMatrix<T>::swapRowBuffers(
+    size_type row,
+    std::vector<size_type>& cols,
+    std::vector<T>& values)
+{
+    if (row >= rows_) {
+        throw std::out_of_range("Index out of range");
+    }
+    if (!row_mutable_) {
+        throw std::runtime_error("Call makeRowMutable() before swapRowBuffers().");
+    }
+    if (cols.size() != values.size()) {
+        throw std::invalid_argument("swapRowBuffers: column/value sizes must match");
+    }
+
+    row_inner_[row].swap(cols);
+    row_values_[row].swap(values);
+}
+
+template <Arithmetic T>
+inline void SparseMatrix<T>::compressRowMutable() {
+    if (!row_mutable_) {
+        return;
+    }
+
+    size_type nnz = 0;
+    for (const auto& row_idx : row_inner_) {
+        nnz += row_idx.size();
+    }
+
+    values_.clear();
+    inner_.clear();
+    outer_.assign(rows_ + 1, 0);
+    values_.reserve(nnz);
+    inner_.reserve(nnz);
+
+    size_type offset = 0;
+    for (size_type row = 0; row < rows_; ++row) {
+        outer_[row] = offset;
+        const auto& row_idx = row_inner_[row];
+        const auto& row_val = row_values_[row];
+        inner_.insert(inner_.end(), row_idx.begin(), row_idx.end());
+        values_.insert(values_.end(), row_val.begin(), row_val.end());
+        offset += row_idx.size();
+    }
+    outer_[rows_] = offset;
+
+    row_inner_.clear();
+    row_values_.clear();
+    row_mutable_ = false;
 }
 
 template <Arithmetic T>
@@ -499,6 +634,16 @@ inline SparseMatrix<T> SparseMatrix<T>::getSubmatrix(
 template <Arithmetic T>
 inline Matrix<T> SparseMatrix<T>::toDense() const {
     Matrix<T> result(rows_, cols_);
+    if (row_mutable_) {
+        for (size_type i = 0; i < rows_; ++i) {
+            const auto& row_inner = row_inner_[i];
+            const auto& row_values = row_values_[i];
+            for (size_type k = 0; k < row_inner.size(); ++k) {
+                result(i, row_inner[k]) = row_values[k];
+            }
+        }
+        return result;
+    }
     for (size_type i = 0; i < rows_; ++i) {
         for (size_type k = outer_[i]; k < outer_[i + 1]; ++k) {
             result(i, inner_[k]) = values_[k];
