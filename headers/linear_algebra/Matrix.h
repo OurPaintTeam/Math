@@ -173,6 +173,10 @@ private:
 template <Arithmetic T>
 inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols) : rows(rows), cols(cols)
 {
+    if (rows == 0 || cols == 0) {
+        matrix = nullptr;
+        return;
+    }
     matrix = new T *[rows];
     for (iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
@@ -185,6 +189,10 @@ inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols) : rows(ro
 template<Arithmetic T>
 inline Matrix<T>::Matrix(const size_type& rows, const size_type& cols, const T& value) : rows(rows), cols(cols)
 {
+    if (rows == 0 || cols == 0) {
+        matrix = nullptr;
+        return;
+    }
     matrix = new T * [rows];
     for (iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
@@ -213,6 +221,10 @@ T Matrix<T>::norm(const Matrix<T>& mat) {
 template<Arithmetic T>
 inline Matrix<T>::Matrix(const size_type& size) : rows(size), cols(size)
 {
+    if (size == 0) {
+        matrix = nullptr;
+        return;
+    }
     matrix = new T * [size];
     for (typename Matrix<T>::iterator_type i = 0; i < size; i++) {
         matrix[i] = new T[cols];
@@ -247,25 +259,17 @@ inline Matrix<T>::Matrix(const V& vec) : rows(vec.size()), cols(vec[0].size())
 }
 
 template <Arithmetic T>
-inline Matrix<T>::Matrix(const Matrix<T>& other) : rows(other.rows), cols(other.cols) {
-    // check matrix and free memory if needed
-    if (matrix != NULL){
-        for (iterator_type i = 0; i < rows; i++)
-        {
-            delete[] matrix[i];
-        }
-        if (rows != 0) delete[] matrix;
+inline Matrix<T>::Matrix(const Matrix<T>& other) : rows(other.rows), cols(other.cols), matrix(nullptr) {
+    if (rows == 0 || cols == 0 || other.matrix == nullptr) {
+        return;
     }
-    // is rows == 0 or cols == 0 we dont need create matrix
-    if (rows != 0 && cols != 0) matrix = new T * [rows];
-
+    matrix = new T * [rows];
     for (typename Matrix<T>::iterator_type i = 0; i < rows; i++) {
         matrix[i] = new T[cols];
         for (typename Matrix<T>::iterator_type j = 0; j < cols; j++) {
             matrix[i][j] = other.matrix[i][j];
         }
     }
-
 }
 
 template <Arithmetic T>
@@ -320,11 +324,14 @@ inline Matrix<T>::Matrix(const std::initializer_list<T>& values)
 
 template <Arithmetic T>
 inline Matrix<T>::~Matrix() {
+    if (matrix == nullptr) {
+        return;
+    }
     for (iterator_type i = 0; i < rows; i++)
     {
         delete[] matrix[i];
     }
-    if (rows != 0) delete[] matrix;
+    delete[] matrix;
 }
 
 template<Arithmetic T>
