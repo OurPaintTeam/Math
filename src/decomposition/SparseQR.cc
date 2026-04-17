@@ -1,4 +1,5 @@
 #include "SparseQR.h"
+#include "SparseQrColamd.h"
 
 #include <algorithm>
 #include <cmath>
@@ -66,7 +67,7 @@ SparseQR::SparseQR(const SparseMatrix<>& A) {
     if (A.rows_size() < 1 || A.cols_size() < 1) {
         throw std::runtime_error("Matrix should be: rows > 0 && cols > 0");
     }
-    _A = A;
+    _A = A.rowMutableMode() ? A.compressed() : A;
 }
 
 SparseQR::SparseQR(const SparseQR& other)
@@ -193,9 +194,9 @@ bool operator!=(const SparseQR& A, const SparseQR& B) {
 double SparseQR::computeDefaultThreshold() const {
     const double eps = std::numeric_limits<double>::epsilon();
     std::vector<double> col_norm_sq(_n, 0.0);
-    for (size_t i = 0; i < _m; ++i) {
-        for (SparseMatrix<>::InnerIterator it(_A, i); it; ++it) {
-            col_norm_sq[it.col()] += it.value() * it.value();
+    for (size_t col = 0; col < _n; ++col) {
+        for (SparseMatrix<>::InnerIterator it(_A, col); it; ++it) {
+            col_norm_sq[col] += it.value() * it.value();
         }
     }
 
@@ -224,10 +225,9 @@ void SparseQR::preprocessProblem() {
     _col_counts.assign(_n, 0);
     _zero_cols.clear();
     _active_cols.clear();
-    for (size_t i = 0; i < _m; ++i) {
-        for (SparseMatrix<>::InnerIterator it(_A, i); it; ++it) {
-            ++_col_counts[it.col()];
-        }
+    const auto& outer = _A.outerIndexData();
+    for (size_t col = 0; col < _n; ++col) {
+        _col_counts[col] = outer[col + 1] - outer[col];
     }
     for (size_t j = 0; j < _n; ++j) {
         if (_col_counts[j] == 0) {
@@ -241,25 +241,33 @@ void SparseQR::preprocessProblem() {
 
 void SparseQR::buildPermutedWorkspace() {
     _workspace_outer.assign(_n + 1, 0);
-    for (size_t row = 0; row < _m; ++row) {
-        for (SparseMatrix<>::InnerIterator it(_A, row); it; ++it) {
-            ++_workspace_outer[_perm_inv[it.col()] + 1];
-        }
-    }
-    for (size_t col = 0; col < _n; ++col) {
-        _workspace_outer[col + 1] += _workspace_outer[col];
+
+    const auto& a_outer = _A.outerIndexData();
+    const auto& a_inner = _A.innerIndexData();
+    const auto& a_values = _A.valueData();
+
+    for (size_t permuted_col = 0; permuted_col < _n; ++permuted_col) {
+        const size_t original_col = _perm[permuted_col];
+        _workspace_outer[permuted_col + 1] =
+            _workspace_outer[permuted_col] + (a_outer[original_col + 1] - a_outer[original_col]);
     }
 
-    _workspace_inner.assign(_workspace_outer.back(), 0);
-    _workspace_val.assign(_workspace_outer.back(), 0.0);
-    std::vector<size_t> next(_workspace_outer);
-    for (size_t row = 0; row < _m; ++row) {
-        for (SparseMatrix<>::InnerIterator it(_A, row); it; ++it) {
-            const size_t col = _perm_inv[it.col()];
-            const size_t pos = next[col]++;
-            _workspace_inner[pos] = row;
-            _workspace_val[pos] = it.value();
-        }
+    _workspace_inner.resize(_workspace_outer.back());
+    _workspace_val.resize(_workspace_outer.back());
+
+    for (size_t permuted_col = 0; permuted_col < _n; ++permuted_col) {
+        const size_t original_col = _perm[permuted_col];
+        const size_t src_begin = a_outer[original_col];
+        const size_t src_end = a_outer[original_col + 1];
+        const size_t dst_begin = _workspace_outer[permuted_col];
+        std::copy(
+            a_inner.begin() + static_cast<std::ptrdiff_t>(src_begin),
+            a_inner.begin() + static_cast<std::ptrdiff_t>(src_end),
+            _workspace_inner.begin() + static_cast<std::ptrdiff_t>(dst_begin));
+        std::copy(
+            a_values.begin() + static_cast<std::ptrdiff_t>(src_begin),
+            a_values.begin() + static_cast<std::ptrdiff_t>(src_end),
+            _workspace_val.begin() + static_cast<std::ptrdiff_t>(dst_begin));
     }
 }
 
@@ -321,20 +329,32 @@ void SparseQR::analyzeStructure() {
         return;
     }
 
-    _perm.clear();
-    _perm.reserve(_n);
-    for (size_t j : _zero_cols) {
-        _perm.push_back(j);
-    }
-    std::vector<size_t> ordered_active(_active_cols);
-    std::sort(ordered_active.begin(), ordered_active.end(), [this](size_t a, size_t b) {
-        if (_col_counts[a] != _col_counts[b]) {
-            return _col_counts[a] < _col_counts[b];
+    _perm = buildFallbackOrdering(_zero_cols, _active_cols, _col_counts);
+
+    sparse_qr::CscPatternView<size_t> csc_view{
+        _m,
+        _n,
+        std::span<const size_t>(_A.outerIndexData()),
+        std::span<const size_t>(_A.innerIndexData())
+    };
+    sparse_qr::ColamdWorkspace<std::ptrdiff_t> colamd_workspace;
+    if (sparse_qr::computeColamdOrdering(csc_view, colamd_workspace)) {
+        const auto ordering = colamd_workspace.ordering();
+        if (ordering.size() == _n) {
+            bool valid = true;
+            for (size_t j = 0; j < ordering.size(); ++j) {
+                if (ordering[j] < 0 || static_cast<size_t>(ordering[j]) >= _n) {
+                    valid = false;
+                    break;
+                }
+            }
+            if (valid) {
+                _perm.resize(_n);
+                for (size_t j = 0; j < _n; ++j) {
+                    _perm[j] = static_cast<size_t>(ordering[j]);
+                }
+            }
         }
-        return a < b;
-    });
-    for (size_t j : ordered_active) {
-        _perm.push_back(j);
     }
 
     _perm_inv.resize(_n);
@@ -355,37 +375,23 @@ SparseMatrix<> SparseQR::buildSparseR(
         return SparseMatrix<>(0, _n);
     }
 
-    std::vector<size_t> outer(_min_mn + 1, 0);
+    std::vector<size_t> outer(_n + 1, 0);
+    std::vector<size_t> inner;
+    std::vector<double> values;
     for (size_t col = 0; col < _n; ++col) {
+        outer[col] = inner.size();
         for (size_t pos = 0; pos < column_rows[col].size(); ++pos) {
             const size_t row = column_rows[col][pos];
             if (row >= _min_mn || std::abs(column_values[col][pos]) == 0.0) {
                 continue;
             }
-            ++outer[row + 1];
+            inner.push_back(row);
+            values.push_back(column_values[col][pos]);
         }
     }
-    for (size_t row = 0; row < _min_mn; ++row) {
-        outer[row + 1] += outer[row];
-    }
+    outer[_n] = inner.size();
 
-    std::vector<size_t> inner(outer.back());
-    std::vector<double> values(outer.back());
-    std::vector<size_t> next(outer);
-    for (size_t col = 0; col < _n; ++col) {
-        for (size_t pos = 0; pos < column_rows[col].size(); ++pos) {
-            const size_t row = column_rows[col][pos];
-            const double value = column_values[col][pos];
-            if (row >= _min_mn || value == 0.0) {
-                continue;
-            }
-            const size_t out_pos = next[row]++;
-            inner[out_pos] = col;
-            values[out_pos] = value;
-        }
-    }
-
-    return SparseMatrix<>::fromCSR(
+    return SparseMatrix<>::fromCSC(
         _min_mn,
         _n,
         std::move(values),
@@ -399,41 +405,27 @@ void SparseQR::buildSparseRFromCSC() {
         return;
     }
 
-    _r_csr_outer_scratch.assign(_min_mn + 1, 0);
+    std::vector<size_t> outer(_n + 1, 0);
+    std::vector<size_t> inner;
+    std::vector<double> values;
     for (size_t col = 0; col < _n; ++col) {
+        outer[col] = inner.size();
         for (size_t p = _r_csc_outer[col]; p < _r_csc_outer[col + 1]; ++p) {
             const size_t row = _r_csc_inner[p];
             if (row < _min_mn && _r_csc_val[p] != 0.0) {
-                ++_r_csr_outer_scratch[row + 1];
+                inner.push_back(row);
+                values.push_back(_r_csc_val[p]);
             }
         }
     }
-    for (size_t row = 0; row < _min_mn; ++row) {
-        _r_csr_outer_scratch[row + 1] += _r_csr_outer_scratch[row];
-    }
+    outer[_n] = inner.size();
 
-    const size_t nnz = _r_csr_outer_scratch.back();
-    std::vector<size_t> inner(nnz);
-    std::vector<double> values(nnz);
-    _r_csr_next_scratch = _r_csr_outer_scratch;
-
-    for (size_t col = 0; col < _n; ++col) {
-        for (size_t p = _r_csc_outer[col]; p < _r_csc_outer[col + 1]; ++p) {
-            const size_t row = _r_csc_inner[p];
-            const double value = _r_csc_val[p];
-            if (row >= _min_mn || value == 0.0) continue;
-            const size_t out_pos = _r_csr_next_scratch[row]++;
-            inner[out_pos] = col;
-            values[out_pos] = value;
-        }
-    }
-
-    _R_sparse = SparseMatrix<>::fromCSR(
+    _R_sparse = SparseMatrix<>::fromCSC(
         _min_mn,
         _n,
         std::move(values),
         std::move(inner),
-        std::move(_r_csr_outer_scratch));
+        std::move(outer));
 }
 
 void SparseQR::factorizeNumeric() {
@@ -907,24 +899,21 @@ Matrix<> SparseQR::solveUpperTriangular(const Matrix<>& rhs, size_t effective_ra
         throw std::invalid_argument("solveUpperTriangular: right-hand side rows must match the effective rank.");
     }
 
+    const size_t ld = rhs.cols_size();
+    std::vector<double> rhs_buf(effective_rank * ld, 0.0);
+    std::vector<double> x_buf(effective_rank * ld, 0.0);
+    for (size_t row = 0; row < effective_rank; ++row) {
+        for (size_t col = 0; col < rhs.cols_size(); ++col) {
+            rhs_buf[row * ld + col] = rhs(row, col);
+        }
+    }
+
+    backsolveCSC(rhs_buf.data(), x_buf.data(), effective_rank, rhs.cols_size(), ld, ld);
+
     Matrix<> x(effective_rank, rhs.cols_size());
-    for (size_t rhs_col = 0; rhs_col < rhs.cols_size(); ++rhs_col) {
-        for (size_t ii = effective_rank; ii > 0; --ii) {
-            const size_t i = ii - 1;
-            double sum = rhs(i, rhs_col);
-            double diagonal = 0.0;
-            for (SparseMatrix<>::InnerIterator it(_R_sparse, i); it; ++it) {
-                if (it.col() == i) {
-                    diagonal = it.value();
-                } else if (it.col() > i && it.col() < effective_rank) {
-                    sum -= it.value() * x(it.col(), rhs_col);
-                }
-            }
-            if (std::abs(diagonal) < _factorization_threshold) {
-                throw std::runtime_error(
-                    "solveUpperTriangular: encountered a pivot below the numerical rank threshold.");
-            }
-            x(i, rhs_col) = sum / diagonal;
+    for (size_t row = 0; row < effective_rank; ++row) {
+        for (size_t col = 0; col < rhs.cols_size(); ++col) {
+            x(row, col) = x_buf[row * ld + col];
         }
     }
     return x;

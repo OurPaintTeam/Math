@@ -100,13 +100,20 @@ double ResidualNorm(const Matrix<double>& A, const Matrix<double>& x, const Matr
 }
 
 Eigen::SparseMatrix<double> ToEigenSparse(const SparseMatrix<double>& matrix) {
+    SparseMatrix<double> buffer;
+    const SparseMatrix<double>* compressed = &matrix;
+    if (matrix.rowMutableMode()) {
+        buffer = matrix.compressed();
+        compressed = &buffer;
+    }
+
     Eigen::SparseMatrix<double> result(
-        static_cast<int>(matrix.rows_size()),
-        static_cast<int>(matrix.cols_size()));
+        static_cast<int>(compressed->rows_size()),
+        static_cast<int>(compressed->cols_size()));
     std::vector<Eigen::Triplet<double>> triplets;
-    triplets.reserve(matrix.nonZeros());
-    for (size_t row = 0; row < matrix.rows_size(); ++row) {
-        for (SparseMatrix<double>::InnerIterator it(matrix, row); it; ++it) {
+    triplets.reserve(compressed->nonZeros());
+    for (size_t col = 0; col < compressed->cols_size(); ++col) {
+        for (SparseMatrix<double>::InnerIterator it(*compressed, col); it; ++it) {
             triplets.emplace_back(
                 static_cast<int>(it.row()),
                 static_cast<int>(it.col()),

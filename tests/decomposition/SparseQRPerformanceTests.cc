@@ -83,13 +83,20 @@ Matrix<double> BuildRankDeficient(size_t rows, size_t cols, size_t target_rank,
 }
 
 Eigen::SparseMatrix<double> ToEigenSparse(const SparseMatrix<double>& matrix) {
+    SparseMatrix<double> buffer;
+    const SparseMatrix<double>* compressed = &matrix;
+    if (matrix.rowMutableMode()) {
+        buffer = matrix.compressed();
+        compressed = &buffer;
+    }
+
     Eigen::SparseMatrix<double> result(
-        static_cast<int>(matrix.rows_size()),
-        static_cast<int>(matrix.cols_size()));
+        static_cast<int>(compressed->rows_size()),
+        static_cast<int>(compressed->cols_size()));
     std::vector<Eigen::Triplet<double>> triplets;
-    triplets.reserve(matrix.nonZeros());
-    for (size_t row = 0; row < matrix.rows_size(); ++row)
-        for (SparseMatrix<double>::InnerIterator it(matrix, row); it; ++it)
+    triplets.reserve(compressed->nonZeros());
+    for (size_t col = 0; col < compressed->cols_size(); ++col)
+        for (SparseMatrix<double>::InnerIterator it(*compressed, col); it; ++it)
             triplets.emplace_back(
                 static_cast<int>(it.row()),
                 static_cast<int>(it.col()),
@@ -137,6 +144,10 @@ struct FactorizationTimes {
     double factorizeMs;
     double totalMs;
 };
+
+double RatioMyToEigen(double myMs, double eigenMs) {
+    return myMs / std::max(eigenMs, 1e-9);
+}
 
 FactorizationTimes TimeSparseQrSplit(const SparseMatrix<double>& A, int repeats) {
     double aTotal = 0, fTotal = 0, tTotal = 0;
@@ -278,6 +289,7 @@ BenchResult RunCase(size_t rows, size_t cols, double density, int repeats, uint3
               << " dense_qr_ms=" << denseMs
               << " sparse_qr_ms=" << sparseMs
               << " eigen_sparse_qr_ms=" << eigenMs
+              << " ratio=" << RatioMyToEigen(sparseMs, eigenMs)
               << std::endl;
 
     return {denseMs, sparseMs, eigenMs};
@@ -299,7 +311,7 @@ void RunFactorizationBench(size_t rows, size_t cols, double density,
               << " factorize_ms=" << split.factorizeMs
               << " total_ms=" << split.totalMs
               << " eigen_ms=" << eigenMs
-              << " ratio=" << (split.totalMs / std::max(eigenMs, 0.001))
+              << " ratio=" << RatioMyToEigen(split.totalMs, eigenMs)
               << std::endl;
 }
 
@@ -341,6 +353,7 @@ void RunSolveCase(size_t rows, size_t cols, size_t rhsCols, double density, int 
               << " sparse_solve_per_run_ms=" << (sparseSolveMs * inv)
               << " eigen_solve_total_ms=" << eigenSolveMs
               << " eigen_solve_per_run_ms=" << (eigenSolveMs * inv)
+              << " ratio=" << RatioMyToEigen(sparseSolveMs, eigenSolveMs)
               << " sparse_residual=" << sparseResidual
               << " eigen_residual=" << eigenResidual
               << std::endl;
@@ -401,6 +414,8 @@ void RunRepeatedSolveBench(size_t rows, size_t cols, size_t rhsCols,
               << " eigen_solve_total_ms=" << eigenSolveTotalMs
               << " sparse_total_ms=" << (sparseFactMs + sparseSolveTotalMs)
               << " eigen_total_ms=" << (eigenFactMs + eigenSolveTotalMs)
+              << " ratio="
+              << RatioMyToEigen(sparseFactMs + sparseSolveTotalMs, eigenFactMs + eigenSolveTotalMs)
               << std::endl;
 }
 
@@ -579,6 +594,7 @@ TEST(SparseQRPerformanceTests, RankDeficient_500x200_rank100) {
               << " eigen_rank=" << eigenRank
               << " sparse_ms=" << split.totalMs
               << " eigen_ms=" << eigenMs
+              << " ratio=" << RatioMyToEigen(split.totalMs, eigenMs)
               << std::endl;
 
     // Under row-nnz cap (<=12), post-sparsification rank can deviate from target_rank.
@@ -608,6 +624,7 @@ TEST(SparseQRPerformanceTests, RankDeficient_1000x500_rank200) {
               << " eigen_rank=" << eigenRank
               << " sparse_ms=" << split.totalMs
               << " eigen_ms=" << eigenMs
+              << " ratio=" << RatioMyToEigen(split.totalMs, eigenMs)
               << std::endl;
 
     EXPECT_EQ(r, static_cast<size_t>(eigenRank));
