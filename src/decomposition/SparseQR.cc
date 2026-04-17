@@ -40,6 +40,26 @@ void appendReachPath(
         reach.end());
 }
 
+std::vector<size_t> buildFallbackOrdering(
+    const std::vector<size_t>& zero_cols,
+    const std::vector<size_t>& active_cols,
+    const std::vector<size_t>& col_counts)
+{
+    std::vector<size_t> perm;
+    perm.reserve(zero_cols.size() + active_cols.size());
+    perm.insert(perm.end(), zero_cols.begin(), zero_cols.end());
+
+    std::vector<size_t> ordered_active(active_cols);
+    std::sort(ordered_active.begin(), ordered_active.end(), [&col_counts](size_t a, size_t b) {
+        if (col_counts[a] != col_counts[b]) {
+            return col_counts[a] < col_counts[b];
+        }
+        return a < b;
+    });
+    perm.insert(perm.end(), ordered_active.begin(), ordered_active.end());
+    return perm;
+}
+
 } // namespace
 
 SparseQR::SparseQR(const SparseMatrix<>& A) {
