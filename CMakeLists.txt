@@ -46,6 +46,7 @@ set(MATH_LINEAR_ALGEBRA_HEADERS
 set(MATH_DECOMPOSITION_HEADERS
         headers/decomposition/QR.h
         headers/decomposition/SparseQR.h
+        headers/decomposition/ordering/SparseQrColamd.h
 )
 
 set(MATH_GRAPH_HEADERS
@@ -152,6 +153,7 @@ target_include_directories(Math
         headers/optimizers/matrix
         headers/optimizers/eigen
         headers/decomposition
+        headers/decomposition/ordering
         headers/graph
         headers/tasks
         headers/tasks/base
