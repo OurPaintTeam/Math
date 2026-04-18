@@ -39,7 +39,7 @@ jobs:
       - name: Configure Project
         run: cmake -G Ninja -B build -S . -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_BUILD_TYPE=Release -DTYPE_OF_COMPILING=1 -DTYPE_OF_OPTIMIZATION=1 -DENABLE_MEMCHECK=OFF
       - name: Build Performance Tests
-        run: cmake --build build --target SparseQRPerformanceTests QRPerformanceTests
+        run: cmake --build build --target perf_tests_build
       - name: Run Performance Tests
         run: ctest --test-dir build/tests --output-on-failure -V -L perf -C Release
 
