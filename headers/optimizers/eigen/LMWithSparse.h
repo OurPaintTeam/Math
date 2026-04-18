@@ -22,6 +22,7 @@ private:
     double epsilon1 = 1e-8;
     double epsilon2 = 1e-8;
     int maxIterations = 100;
+    int performedIterations = 0;
 
     Eigen::SparseMatrix<double> jacobian;
     bool structureInitialized = false;
@@ -48,6 +49,8 @@ public:
 
     void optimize() {
         int iteration = 0;
+        performedIterations = 0;
+        converged = false;
         Eigen::VectorXd residuals;
         Eigen::MatrixXd denseJacobian;
 
@@ -111,6 +114,8 @@ public:
             ++iteration;
         }
 
+        performedIterations = iteration;
+
         std::cout << "[LM] Finished after " << iteration << " iterations. "
                   << "Final error: " << currentError
                   << (converged ? " [converged]" : " [not converged]") << std::endl;
@@ -126,6 +131,10 @@ public:
 
     double getCurrentError() const {
         return currentError;
+    }
+
+    int getIterationCount() const {
+        return performedIterations;
     }
 };
 
