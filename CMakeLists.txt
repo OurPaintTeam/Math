@@ -46,6 +46,7 @@ set(MATH_LINEAR_ALGEBRA_HEADERS
 set(MATH_DECOMPOSITION_HEADERS
         headers/decomposition/QR.h
         headers/decomposition/SparseQR.h
+        headers/decomposition/ordering/SparseQrColamd.h
 )
 
 set(MATH_GRAPH_HEADERS
@@ -64,6 +65,7 @@ set(MATH_MATRIX_OPTIMIZER_SOURCES
         src/optimizers/matrix/NewtonOptimizer.cc
         src/optimizers/matrix/NewtonGaussSolver.cc
         src/optimizers/matrix/LevenbergMarquardtSolver.cc
+        src/optimizers/matrix/sparse/SparseLevenbergMarquardtSolver.cc
 )
 
 set(MATH_MATRIX_OPTIMIZER_HEADERS
@@ -72,6 +74,7 @@ set(MATH_MATRIX_OPTIMIZER_HEADERS
         headers/optimizers/matrix/NewtonOptimizer.h
         headers/optimizers/matrix/NewtonGaussSolver.h
         headers/optimizers/matrix/LevenbergMarquardtSolver.h
+        headers/optimizers/matrix/sparse/SparseLevenbergMarquardtSolver.h
 )
 
 set(MATH_EIGEN_OPTIMIZER_SOURCES
@@ -95,6 +98,7 @@ set(MATH_MATRIX_TASK_HEADERS
         headers/tasks/matrix/TaskMatrix.h
         headers/tasks/matrix/TaskF.h
         headers/tasks/matrix/LSMTask.h
+        headers/tasks/matrix/SparseLSMTask.h
 )
 
 set(MATH_EIGEN_TASK_HEADERS
@@ -152,6 +156,7 @@ target_include_directories(Math
         headers/optimizers/matrix
         headers/optimizers/eigen
         headers/decomposition
+        headers/decomposition/ordering
         headers/graph
         headers/tasks
         headers/tasks/base

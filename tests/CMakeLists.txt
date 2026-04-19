@@ -41,6 +41,7 @@ function(add_math_test name src)
 
     add_test(NAME ${name} COMMAND ${name})
     if (is_perf)
+        set_property(GLOBAL APPEND PROPERTY MATH_PERF_TEST_TARGETS ${name})
         set_tests_properties(${name} PROPERTIES
             LABELS "perf"
             TIMEOUT 0
@@ -90,3 +91,8 @@ foreach(src ${TEST_SOURCES})
   get_filename_component(tname "${src}" NAME_WE)
   add_math_test(${tname} "${src}")
 endforeach()
+
+get_property(MATH_PERF_TEST_TARGETS GLOBAL PROPERTY MATH_PERF_TEST_TARGETS)
+if (MATH_PERF_TEST_TARGETS)
+    add_custom_target(perf_tests_build DEPENDS ${MATH_PERF_TEST_TARGETS})
+endif()

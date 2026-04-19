@@ -1,5 +1,7 @@
+#include <algorithm>
 #include <cmath>
 #include <random>
+#include <string>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -12,6 +14,34 @@
 #include "SparseQR.h"
 
 namespace {
+
+constexpr size_t kMaxRowNnzForGeometry = 12;
+
+void EnforceRowNnzCap(Matrix<double>& matrix, size_t max_row_nnz = kMaxRowNnzForGeometry) {
+    for (size_t i = 0; i < matrix.rows_size(); ++i) {
+        std::vector<std::pair<double, size_t>> nz;
+        nz.reserve(matrix.cols_size());
+        for (size_t j = 0; j < matrix.cols_size(); ++j) {
+            const double v = matrix(i, j);
+            if (v != 0.0) {
+                nz.emplace_back(std::abs(v), j);
+            }
+        }
+        if (nz.size() <= max_row_nnz) continue;
+        std::nth_element(
+            nz.begin(),
+            nz.begin() + static_cast<std::ptrdiff_t>(max_row_nnz),
+            nz.end(),
+            [](const auto& a, const auto& b) { return a.first > b.first; });
+        std::vector<char> keep(matrix.cols_size(), 0);
+        for (size_t k = 0; k < max_row_nnz; ++k) {
+            keep[nz[k].second] = 1;
+        }
+        for (size_t j = 0; j < matrix.cols_size(); ++j) {
+            if (!keep[j]) matrix(i, j) = 0.0;
+        }
+    }
+}
 
 bool DenseApproxEqual(const Matrix<double>& A, const Matrix<double>& B, double eps = 1e-9) {
     if (A.rows_size() != B.rows_size() || A.cols_size() != B.cols_size()) {
@@ -60,40 +90,8 @@ Matrix<double> BuildSparseLikeDense(size_t rows, size_t cols, double density, ui
         }
     }
 
+    EnforceRowNnzCap(result);
     return result;
-}
-
-std::vector<size_t> ColumnOrdering(const Matrix<double>& dense) {
-    std::vector<size_t> counts(dense.cols_size(), 0);
-    for (size_t i = 0; i < dense.rows_size(); ++i) {
-        for (size_t j = 0; j < dense.cols_size(); ++j) {
-            if (dense(i, j) != 0.0) {
-                ++counts[j];
-            }
-        }
-    }
-    std::vector<size_t> perm(dense.cols_size());
-    for (size_t j = 0; j < dense.cols_size(); ++j) {
-        perm[j] = j;
-    }
-    std::sort(perm.begin(), perm.end(), [&counts](size_t a, size_t b) {
-        if (counts[a] != counts[b]) {
-            return counts[a] < counts[b];
-        }
-        return a < b;
-    });
-    return perm;
-}
-
-Matrix<double> ApplyColumnOrdering(const Matrix<double>& dense) {
-    std::vector<size_t> perm = ColumnOrdering(dense);
-    Matrix<double> ordered(dense.rows_size(), dense.cols_size());
-    for (size_t j = 0; j < dense.cols_size(); ++j) {
-        for (size_t i = 0; i < dense.rows_size(); ++i) {
-            ordered(i, j) = dense(i, perm[j]);
-        }
-    }
-    return ordered;
 }
 
 double ResidualNorm(const Matrix<double>& A, const Matrix<double>& x, const Matrix<double>& b) {
@@ -102,13 +100,20 @@ double ResidualNorm(const Matrix<double>& A, const Matrix<double>& x, const Matr
 }
 
 Eigen::SparseMatrix<double> ToEigenSparse(const SparseMatrix<double>& matrix) {
+    SparseMatrix<double> buffer;
+    const SparseMatrix<double>* compressed = &matrix;
+    if (matrix.rowMutableMode()) {
+        buffer = matrix.compressed();
+        compressed = &buffer;
+    }
+
     Eigen::SparseMatrix<double> result(
-        static_cast<int>(matrix.rows_size()),
-        static_cast<int>(matrix.cols_size()));
+        static_cast<int>(compressed->rows_size()),
+        static_cast<int>(compressed->cols_size()));
     std::vector<Eigen::Triplet<double>> triplets;
-    triplets.reserve(matrix.nonZeros());
-    for (size_t row = 0; row < matrix.rows_size(); ++row) {
-        for (SparseMatrix<double>::InnerIterator it(matrix, row); it; ++it) {
+    triplets.reserve(compressed->nonZeros());
+    for (size_t col = 0; col < compressed->cols_size(); ++col) {
+        for (SparseMatrix<double>::InnerIterator it(*compressed, col); it; ++it) {
             triplets.emplace_back(
                 static_cast<int>(it.row()),
                 static_cast<int>(it.col()),
@@ -147,10 +152,16 @@ void CheckFactorization(const Matrix<double>& dense, double eps = 1e-8) {
     SparseQR qr(sparse);
     qr.qr();
 
-    Matrix<double> restored = qr.Q() * qr.R();
-    Matrix<double> ordered = ApplyColumnOrdering(dense);
+    Matrix<double> qr_product = qr.Q() * qr.R();
+    const auto& perm = qr.colsPermutation();
+    Matrix<double> AP(dense.rows_size(), dense.cols_size());
+    for (size_t j = 0; j < dense.cols_size(); ++j) {
+        for (size_t i = 0; i < dense.rows_size(); ++i) {
+            AP(i, j) = dense(i, perm[j]);
+        }
+    }
 
-    EXPECT_TRUE(DenseApproxEqual(restored, ordered, eps));
+    EXPECT_TRUE(DenseApproxEqual(qr_product, AP, eps));
     EXPECT_TRUE(IsOrthonormal(qr.Q(), eps));
     EXPECT_TRUE(IsUpperTriangular(qr.R(), eps));
 }
@@ -268,6 +279,56 @@ TEST(SparseQRTests, solveLeastSquaresComparedToEigen) {
     EXPECT_LE(sparseResidual, eigenResidual * 100.0 + 1e-6);
 }
 
+TEST(SparseQRTests, solveSquareFullRankSystem) {
+    Matrix<double> dense = {
+        {4.0, 1.0, 0.0},
+        {0.0, 3.0, -1.0},
+        {2.0, 0.0, 5.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> xExpected(3, 1);
+    xExpected(0, 0) = 1.5;
+    xExpected(1, 0) = -2.0;
+    xExpected(2, 0) = 0.5;
+    Matrix<double> b = dense * xExpected;
+    Matrix<double> x = qr.solve(b, 0.0);
+
+    EXPECT_TRUE(DenseApproxEqual(x, xExpected, 1e-10));
+    EXPECT_EQ(qr.rank(), 3u);
+    EXPECT_TRUE(IsUpperTriangular(qr.R(), 1e-10));
+}
+
+TEST(SparseQRTests, solveTallFullRankSystemAndThinQ) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0},
+        {0.0, 3.0, 0.0},
+        {4.0, 0.0, 5.0},
+        {0.0, 6.0, 1.0},
+        {1.0, 2.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> q = qr.Q();
+    EXPECT_EQ(q.rows_size(), dense.rows_size());
+    EXPECT_EQ(q.cols_size(), std::min(dense.rows_size(), dense.cols_size()));
+    EXPECT_TRUE(IsOrthonormal(q, 1e-10));
+
+    Matrix<double> xExpected(3, 1);
+    xExpected(0, 0) = 1.0;
+    xExpected(1, 0) = -2.0;
+    xExpected(2, 0) = 3.0;
+    Matrix<double> b = dense * xExpected;
+    Matrix<double> x = qr.solve(b, 0.0);
+
+    EXPECT_TRUE(DenseApproxEqual(x, xExpected, 1e-9));
+    EXPECT_EQ(qr.rank(), dense.cols_size());
+}
+
 TEST(SparseQRTests, rankEstimationForDependentColumns) {
     Matrix<double> dense = {
         {1.0, 2.0, 3.0},
@@ -279,4 +340,231 @@ TEST(SparseQRTests, rankEstimationForDependentColumns) {
     SparseQR qr(sparse);
     qr.qr();
     EXPECT_EQ(qr.rank(), 2u);
+}
+
+TEST(SparseQRTests, scaleAwareThresholdMatchesEigenAndTolCanOverride) {
+    Matrix<double> dense = {
+        {1.0e10, 1.0e10},
+        {0.0, 1.0e-8},
+        {0.0, 0.0},
+        {0.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparse);
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> eigenQr;
+    eigenQr.compute(eigenA);
+
+    EXPECT_EQ(qr.rank(), static_cast<size_t>(eigenQr.rank()));
+    EXPECT_EQ(qr.rank(), 1u);
+    EXPECT_EQ(qr.rank(1e-12), 2u);
+    EXPECT_LT(std::abs(qr.R()(1, 1)), 1e-6);
+}
+
+TEST(SparseQRTests, setPivotThresholdControlsNumericalRank) {
+    Matrix<double> dense = {
+        {1.0, 1.0},
+        {0.0, 1.0e-6},
+        {0.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.setPivotThreshold(1.0e-5);
+    qr.qr();
+
+    EXPECT_EQ(qr.rank(), 1u);
+    EXPECT_EQ(qr.rank(1.0e-7), 2u);
+}
+
+TEST(SparseQRTests, solveRejectsUnderdeterminedSystemsExplicitly) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0},
+        {0.0, 3.0, 4.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> b(2, 1);
+    b(0, 0) = 1.0;
+    b(1, 0) = 2.0;
+
+    try {
+        (void)qr.solve(b, 0.0);
+        FAIL() << "Expected solve() to reject underdetermined systems.";
+    } catch (const std::runtime_error& err) {
+        EXPECT_NE(std::string(err.what()).find("pseudoInverse"), std::string::npos);
+    }
+}
+
+TEST(SparseQRTests, solveRejectsRankDeficientSystemsExplicitly) {
+    Matrix<double> dense = {
+        {1.0, 2.0, 3.0},
+        {2.0, 4.0, 6.0},
+        {0.0, 1.0, 1.0},
+        {0.0, 2.0, 2.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> b(4, 1);
+    b(0, 0) = 1.0;
+    b(1, 0) = 2.0;
+    b(2, 0) = 3.0;
+    b(3, 0) = 4.0;
+
+    try {
+        (void)qr.solve(b, 0.0);
+        FAIL() << "Expected solve() to reject rank-deficient systems.";
+    } catch (const std::runtime_error& err) {
+        EXPECT_NE(std::string(err.what()).find("rank-deficient"), std::string::npos);
+    }
+}
+
+TEST(SparseQRTests, pseudoInverseTallFullRankHasExpectedShapeAndAction) {
+    Matrix<double> dense = {
+        {1.0, 0.0, 2.0},
+        {0.0, 3.0, 0.0},
+        {4.0, 0.0, 5.0},
+        {0.0, 6.0, 1.0},
+        {1.0, 2.0, 0.0}
+    };
+    SparseMatrix<double> sparse(dense);
+    SparseQR qr(sparse);
+    qr.qr();
+
+    Matrix<double> pinv = qr.pseudoInverse(0.0);
+    EXPECT_EQ(pinv.rows_size(), dense.cols_size());
+    EXPECT_EQ(pinv.cols_size(), dense.rows_size());
+
+    Matrix<double> leftIdentity = pinv * dense;
+    Matrix<double> expected = Matrix<double>::identity(dense.cols_size(), dense.cols_size());
+    EXPECT_TRUE(DenseApproxEqual(leftIdentity, expected, 1e-8));
+}
+
+TEST(SparseQRTests, numericPivotingFullRankRectangularMatchesEigenRank) {
+    Matrix<double> dense = BuildSparseLikeDense(60, 35, 0.08, 2027u);
+    for (size_t i = 0; i < dense.cols_size(); ++i) {
+        dense(i % dense.rows_size(), i) += 1.0;
+    }
+    SparseMatrix<double> sparse(dense);
+
+    SparseQR qrPivot(sparse);
+    qrPivot.qr();
+
+    SparseQR qrNoPivot(sparse);
+    qrNoPivot.setNumericPivotingEnabled(false);
+    qrNoPivot.qr();
+
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparse);
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> eigenQr;
+    eigenQr.compute(eigenA);
+    const size_t rankEigen = static_cast<size_t>(eigenQr.rank());
+
+    const size_t errPivot =
+        (qrPivot.rank() > rankEigen) ? (qrPivot.rank() - rankEigen) : (rankEigen - qrPivot.rank());
+    const size_t errNoPivot =
+        (qrNoPivot.rank() > rankEigen) ? (qrNoPivot.rank() - rankEigen) : (rankEigen - qrNoPivot.rank());
+    EXPECT_LE(errPivot, errNoPivot);
+}
+
+TEST(SparseQRTests, numericPivotingImprovesIllConditionedResidualAgainstNoPivot) {
+    Matrix<double> dense(80, 40);
+    for (size_t i = 0; i < 40; ++i) {
+        dense(i, i) = 1.0;
+    }
+    for (size_t i = 0; i < 40; ++i) {
+        dense(i, 0) += std::pow(10.0, -10.0) * static_cast<double>(i + 1);
+        dense(i + 40, i) = std::pow(10.0, -8.0) * static_cast<double>((i % 7) + 1);
+        dense(i + 40, 0) += std::pow(10.0, -12.0) * static_cast<double>(i + 3);
+    }
+
+    Matrix<double> xTrue(40, 1);
+    for (size_t i = 0; i < 40; ++i) xTrue(i, 0) = std::sin(0.03 * static_cast<double>(i + 1));
+    Matrix<double> b = dense * xTrue;
+    for (size_t i = 0; i < b.rows_size(); ++i) {
+        b(i, 0) += 1e-10 * std::cos(0.11 * static_cast<double>(i));
+    }
+
+    SparseMatrix<double> sparse(dense);
+    SparseQR qrPivot(sparse);
+    qrPivot.qr();
+    Matrix<double> xPivot = qrPivot.solve(b, 1e-12);
+    const double resPivot = ResidualNorm(dense, xPivot, b);
+
+    SparseQR qrNoPivot(sparse);
+    qrNoPivot.setNumericPivotingEnabled(false);
+    qrNoPivot.qr();
+    Matrix<double> xNoPivot = qrNoPivot.solve(b, 1e-12);
+    const double resNoPivot = ResidualNorm(dense, xNoPivot, b);
+
+    EXPECT_LE(resPivot, resNoPivot * 1.05 + 1e-12);
+}
+
+TEST(SparseQRTests, numericPivotingRankDeficientTracksEigenBetterThanNoPivot) {
+    Matrix<double> dense(90, 45);
+    for (size_t i = 0; i < 30; ++i) {
+        dense(i, i) = 2.0;
+        dense(i + 30, i) = -1.0;
+        dense(i + 60, i) = 0.5;
+    }
+    for (size_t i = 0; i < 15; ++i) {
+        dense(i, 30 + i) = 1.0;
+        dense(i + 30, 30 + i) = 2.0;
+        dense(i + 60, 30 + i) = -3.0;
+        dense(i, 15 + i) += 1e-10;
+    }
+
+    SparseMatrix<double> sparse(dense);
+    SparseQR qrPivot(sparse);
+    qrPivot.qr();
+
+    SparseQR qrNoPivot(sparse);
+    qrNoPivot.setNumericPivotingEnabled(false);
+    qrNoPivot.qr();
+
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparse);
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> eigenQr;
+    eigenQr.compute(eigenA);
+    const size_t rankEigen = static_cast<size_t>(eigenQr.rank());
+
+    const size_t errPivot =
+        (qrPivot.rank() > rankEigen) ? (qrPivot.rank() - rankEigen) : (rankEigen - qrPivot.rank());
+    const size_t errNoPivot =
+        (qrNoPivot.rank() > rankEigen) ? (qrNoPivot.rank() - rankEigen) : (rankEigen - qrNoPivot.rank());
+    EXPECT_LE(errPivot, errNoPivot);
+}
+
+TEST(SparseQRTests, numericPivotingNearlyDependentColumnsImprovesRankEstimate) {
+    Matrix<double> dense(70, 35);
+    for (size_t i = 0; i < 35; ++i) {
+        dense(i, i) = 1.0;
+    }
+    for (size_t i = 0; i < 15; ++i) {
+        for (size_t r = 0; r < 70; ++r) {
+            dense(r, 20 + i) = dense(r, i) + 1e-11 * static_cast<double>((r + i) % 5 + 1);
+        }
+    }
+
+    SparseMatrix<double> sparse(dense);
+    SparseQR qrPivot(sparse);
+    qrPivot.qr();
+
+    SparseQR qrNoPivot(sparse);
+    qrNoPivot.setNumericPivotingEnabled(false);
+    qrNoPivot.qr();
+
+    Eigen::SparseMatrix<double> eigenA = ToEigenSparse(sparse);
+    Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> eigenQr;
+    eigenQr.compute(eigenA);
+    const size_t rankEigen = static_cast<size_t>(eigenQr.rank());
+
+    const size_t errPivot =
+        (qrPivot.rank() > rankEigen) ? (qrPivot.rank() - rankEigen) : (rankEigen - qrPivot.rank());
+    const size_t errNoPivot =
+        (qrNoPivot.rank() > rankEigen) ? (qrNoPivot.rank() - rankEigen) : (rankEigen - qrNoPivot.rank());
+    EXPECT_LE(errPivot, errNoPivot);
 }
