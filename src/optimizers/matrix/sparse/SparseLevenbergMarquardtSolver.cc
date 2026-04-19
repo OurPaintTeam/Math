@@ -90,11 +90,11 @@ void SparseLMSolver::optimize() {
         }
 
         const double candidateError = c_task->setError(candidate);
-        const double gainNumerator = 0.5 * (currentError - candidateError);
+        const double gainNumerator = currentError - candidateError;
         const double rho = gainNumerator
                          / (computeGainDenominator(step, gradient, lambda) + 1e-20);
 
-        if (rho > 0.0 && std::isfinite(candidateError)) {
+        if (std::isfinite(candidateError) && std::isfinite(rho) && rho > 0.0) {
             m_result = candidate;
             currentError = candidateError;
             lambda *= std::max(1.0 / 3.0, 1.0 - std::pow(2.0 * rho - 1.0, 3.0));
