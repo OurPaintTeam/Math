@@ -365,12 +365,17 @@ public:
     }
 
     SparseMatrix<> dampedNormalMatrix(double lambda) const {
-        ensureApproximateHessian();
-        SparseMatrix<> damped = m_approximateHessian;
-        for (const auto& [row, col] : m_hessianDiagonalCoordinates) {
-            damped.coeffRef(row, col) += lambda;
-        }
-        return damped;
+      ensureApproximateHessian();
+      SparseMatrix<> damped = m_approximateHessian;
+
+      constexpr double minDiagonal = 1e-12;
+
+      for (const auto& [row, col] : m_hessianDiagonalCoordinates) {
+        const double h_ii = std::abs(m_approximateHessian.coeff(row, col));
+        damped.coeffRef(row, col) += lambda * std::max(h_ii, minDiagonal);
+      }
+
+      return damped;
     }
 
     LinearizationView linearizationView() const {
