@@ -158,6 +158,102 @@ Function* makeAnchorResidual(size_t variableIndex,
     return new Subtraction(vars[variableIndex]->clone(), new Constant(targetValue));
 }
 
+Function* makeWeightedAnchorResidual(size_t variableIndex,
+                                     const std::vector<Variable*>& vars,
+                                     double targetValue,
+                                     double weight) {
+    Function* residual = makeAnchorResidual(variableIndex, vars, targetValue);
+    if (std::abs(weight - 1.0) < 1e-12) {
+        return residual;
+    }
+    return new Multiplication(new Constant(weight), residual);
+}
+
+std::vector<Function*> buildTriangleChainResiduals(const GeometryChainProblem& problem,
+                                                   const TriangleScenario& scenario,
+                                                   bool addMovingAnchorRequirement = false,
+                                                   double movingAnchorTargetX = 0.0,
+                                                   double movingAnchorTargetY = 0.0,
+                                                   double movingAnchorWeight = 1.0) {
+    std::vector<Function*> residuals;
+    residuals.reserve(problem.residuals.size() + 2);
+
+    for (int i = 0; i < scenario.triangleCount; ++i) {
+        const PointVar& a = problem.anchors[i];
+        const PointVar& c = problem.anchors[i + 1];
+        const PointVar& b = problem.rightVertices[i];
+
+        const double lx = problem.legX[i];
+        const double ly = problem.legY[i];
+        const double hypotenuse = std::sqrt(lx * lx + ly * ly);
+
+        residuals.push_back(makeDistanceResidual(a, c, problem.variableRefs, lx));
+        residuals.push_back(makeDistanceResidual(a, b, problem.variableRefs, ly));
+        residuals.push_back(makeDistanceResidual(b, c, problem.variableRefs, hypotenuse));
+
+        if (scenario.addRightAngleConstraint) {
+            residuals.push_back(makeRightAngleResidual(a, b, c, problem.variableRefs));
+        }
+    }
+
+    if (scenario.addCrossTriangleDistanceConstraint) {
+        for (int i = 0; i + 1 < scenario.triangleCount; ++i) {
+            const PointVar& bCurrent = problem.rightVertices[i];
+            const PointVar& bNext = problem.rightVertices[i + 1];
+            const double dx = problem.targetValues[bCurrent.xIndex] - problem.targetValues[bNext.xIndex];
+            const double dy = problem.targetValues[bCurrent.yIndex] - problem.targetValues[bNext.yIndex];
+            residuals.push_back(makeDistanceResidual(
+                bCurrent,
+                bNext,
+                problem.variableRefs,
+                std::sqrt(dx * dx + dy * dy)));
+        }
+    }
+
+    residuals.push_back(makeAnchorResidual(problem.anchors.front().xIndex, problem.variableRefs, 0.0));
+    residuals.push_back(makeAnchorResidual(problem.anchors.front().yIndex, problem.variableRefs, 0.0));
+    residuals.push_back(makeAnchorResidual(problem.anchors[1].yIndex, problem.variableRefs, 0.0));
+
+    if (addMovingAnchorRequirement) {
+        const PointVar& movingAnchor = problem.anchors.back();
+        residuals.push_back(makeWeightedAnchorResidual(
+            movingAnchor.xIndex,
+            problem.variableRefs,
+            movingAnchorTargetX,
+            movingAnchorWeight));
+        residuals.push_back(makeWeightedAnchorResidual(
+            movingAnchor.yIndex,
+            problem.variableRefs,
+            movingAnchorTargetY,
+            movingAnchorWeight));
+    }
+
+    return residuals;
+}
+
+std::unique_ptr<SparseLSMTask> buildTriangleChainMotionTask(const GeometryChainProblem& problem,
+                                                            const TriangleScenario& scenario,
+                                                            double movingAnchorTargetX,
+                                                            double movingAnchorTargetY) {
+    constexpr double movingAnchorWeight = 50.0;
+    std::vector<Function*> residuals = buildTriangleChainResiduals(
+        problem,
+        scenario,
+        true,
+        movingAnchorTargetX,
+        movingAnchorTargetY,
+        movingAnchorWeight);
+
+    return std::make_unique<SparseLSMTask>(residuals, problem.variableRefs);
+}
+
+void setProblemValues(GeometryChainProblem& problem, const std::vector<double>& values) {
+    ASSERT_EQ(problem.values.size(), values.size());
+    for (size_t i = 0; i < values.size(); ++i) {
+        problem.values[i] = values[i];
+    }
+}
+
 GeometryChainProblem buildTriangleChainProblem(const TriangleScenario& scenario) {
     GeometryChainProblem problem;
 
@@ -211,43 +307,7 @@ GeometryChainProblem buildTriangleChainProblem(const TriangleScenario& scenario)
                                                     sign * ly));
     }
 
-    for (int i = 0; i < scenario.triangleCount; ++i) {
-        const PointVar& a = problem.anchors[i];
-        const PointVar& c = problem.anchors[i + 1];
-        const PointVar& b = problem.rightVertices[i];
-
-        const double lx = problem.legX[i];
-        const double ly = problem.legY[i];
-        const double hypotenuse = std::sqrt(lx * lx + ly * ly);
-
-        problem.residuals.push_back(makeDistanceResidual(a, c, problem.variableRefs, lx));
-        problem.residuals.push_back(makeDistanceResidual(a, b, problem.variableRefs, ly));
-        problem.residuals.push_back(makeDistanceResidual(b, c, problem.variableRefs, hypotenuse));
-
-        if (scenario.addRightAngleConstraint) {
-            problem.residuals.push_back(makeRightAngleResidual(a, b, c, problem.variableRefs));
-        }
-    }
-
-    if (scenario.addCrossTriangleDistanceConstraint) {
-        for (int i = 0; i + 1 < scenario.triangleCount; ++i) {
-            const PointVar& bCurrent = problem.rightVertices[i];
-            const PointVar& bNext = problem.rightVertices[i + 1];
-            const double dx = problem.targetValues[bCurrent.xIndex] - problem.targetValues[bNext.xIndex];
-            const double dy = problem.targetValues[bCurrent.yIndex] - problem.targetValues[bNext.yIndex];
-            problem.residuals.push_back(makeDistanceResidual(
-                bCurrent,
-                bNext,
-                problem.variableRefs,
-                std::sqrt(dx * dx + dy * dy)));
-        }
-    }
-
-    // Anchors remove rigid-body ambiguity.
-    problem.residuals.push_back(makeAnchorResidual(problem.anchors.front().xIndex, problem.variableRefs, 0.0));
-    problem.residuals.push_back(makeAnchorResidual(problem.anchors.front().yIndex, problem.variableRefs, 0.0));
-    problem.residuals.push_back(makeAnchorResidual(problem.anchors[1].yIndex, problem.variableRefs, 0.0));
-
+    problem.residuals = buildTriangleChainResiduals(problem, scenario);
     problem.task = std::make_unique<SparseLSMTask>(problem.residuals, problem.variableRefs);
     return problem;
 }
@@ -291,6 +351,59 @@ TEST(SparseLMSolverGeometryTest, ConvergesOnConnectedTwentyRightTriangles) {
     EXPECT_LT(optimizer.getCurrentError(), initialError);
     EXPECT_EQ(result.size(), problem.targetValues.size());
     EXPECT_LT(maxAbsDiff(result, problem.targetValues), 3e-3);
+}
+
+TEST(SparseLMSolverGeometryTest, TracksIncrementalAnchorMotion) {
+    const TriangleScenario scenario{
+        "incremental_last_anchor_motion",
+        12,
+        1.5,
+        0.38,
+        true,
+        true
+    };
+
+    GeometryChainProblem problem = buildTriangleChainProblem(scenario);
+    const PointVar movingAnchor = problem.anchors.back();
+    const double initialTargetX = problem.targetValues[movingAnchor.xIndex];
+    const double initialTargetY = problem.targetValues[movingAnchor.yIndex];
+    const double stepDelta = 0.01;
+    const int stepCount = 20;
+    const double tolerance = 1e-2;
+
+    std::vector<double> currentValues = problem.values;
+
+    for (int step = 1; step <= stepCount; ++step) {
+        const double targetX = initialTargetX + stepDelta * static_cast<double>(step);
+        const double targetY = initialTargetY + stepDelta * static_cast<double>(step);
+
+        setProblemValues(problem, currentValues);
+        std::unique_ptr<SparseLSMTask> motionTask =
+            buildTriangleChainMotionTask(problem, scenario, targetX, targetY);
+
+        SparseLMSolver optimizer(600, 1e-2, 1e-10, 1e-10);
+        optimizer.setTask(motionTask.get());
+
+        const double initialError = motionTask->getError();
+        const double initialXDistance = std::abs(currentValues[movingAnchor.xIndex] - targetX);
+        const double initialYDistance = std::abs(currentValues[movingAnchor.yIndex] - targetY);
+        optimizer.optimize();
+
+        const std::vector<double> result = optimizer.getResult();
+        ASSERT_EQ(result.size(), currentValues.size()) << "step: " << step;
+        EXPECT_TRUE(optimizer.isConverged()) << "step: " << step;
+        EXPECT_LT(optimizer.getCurrentError(), initialError) << "step: " << step;
+        EXPECT_LT(std::abs(result[movingAnchor.xIndex] - targetX), initialXDistance) << "step: " << step;
+        EXPECT_LT(std::abs(result[movingAnchor.yIndex] - targetY), initialYDistance) << "step: " << step;
+        EXPECT_NEAR(result[movingAnchor.xIndex], targetX, tolerance) << "step: " << step;
+        EXPECT_NEAR(result[movingAnchor.yIndex], targetY, tolerance) << "step: " << step;
+
+        currentValues = result;
+    }
+
+    const double totalDelta = stepDelta * static_cast<double>(stepCount);
+    EXPECT_NEAR(currentValues[movingAnchor.xIndex], initialTargetX + totalDelta, tolerance);
+    EXPECT_NEAR(currentValues[movingAnchor.yIndex], initialTargetY + totalDelta, tolerance);
 }
 
 class SparseLMSolverGeometryScenarioTest : public ::testing::TestWithParam<TriangleScenario> {};
