@@ -3,7 +3,6 @@
 
 #include "MatrixOptimizer.h"
 #include "SparseLSMTask.h"
-
 #include <vector>
 
 class SparseLMSolver : public MatrixOptimizer {

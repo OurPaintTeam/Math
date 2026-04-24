@@ -88,6 +88,7 @@ void SparseLMSolver::optimize() {
     int iteration = 0;
     StopReason stopReason = StopReason::MaxIterations;
     while (iteration < maxIterations) {
+<<<<<<< HEAD
         if (currentError <= errorTolerance) {
             converged = true;
             stopReason = StopReason::ResidualTolerance;
@@ -95,6 +96,8 @@ void SparseLMSolver::optimize() {
         }
 
         c_task->linearizationView();
+=======
+>>>>>>> 1e12c1b1650384183c68999802d011d4e05bc24f
         const Matrix<>& gradient = c_task->normalGradient();
         const double gradientNorm = gradient.norm();
         if (gradientNorm < epsilon1) {
@@ -109,11 +112,7 @@ void SparseLMSolver::optimize() {
 
         Matrix<> step;
         Matrix<> negativeGradient = gradient * (-1.0);
-        try {
-            step = solver.solve(negativeGradient, 0.0);
-        } catch (const std::runtime_error&) {
-            step = solver.pseudoInverse(lambda) * negativeGradient;
-        }
+        step = solver.solve(negativeGradient, 0.0);
 
         const double stepNorm = step.norm();
         if (stepNorm < epsilon2) {
@@ -126,12 +125,13 @@ void SparseLMSolver::optimize() {
             candidate[i] += step(i, 0);
         }
 
+        const double gainDenominator = computeGainDenominator(step, gradient, lambda);
         const double candidateError = c_task->setError(candidate);
-        const double gainNumerator = 0.5 * (currentError - candidateError);
+        const double gainNumerator = currentError - candidateError;
         const double rho = gainNumerator
-                         / (computeGainDenominator(step, gradient, lambda) + 1e-20);
+                         / (gainDenominator + 1e-20);
 
-        if (rho > 0.0 && std::isfinite(candidateError)) {
+        if (std::isfinite(candidateError) && std::isfinite(rho) && rho > 0.0) {
             m_result = candidate;
             currentError = candidateError;
             lambda *= std::max(1.0 / 3.0, 1.0 - std::pow(2.0 * rho - 1.0, 3.0));

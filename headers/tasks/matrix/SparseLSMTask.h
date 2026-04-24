@@ -36,7 +36,7 @@ private:
     std::vector<size_t> m_rowEntryOffsets;
     std::vector<HessianContribution> m_hessianContributions;
     std::vector<double*> m_hessianValueRefs;
-    std::vector<std::pair<size_t, size_t>> m_hessianDiagonalCoordinates;
+    std::vector<size_t> m_hessianDiagonalPositions;
 
     mutable Matrix<> m_residualVector;
     mutable SparseMatrix<> m_jacobian;
@@ -96,7 +96,7 @@ private:
         std::vector<size_t> next(outer);
         std::vector<size_t> inner(m_jacobianEntries.size(), 0);
         std::vector<double> values(m_jacobianEntries.size(), 0.0);
-        for (const JacobianEntry& entry : m_jacobianEntries) {
+        for (JacobianEntry& entry : m_jacobianEntries) {
             const size_t position = next[entry.variableIndex]++;
             inner[position] = entry.residualIndex;
         }
@@ -116,6 +116,7 @@ private:
     void buildSymbolicHessian() {
         const size_t variableCount = m_X.size();
         std::vector<std::vector<size_t>> columnRows(variableCount);
+        std::vector<size_t> columnValueOffsets(variableCount, 0);
         for (size_t col = 0; col < variableCount; ++col) {
             columnRows[col].push_back(col);
         }
@@ -144,8 +145,8 @@ private:
         m_hessianValueRefs.clear();
         m_hessianValueRefs.reserve(variableCount == 0 ? 0 : contributionCount + variableCount);
 
-        m_hessianDiagonalCoordinates.clear();
-        m_hessianDiagonalCoordinates.reserve(variableCount);
+        m_hessianDiagonalPositions.clear();
+        m_hessianDiagonalPositions.reserve(variableCount);
 
         for (size_t col = 0; col < variableCount; ++col) {
             auto& rows = columnRows[col];
@@ -153,9 +154,10 @@ private:
             rows.erase(std::unique(rows.begin(), rows.end()), rows.end());
 
             outer[col] = inner.size();
+            columnValueOffsets[col] = values.size();
             for (size_t row : rows) {
                 if (row == col) {
-                    m_hessianDiagonalCoordinates.emplace_back(row, col);
+                    m_hessianDiagonalPositions.push_back(values.size());
                 }
                 inner.push_back(row);
                 values.push_back(0.0);
@@ -174,8 +176,8 @@ private:
         m_hessianContributions.reserve(contributionCount);
         for (size_t col = 0; col < variableCount; ++col) {
             const auto& rows = columnRows[col];
-            for (size_t row : rows) {
-                m_hessianValueRefs.push_back(&m_approximateHessian.coeffRef(row, col));
+            for (size_t idx = 0; idx < rows.size(); ++idx) {
+                m_hessianValueRefs.push_back(&m_approximateHessian.coeffRef(rows[idx], col));
             }
         }
 
@@ -184,12 +186,18 @@ private:
             const size_t end = m_rowEntryOffsets[residualIndex + 1];
             for (size_t left = begin; left < end; ++left) {
                 for (size_t right = begin; right < end; ++right) {
+                    const size_t col = m_jacobianEntries[right].variableIndex;
+                    const auto& rows = columnRows[col];
+                    const auto rowIt = std::lower_bound(
+                        rows.begin(),
+                        rows.end(),
+                        m_jacobianEntries[left].variableIndex);
+                    const size_t rowOffset = static_cast<size_t>(rowIt - rows.begin());
+                    const size_t valuePosition = columnValueOffsets[col] + rowOffset;
                     m_hessianContributions.push_back({
                         m_jacobianEntries[left].jacobianValue,
                         m_jacobianEntries[right].jacobianValue,
-                        &m_approximateHessian.coeffRef(
-                            m_jacobianEntries[left].variableIndex,
-                            m_jacobianEntries[right].variableIndex)
+                        m_hessianValueRefs[valuePosition]
                     });
                 }
             }
@@ -274,8 +282,9 @@ private:
         }
 
         for (const HessianContribution& contribution : m_hessianContributions) {
-            *contribution.hessianValue +=
+            const double value =
                 (*contribution.leftJacobianValue) * (*contribution.rightJacobianValue);
+            *contribution.hessianValue += value;
         }
 
         m_approximateHessianDirty = false;
@@ -366,11 +375,17 @@ public:
 
     SparseMatrix<> dampedNormalMatrix(double lambda) const {
         ensureApproximateHessian();
-        SparseMatrix<> damped = m_approximateHessian;
-        for (const auto& [row, col] : m_hessianDiagonalCoordinates) {
-            damped.coeffRef(row, col) += lambda;
+        std::vector<double> values = m_approximateHessian.valueData();
+        for (size_t position : m_hessianDiagonalPositions) {
+            values[position] += lambda;
         }
-        return damped;
+
+        return SparseMatrix<>::fromCSC(
+            m_approximateHessian.rows_size(),
+            m_approximateHessian.cols_size(),
+            std::move(values),
+            std::vector<size_t>(m_approximateHessian.innerIndexData()),
+            std::vector<size_t>(m_approximateHessian.outerIndexData()));
     }
 
     LinearizationView linearizationView() const {

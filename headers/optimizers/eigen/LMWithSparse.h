@@ -4,7 +4,7 @@
 #include "EigenOptimizer.h"
 #include "LSMFORLMTask.h"
 #include <Eigen/Sparse>
-#include <Eigen/SparseCholesky>
+#include <Eigen/SparseQR>
 #include <vector>
 #include <iostream>
 #include <cmath>
@@ -51,6 +51,7 @@ public:
         int iteration = 0;
         performedIterations = 0;
         converged = false;
+        currentError = task->setError(std::vector<double>(result.data(), result.data() + result.size()));
         Eigen::VectorXd residuals;
         Eigen::MatrixXd denseJacobian;
 
@@ -80,14 +81,18 @@ public:
             Eigen::SparseMatrix<double> identity(hessian.rows(), hessian.cols());
             identity.setIdentity();
             Eigen::SparseMatrix<double> dampedHessian = hessian + lambda * identity;
+            dampedHessian.makeCompressed();
 
-            Eigen::SimplicialLDLT<Eigen::SparseMatrix<double>> solver;
+            Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> solver;
             solver.compute(dampedHessian);
             if (solver.info() != Eigen::Success) {
-                throw std::runtime_error("Failed to decompose damped Hessian.");
+                throw std::runtime_error("Failed to factorize damped Hessian with Eigen::SparseQR.");
             }
 
             Eigen::VectorXd delta = solver.solve(-gradient);
+            if (solver.info() != Eigen::Success) {
+                throw std::runtime_error("Failed to solve damped sparse QR system.");
+            }
             if (delta.norm() < epsilon2) {
                 converged = true;
                 break;
@@ -107,6 +112,7 @@ public:
                 lambda *= std::max(1.0 / 3.0, 1.0 - std::pow(2 * rho - 1, 3));
                 nu = 2.0;
             } else {
+                task->setError(std::vector<double>(result.data(), result.data() + result.size()));
                 lambda *= nu;
                 nu *= 2.0;
             }
@@ -115,8 +121,9 @@ public:
         }
 
         performedIterations = iteration;
+        currentError = task->setError(std::vector<double>(result.data(), result.data() + result.size()));
 
-        std::cout << "[LM] Finished after " << iteration << " iterations. "
+        std::cout << "[LM EigenSparseQR] Finished after " << iteration << " iterations. "
                   << "Final error: " << currentError
                   << (converged ? " [converged]" : " [not converged]") << std::endl;
     }
