@@ -9,6 +9,13 @@
 
 namespace {
 
+enum class StopReason {
+    ResidualTolerance,
+    StationaryPoint,
+    StepTooSmall,
+    MaxIterations
+};
+
 double computeGainDenominator(const Matrix<>& step, const Matrix<>& gradient, double lambda) {
     double gain = 0.0;
     for (size_t i = 0; i < step.rows_size(); ++i) {
@@ -17,16 +24,37 @@ double computeGainDenominator(const Matrix<>& step, const Matrix<>& gradient, do
     return 0.5 * gain;
 }
 
+const char* describeStopReason(StopReason reason) {
+    switch (reason) {
+        case StopReason::ResidualTolerance:
+            return "residual tolerance reached";
+        case StopReason::StationaryPoint:
+            return "stationary point with non-zero residual";
+        case StopReason::StepTooSmall:
+            return "step too small with non-zero residual";
+        case StopReason::MaxIterations:
+            return "maximum iterations reached";
+    }
+
+    return "unknown";
+}
+
 } // namespace
 
-SparseLMSolver::SparseLMSolver(int maxIterations, double initLambda, double epsilon1, double epsilon2)
+SparseLMSolver::SparseLMSolver(int maxIterations,
+                               double initLambda,
+                               double epsilon1,
+                               double epsilon2,
+                               double errorTolerance)
     : c_task(nullptr),
       converged(false),
       currentError(0.0),
+      initialLambda(initLambda),
       lambda(initLambda),
       nu(2.0),
       epsilon1(epsilon1),
       epsilon2(epsilon2),
+      errorTolerance(errorTolerance),
       maxIterations(maxIterations),
       performedIterations(0) {}
 
@@ -43,7 +71,9 @@ void SparseLMSolver::setTask(TaskMatrix* task) {
     m_result = c_task->getValues();
     currentError = c_task->getError();
     converged = false;
+    lambda = initialLambda;
     nu = 2.0;
+    performedIterations = 0;
 }
 
 void SparseLMSolver::optimize() {
@@ -56,12 +86,19 @@ void SparseLMSolver::optimize() {
     currentError = c_task->setError(m_result);
 
     int iteration = 0;
+    StopReason stopReason = StopReason::MaxIterations;
     while (iteration < maxIterations) {
+        if (currentError <= errorTolerance) {
+            converged = true;
+            stopReason = StopReason::ResidualTolerance;
+            break;
+        }
+
         c_task->linearizationView();
         const Matrix<>& gradient = c_task->normalGradient();
         const double gradientNorm = gradient.norm();
         if (gradientNorm < epsilon1) {
-            converged = true;
+            stopReason = StopReason::StationaryPoint;
             break;
         }
 
@@ -80,7 +117,7 @@ void SparseLMSolver::optimize() {
 
         const double stepNorm = step.norm();
         if (stepNorm < epsilon2) {
-            converged = true;
+            stopReason = StopReason::StepTooSmall;
             break;
         }
 
@@ -99,6 +136,13 @@ void SparseLMSolver::optimize() {
             currentError = candidateError;
             lambda *= std::max(1.0 / 3.0, 1.0 - std::pow(2.0 * rho - 1.0, 3.0));
             nu = 2.0;
+
+            if (currentError <= errorTolerance) {
+                converged = true;
+                stopReason = StopReason::ResidualTolerance;
+                ++iteration;
+                break;
+            }
         } else {
             c_task->setError(m_result);
             lambda *= nu;
@@ -112,7 +156,8 @@ void SparseLMSolver::optimize() {
     currentError = c_task->setError(m_result);
     std::cout << "[Sparse LM] Finished after " << iteration
               << " iterations. Final error: " << currentError
-              << (converged ? " [converged]" : " [not converged]") << std::endl;
+              << (converged ? " [converged]" : " [not converged]")
+              << " Reason: " << describeStopReason(stopReason) << std::endl;
 }
 
 std::vector<double> SparseLMSolver::getResult() const {

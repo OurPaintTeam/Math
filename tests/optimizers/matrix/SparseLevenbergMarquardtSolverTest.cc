@@ -3,6 +3,8 @@
 #include "SparseLSMTask.h"
 #include "sparse/SparseLevenbergMarquardtSolver.h"
 
+#include <cmath>
+
 TEST(SparseLSMTaskTest, JacobianStoresOnlyNonZeroEntries) {
     double xValue = 3.0;
     double yValue = -1.0;
@@ -86,4 +88,49 @@ TEST(SparseLMSolverTest, ConvergesOnSparseLeastSquaresSystem) {
     EXPECT_NEAR(result[1], -2.0, 1e-6);
     EXPECT_NEAR(result[2], 3.0, 1e-6);
     EXPECT_NEAR(optimizer.getCurrentError(), 0.0, 1e-8);
+}
+
+TEST(SparseLMSolverTest, DoesNotReportConvergenceAtStationaryPointWithResidual) {
+    double xValue = 0.0;
+
+    Variable x(&xValue);
+
+    Function* residual = new Addition(
+        new Power(x.clone(), new Constant(2.0)),
+        new Constant(1.0));
+
+    SparseLSMTask task({residual}, {&x});
+    SparseLMSolver optimizer(50, 1e-3, 1e-10, 1e-10, 1e-10);
+
+    optimizer.setTask(&task);
+    optimizer.optimize();
+
+    EXPECT_FALSE(optimizer.isConverged());
+    EXPECT_EQ(optimizer.getIterationCount(), 0);
+    EXPECT_NEAR(optimizer.getCurrentError(), 1.0, 1e-12);
+}
+
+TEST(SparseLMSolverTest, ReusingOptimizerResetsDampingForRankDeficientProblems) {
+    double xValue = 0.0;
+    double yValue = 0.0;
+
+    Variable x(&xValue);
+    Variable y(&yValue);
+
+    Function* residual = new Subtraction(
+        new Addition(x.clone(), y.clone()),
+        new Constant(1.0));
+
+    SparseLSMTask task({residual}, {&x, &y});
+    SparseLMSolver optimizer(20, 1e-3, 1e-10, 1e-10, 1e-12);
+
+    for (int iteration = 0; iteration < 900; ++iteration) {
+        xValue = 0.0;
+        yValue = 0.0;
+
+        optimizer.setTask(&task);
+        optimizer.optimize();
+
+        EXPECT_TRUE(std::isfinite(optimizer.getCurrentError()));
+    }
 }
