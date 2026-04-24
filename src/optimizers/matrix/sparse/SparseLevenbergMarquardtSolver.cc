@@ -88,7 +88,6 @@ void SparseLMSolver::optimize() {
     int iteration = 0;
     StopReason stopReason = StopReason::MaxIterations;
     while (iteration < maxIterations) {
-<<<<<<< HEAD
         if (currentError <= errorTolerance) {
             converged = true;
             stopReason = StopReason::ResidualTolerance;
@@ -96,8 +95,6 @@ void SparseLMSolver::optimize() {
         }
 
         c_task->linearizationView();
-=======
->>>>>>> 1e12c1b1650384183c68999802d011d4e05bc24f
         const Matrix<>& gradient = c_task->normalGradient();
         const double gradientNorm = gradient.norm();
         if (gradientNorm < epsilon1) {
