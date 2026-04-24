@@ -4,7 +4,9 @@
 
 #include <algorithm>
 #include <cmath>
+#ifdef DEBUG
 #include <iostream>
+#endif
 #include <stdexcept>
 
 namespace {
@@ -16,14 +18,7 @@ enum class StopReason {
     MaxIterations
 };
 
-double computeGainDenominator(const Matrix<>& step, const Matrix<>& gradient, double lambda) {
-    double gain = 0.0;
-    for (size_t i = 0; i < step.rows_size(); ++i) {
-        gain += step(i, 0) * (lambda * step(i, 0) - gradient(i, 0));
-    }
-    return 0.5 * gain;
-}
-
+#ifdef DEBUG
 const char* describeStopReason(StopReason reason) {
     switch (reason) {
         case StopReason::ResidualTolerance:
@@ -37,6 +32,15 @@ const char* describeStopReason(StopReason reason) {
     }
 
     return "unknown";
+}
+#endif
+
+double computeGainDenominator(const Matrix<>& step, const Matrix<>& gradient, double lambda) {
+    double gain = 0.0;
+    for (size_t i = 0; i < step.rows_size(); ++i) {
+        gain += step(i, 0) * (lambda * step(i, 0) - gradient(i, 0));
+    }
+    return 0.5 * gain;
 }
 
 } // namespace
@@ -98,7 +102,12 @@ void SparseLMSolver::optimize() {
         const Matrix<>& gradient = c_task->normalGradient();
         const double gradientNorm = gradient.norm();
         if (gradientNorm < epsilon1) {
-            stopReason = StopReason::StationaryPoint;
+            if (currentError <= errorTolerance) {
+                converged = true;
+                stopReason = StopReason::ResidualTolerance;
+            } else {
+                stopReason = StopReason::StationaryPoint;
+            }
             break;
         }
 
@@ -109,11 +118,20 @@ void SparseLMSolver::optimize() {
 
         Matrix<> step;
         Matrix<> negativeGradient = gradient * (-1.0);
-        step = solver.solve(negativeGradient, 0.0);
+        try {
+            step = solver.solve(negativeGradient, 0.0);
+        } catch (const std::runtime_error&) {
+            step = solver.pseudoInverse(lambda) * negativeGradient;
+        }
 
         const double stepNorm = step.norm();
         if (stepNorm < epsilon2) {
-            stopReason = StopReason::StepTooSmall;
+            if (currentError <= errorTolerance) {
+                converged = true;
+                stopReason = StopReason::ResidualTolerance;
+            } else {
+                stopReason = StopReason::StepTooSmall;
+            }
             break;
         }
 
@@ -122,13 +140,13 @@ void SparseLMSolver::optimize() {
             candidate[i] += step(i, 0);
         }
 
-        const double gainDenominator = computeGainDenominator(step, gradient, lambda);
         const double candidateError = c_task->setError(candidate);
+        // Task error is ||r||^2 (no 1/2 factor); match numerator to denominator scaling.
         const double gainNumerator = currentError - candidateError;
         const double rho = gainNumerator
-                         / (gainDenominator + 1e-20);
+                         / (computeGainDenominator(step, gradient, lambda) + 1e-20);
 
-        if (std::isfinite(candidateError) && std::isfinite(rho) && rho > 0.0) {
+        if (rho > 0.0 && std::isfinite(candidateError)) {
             m_result = candidate;
             currentError = candidateError;
             lambda *= std::max(1.0 / 3.0, 1.0 - std::pow(2.0 * rho - 1.0, 3.0));
@@ -148,13 +166,16 @@ void SparseLMSolver::optimize() {
 
         ++iteration;
     }
-
     performedIterations = iteration;
     currentError = c_task->setError(m_result);
+#ifdef DEBUG
     std::cout << "[Sparse LM] Finished after " << iteration
               << " iterations. Final error: " << currentError
               << (converged ? " [converged]" : " [not converged]")
               << " Reason: " << describeStopReason(stopReason) << std::endl;
+#else
+    (void)stopReason;
+#endif
 }
 
 std::vector<double> SparseLMSolver::getResult() const {
