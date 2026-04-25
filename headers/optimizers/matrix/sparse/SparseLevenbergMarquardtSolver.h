@@ -3,7 +3,6 @@
 
 #include "MatrixOptimizer.h"
 #include "SparseLSMTask.h"
-
 #include <vector>
 
 class SparseLMSolver : public MatrixOptimizer {
@@ -12,10 +11,12 @@ private:
     std::vector<double> m_result;
     bool converged;
     double currentError;
+    double initialLambda;
     double lambda;
     double nu;
     double epsilon1;
     double epsilon2;
+    double errorTolerance;
     int maxIterations;
     int performedIterations;
 
@@ -23,7 +24,8 @@ public:
     SparseLMSolver(int maxIterations = 100,
                    double initLambda = 1e-3,
                    double epsilon1 = 1e-8,
-                   double epsilon2 = 1e-8);
+                   double epsilon2 = 1e-8,
+                   double errorTolerance = 1e-8);
 
     void setTask(TaskMatrix* task) override;
 
