@@ -301,6 +301,36 @@ TEST(SparseQRTests, solveSquareFullRankSystem) {
     EXPECT_TRUE(IsUpperTriangular(qr.R(), 1e-10));
 }
 
+TEST(SparseQRTests, factorizeReusesAnalysisForSameSparsePattern) {
+    Matrix<double> denseA = {
+        {2.0, 0.0, 1.0},
+        {0.0, 3.0, 0.0},
+        {1.0, 0.0, 4.0}
+    };
+    Matrix<double> denseB = {
+        {5.0, 0.0, -1.0},
+        {0.0, 7.0, 0.0},
+        {-1.0, 0.0, 6.0}
+    };
+    SparseMatrix<double> sparseA(denseA);
+    SparseMatrix<double> sparseB(denseB);
+
+    SparseQR qr(sparseA);
+    qr.analyze();
+    qr.factorize();
+
+    Matrix<double> xExpected(3, 1);
+    xExpected(0, 0) = 1.0;
+    xExpected(1, 0) = -2.0;
+    xExpected(2, 0) = 0.5;
+    Matrix<double> first = qr.solve(denseA * xExpected, 0.0);
+    EXPECT_TRUE(DenseApproxEqual(first, xExpected, 1e-10));
+
+    qr.factorize(sparseB);
+    Matrix<double> second = qr.solve(denseB * xExpected, 0.0);
+    EXPECT_TRUE(DenseApproxEqual(second, xExpected, 1e-10));
+}
+
 TEST(SparseQRTests, solveTallFullRankSystemAndThinQ) {
     Matrix<double> dense = {
         {1.0, 0.0, 2.0},

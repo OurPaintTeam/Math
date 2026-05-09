@@ -68,6 +68,10 @@ private:
     void buildPermutedWorkspace();
     void buildColumnEliminationTree();
     void factorizeNumeric();
+    void clearFactorization();
+    void resetAnalysis();
+    bool hasSameStructure(const SparseMatrix<>& A) const;
+    void updatePermutedWorkspaceValues();
     SparseMatrix<> buildSparseR(
         const std::vector<std::vector<size_t>>& r_column_rows,
         const std::vector<std::vector<double>>& r_column_values) const;
@@ -95,6 +99,11 @@ public:
     void qr();
     void analyze();
     void factorize();
+    void qr(const SparseMatrix<>& A);
+    void analyze(const SparseMatrix<>& A);
+    void factorize(const SparseMatrix<>& A);
+    void compute(const SparseMatrix<>& A);
+    void setMatrix(const SparseMatrix<>& A);
     void setPivotThreshold(double threshold);
     void setNumericPivotingEnabled(bool enabled);
     Matrix<> solve(const Matrix<>& b, double damping = 1e-8) const;
