@@ -65,6 +65,9 @@ set(MATH_MATRIX_OPTIMIZER_SOURCES
         src/optimizers/matrix/NewtonOptimizer.cc
         src/optimizers/matrix/NewtonGaussSolver.cc
         src/optimizers/matrix/LevenbergMarquardtSolver.cc
+        src/optimizers/matrix/sparse/SparseNewtonSolver.cc
+        src/optimizers/matrix/sparse/SparseNewtonGaussSolver.cc
+        src/optimizers/matrix/sparse/SparseDogLegSolver.cc
         src/optimizers/matrix/sparse/SparseLevenbergMarquardtSolver.cc
 )
 
@@ -74,6 +77,9 @@ set(MATH_MATRIX_OPTIMIZER_HEADERS
         headers/optimizers/matrix/NewtonOptimizer.h
         headers/optimizers/matrix/NewtonGaussSolver.h
         headers/optimizers/matrix/LevenbergMarquardtSolver.h
+        headers/optimizers/matrix/sparse/SparseNewtonSolver.h
+        headers/optimizers/matrix/sparse/SparseNewtonGaussSolver.h
+        headers/optimizers/matrix/sparse/SparseDogLegSolver.h
         headers/optimizers/matrix/sparse/SparseLevenbergMarquardtSolver.h
 )
 
@@ -99,6 +105,7 @@ set(MATH_MATRIX_TASK_HEADERS
         headers/tasks/matrix/TaskF.h
         headers/tasks/matrix/LSMTask.h
         headers/tasks/matrix/SparseLSMTask.h
+        headers/tasks/matrix/SparseSystemTask.h
 )
 
 set(MATH_EIGEN_TASK_HEADERS
