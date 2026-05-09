@@ -1,0 +1,73 @@
+#include "gtest/gtest.h"
+
+#include "SparseLSMTask.h"
+#include "sparse/SparseNewtonGaussSolver.h"
+
+#include <memory>
+#include <vector>
+
+namespace {
+
+struct SparseLinearProblem {
+    double xValue = 0.0;
+    double yValue = 0.0;
+    double zValue = 0.0;
+    Variable x;
+    Variable y;
+    Variable z;
+    std::unique_ptr<SparseLSMTask> task;
+
+    SparseLinearProblem()
+        : x(&xValue), y(&yValue), z(&zValue)
+    {
+        std::vector<Function*> residuals;
+        residuals.push_back(new Subtraction(x.clone(), new Constant(2.0)));
+        residuals.push_back(new Addition(y.clone(), new Constant(3.0)));
+        residuals.push_back(new Subtraction(z.clone(), new Constant(4.0)));
+        residuals.push_back(new Subtraction(
+            new Addition(x.clone(), z.clone()),
+            new Constant(6.0)));
+
+        task = std::make_unique<SparseLSMTask>(
+            residuals,
+            std::vector<Variable*>{&x, &y, &z});
+    }
+};
+
+void ExpectSolved(const std::vector<double>& result, double error) {
+    ASSERT_EQ(result.size(), 3u);
+    EXPECT_NEAR(result[0], 2.0, 1e-6);
+    EXPECT_NEAR(result[1], -3.0, 1e-6);
+    EXPECT_NEAR(result[2], 4.0, 1e-6);
+    EXPECT_NEAR(error, 0.0, 1e-8);
+}
+
+} // namespace
+
+TEST(SparseNewtonGaussSolverTest, ConvergesOnSparseLinearLeastSquaresSystem) {
+    SparseLinearProblem problem;
+    SparseNewtonGaussSolver optimizer(20, 1e-10, 1e-10, 1e-12);
+
+    optimizer.setTask(problem.task.get());
+    optimizer.optimize();
+
+    EXPECT_TRUE(optimizer.isConverged());
+    ExpectSolved(optimizer.getResult(), optimizer.getCurrentError());
+}
+
+TEST(SparseNewtonGaussSolverTest, ReusesOptimizerAcrossChangingValues) {
+    SparseLinearProblem problem;
+    SparseNewtonGaussSolver optimizer(20, 1e-10, 1e-10, 1e-12);
+
+    for (int iteration = 0; iteration < 50; ++iteration) {
+        problem.xValue = 10.0;
+        problem.yValue = -10.0;
+        problem.zValue = 1.0;
+
+        optimizer.setTask(problem.task.get());
+        optimizer.optimize();
+
+        EXPECT_TRUE(optimizer.isConverged());
+        ExpectSolved(optimizer.getResult(), optimizer.getCurrentError());
+    }
+}
