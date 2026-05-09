@@ -140,6 +140,7 @@ public:
     [[nodiscard]] const std::vector<T>& valueData() const noexcept { return values_; }
     [[nodiscard]] const std::vector<size_type>& innerIndexData() const noexcept { return inner_; }
     [[nodiscard]] const std::vector<size_type>& outerIndexData() const noexcept { return outer_; }
+    [[nodiscard]] std::vector<T>& mutableValueData() noexcept { return values_; }
 
 private:
     [[nodiscard]] size_type rowMutableNonZeros() const noexcept;

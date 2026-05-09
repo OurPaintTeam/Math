@@ -64,10 +64,7 @@ std::vector<size_t> buildFallbackOrdering(
 } // namespace
 
 SparseQR::SparseQR(const SparseMatrix<>& A) {
-    if (A.rows_size() < 1 || A.cols_size() < 1) {
-        throw std::runtime_error("Matrix should be: rows > 0 && cols > 0");
-    }
-    _A = A.rowMutableMode() ? A.compressed() : A;
+    setMatrix(A);
 }
 
 SparseQR::SparseQR(const SparseQR& other)
@@ -79,6 +76,20 @@ SparseQR::SparseQR(const SparseQR& other)
       _active_cols(other._active_cols), _perm(other._perm), _perm_inv(other._perm_inv),
       _workspace_outer(other._workspace_outer), _workspace_inner(other._workspace_inner),
       _workspace_val(other._workspace_val), _etree(other._etree), _first_row_elt(other._first_row_elt),
+      _r_csc_outer(other._r_csc_outer), _r_csc_inner(other._r_csc_inner),
+      _r_csc_val(other._r_csc_val), _r_diag(other._r_diag),
+      _r_csr_outer_scratch(other._r_csr_outer_scratch),
+      _r_csr_inner_scratch(other._r_csr_inner_scratch),
+      _r_csr_values_scratch(other._r_csr_values_scratch),
+      _r_csr_next_scratch(other._r_csr_next_scratch),
+      _col_norms(other._col_norms), _col_map(other._col_map),
+      _qt_workspace(other._qt_workspace), _factor_accumulator(other._factor_accumulator),
+      _factor_touched_rows(other._factor_touched_rows),
+      _factor_touched_marks(other._factor_touched_marks),
+      _factor_marks(other._factor_marks), _factor_reach(other._factor_reach),
+      _factor_reflector_rows(other._factor_reflector_rows),
+      _factor_reflector_values(other._factor_reflector_values),
+      _enable_numeric_pivoting(other._enable_numeric_pivoting),
       _use_default_threshold(other._use_default_threshold), _preprocessed(other._preprocessed),
       _analyzed(other._analyzed) {}
 
@@ -94,6 +105,21 @@ SparseQR::SparseQR(SparseQR&& other) noexcept
       _workspace_outer(std::move(other._workspace_outer)), _workspace_inner(std::move(other._workspace_inner)),
       _workspace_val(std::move(other._workspace_val)), _etree(std::move(other._etree)),
       _first_row_elt(std::move(other._first_row_elt)),
+      _r_csc_outer(std::move(other._r_csc_outer)), _r_csc_inner(std::move(other._r_csc_inner)),
+      _r_csc_val(std::move(other._r_csc_val)), _r_diag(std::move(other._r_diag)),
+      _r_csr_outer_scratch(std::move(other._r_csr_outer_scratch)),
+      _r_csr_inner_scratch(std::move(other._r_csr_inner_scratch)),
+      _r_csr_values_scratch(std::move(other._r_csr_values_scratch)),
+      _r_csr_next_scratch(std::move(other._r_csr_next_scratch)),
+      _col_norms(std::move(other._col_norms)), _col_map(std::move(other._col_map)),
+      _qt_workspace(std::move(other._qt_workspace)),
+      _factor_accumulator(std::move(other._factor_accumulator)),
+      _factor_touched_rows(std::move(other._factor_touched_rows)),
+      _factor_touched_marks(std::move(other._factor_touched_marks)),
+      _factor_marks(std::move(other._factor_marks)), _factor_reach(std::move(other._factor_reach)),
+      _factor_reflector_rows(std::move(other._factor_reflector_rows)),
+      _factor_reflector_values(std::move(other._factor_reflector_values)),
+      _enable_numeric_pivoting(other._enable_numeric_pivoting),
       _use_default_threshold(other._use_default_threshold), _preprocessed(other._preprocessed),
       _analyzed(other._analyzed) {}
 
@@ -133,6 +159,13 @@ SparseQR& SparseQR::operator=(const SparseQR& other) {
     std::swap(_col_norms, temp._col_norms);
     std::swap(_col_map, temp._col_map);
     std::swap(_qt_workspace, temp._qt_workspace);
+    std::swap(_factor_accumulator, temp._factor_accumulator);
+    std::swap(_factor_touched_rows, temp._factor_touched_rows);
+    std::swap(_factor_touched_marks, temp._factor_touched_marks);
+    std::swap(_factor_marks, temp._factor_marks);
+    std::swap(_factor_reach, temp._factor_reach);
+    std::swap(_factor_reflector_rows, temp._factor_reflector_rows);
+    std::swap(_factor_reflector_values, temp._factor_reflector_values);
     std::swap(_enable_numeric_pivoting, temp._enable_numeric_pivoting);
     std::swap(_use_default_threshold, temp._use_default_threshold);
     std::swap(_preprocessed, temp._preprocessed);
@@ -176,6 +209,13 @@ SparseQR& SparseQR::operator=(SparseQR&& other) noexcept {
     std::swap(_col_norms, temp._col_norms);
     std::swap(_col_map, temp._col_map);
     std::swap(_qt_workspace, temp._qt_workspace);
+    std::swap(_factor_accumulator, temp._factor_accumulator);
+    std::swap(_factor_touched_rows, temp._factor_touched_rows);
+    std::swap(_factor_touched_marks, temp._factor_touched_marks);
+    std::swap(_factor_marks, temp._factor_marks);
+    std::swap(_factor_reach, temp._factor_reach);
+    std::swap(_factor_reflector_rows, temp._factor_reflector_rows);
+    std::swap(_factor_reflector_values, temp._factor_reflector_values);
     std::swap(_enable_numeric_pivoting, temp._enable_numeric_pivoting);
     std::swap(_use_default_threshold, temp._use_default_threshold);
     std::swap(_preprocessed, temp._preprocessed);
@@ -213,6 +253,98 @@ double SparseQR::computeDefaultThreshold() const {
 
 double SparseQR::resolvePivotThreshold() const {
     return _use_default_threshold ? computeDefaultThreshold() : _pivot_threshold;
+}
+
+void SparseQR::clearFactorization() {
+    _R_sparse = SparseMatrix<>();
+    _ref_ptr.clear();
+    _ref_idx.clear();
+    _ref_val.clear();
+    _ref_beta.clear();
+    _r_csc_outer.clear();
+    _r_csc_inner.clear();
+    _r_csc_val.clear();
+    _r_diag.clear();
+    _qt_workspace.clear();
+    _numerical_rank = 0;
+    _leading_numerical_rank = 0;
+    _factorization_threshold = 0.0;
+}
+
+void SparseQR::resetAnalysis() {
+    clearFactorization();
+    _m = 0;
+    _n = 0;
+    _min_mn = 0;
+    _col_counts.clear();
+    _zero_cols.clear();
+    _active_cols.clear();
+    _perm.clear();
+    _perm_inv.clear();
+    _workspace_outer.clear();
+    _workspace_inner.clear();
+    _workspace_val.clear();
+    _etree.clear();
+    _first_row_elt.clear();
+    _r_csr_outer_scratch.clear();
+    _r_csr_inner_scratch.clear();
+    _r_csr_values_scratch.clear();
+    _r_csr_next_scratch.clear();
+    _col_norms.clear();
+    _col_map.clear();
+    _factor_accumulator.clear();
+    _factor_touched_rows.clear();
+    _factor_touched_marks.clear();
+    _factor_marks.clear();
+    _factor_reach.clear();
+    _factor_reflector_rows.clear();
+    _factor_reflector_values.clear();
+    _preprocessed = false;
+    _analyzed = false;
+}
+
+bool SparseQR::hasSameStructure(const SparseMatrix<>& A) const {
+    return _A.rows_size() == A.rows_size()
+        && _A.cols_size() == A.cols_size()
+        && _A.outerIndexData() == A.outerIndexData()
+        && _A.innerIndexData() == A.innerIndexData();
+}
+
+void SparseQR::updatePermutedWorkspaceValues() {
+    if (!_analyzed) {
+        return;
+    }
+
+    const auto& a_outer = _A.outerIndexData();
+    const auto& a_values = _A.valueData();
+
+    for (size_t permuted_col = 0; permuted_col < _n; ++permuted_col) {
+        const size_t original_col = _perm[permuted_col];
+        const size_t src_begin = a_outer[original_col];
+        const size_t src_end = a_outer[original_col + 1];
+        const size_t dst_begin = _workspace_outer[permuted_col];
+        std::copy(
+            a_values.begin() + static_cast<std::ptrdiff_t>(src_begin),
+            a_values.begin() + static_cast<std::ptrdiff_t>(src_end),
+            _workspace_val.begin() + static_cast<std::ptrdiff_t>(dst_begin));
+    }
+}
+
+void SparseQR::setMatrix(const SparseMatrix<>& A) {
+    if (A.rows_size() < 1 || A.cols_size() < 1) {
+        throw std::runtime_error("Matrix should be: rows > 0 && cols > 0");
+    }
+
+    SparseMatrix<> compressed = A.rowMutableMode() ? A.compressed() : A;
+    const bool can_reuse_analysis = _analyzed && hasSameStructure(compressed);
+    _A = std::move(compressed);
+
+    if (can_reuse_analysis) {
+        clearFactorization();
+        updatePermutedWorkspaceValues();
+    } else {
+        resetAnalysis();
+    }
 }
 
 void SparseQR::preprocessProblem() {
@@ -633,6 +765,29 @@ void SparseQR::qr() {
     preprocessProblem();
     analyzeStructure();
     factorizeNumeric();
+}
+
+void SparseQR::analyze(const SparseMatrix<>& A) {
+    setMatrix(A);
+    analyze();
+}
+
+void SparseQR::factorize(const SparseMatrix<>& A) {
+    setMatrix(A);
+    if (!_analyzed) {
+        preprocessProblem();
+        analyzeStructure();
+    }
+    factorizeNumeric();
+}
+
+void SparseQR::qr(const SparseMatrix<>& A) {
+    setMatrix(A);
+    qr();
+}
+
+void SparseQR::compute(const SparseMatrix<>& A) {
+    qr(A);
 }
 
 void SparseQR::setPivotThreshold(double threshold) {

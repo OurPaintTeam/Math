@@ -4,6 +4,7 @@
 
 class TestFunction : public ::testing::Test {
 protected:
+    double varValue;
     Variable* var;
     Constant* const2;
     Constant* const3;
@@ -11,8 +12,8 @@ protected:
     Function* powerFunc;
 
     void SetUp() override {
-        double x = 0.0;
-        var = new Variable(&x);
+        varValue = 0.0;
+        var = new Variable(&varValue);
         const2 = new Constant(2.0);
         const3 = new Constant(3.0);
         addFunc = new Addition(var, const2);

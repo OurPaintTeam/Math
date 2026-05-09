@@ -64,6 +64,22 @@ TEST(SparseLSMTaskTest, JacobianKeepsStructuralEntriesAtNumericalZero) {
     EXPECT_DOUBLE_EQ(updatedJacobian(0, 1), 2.0);
 }
 
+TEST(SparseLSMTaskTest, HessianContainsResidualSecondDerivativeTerm) {
+    double xValue = 2.0;
+
+    Variable x(&xValue);
+    Function* residual = new Addition(
+        new Power(x.clone(), new Constant(2.0)),
+        new Constant(1.0));
+
+    SparseLSMTask task({residual}, {&x});
+    Matrix<> hessian = task.hessian();
+    SparseMatrix<> sparseHessian = task.objectiveHessian();
+
+    EXPECT_NEAR(hessian(0, 0), 52.0, 1e-12);
+    EXPECT_NEAR(sparseHessian(0, 0), 52.0, 1e-12);
+}
+
 TEST(SparseLMSolverTest, ConvergesOnSparseLeastSquaresSystem) {
     double xValue = 0.0;
     double yValue = 0.0;

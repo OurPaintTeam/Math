@@ -111,17 +111,20 @@ void SparseLMSolver::optimize() {
             break;
         }
 
-        SparseMatrix<> dampedNormalMatrix = c_task->dampedNormalMatrix(lambda);
-
-        SparseQR solver(dampedNormalMatrix);
-        solver.qr();
+        c_task->fillDampedNormalMatrix(lambda, m_dampedNormalMatrix);
+        if (m_linearSolver == nullptr) {
+            m_linearSolver = std::make_unique<SparseQR>(m_dampedNormalMatrix);
+            m_linearSolver->qr();
+        } else {
+            m_linearSolver->factorize(m_dampedNormalMatrix);
+        }
 
         Matrix<> step;
         Matrix<> negativeGradient = gradient * (-1.0);
         try {
-            step = solver.solve(negativeGradient, 0.0);
+            step = m_linearSolver->solve(negativeGradient, 0.0);
         } catch (const std::runtime_error&) {
-            step = solver.pseudoInverse(lambda) * negativeGradient;
+            step = m_linearSolver->pseudoInverse(lambda) * negativeGradient;
         }
 
         const double stepNorm = step.norm();

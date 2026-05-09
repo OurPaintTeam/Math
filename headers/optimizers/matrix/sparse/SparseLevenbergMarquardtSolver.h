@@ -2,13 +2,17 @@
 #define MINIMIZEROPTIMIZER_HEADERS_OPTIMIZERS_MATRIX_SPARSE_SPARSELEVENBERGMARQUARDTSOLVER_H_
 
 #include "MatrixOptimizer.h"
+#include "SparseQR.h"
 #include "SparseLSMTask.h"
+#include <memory>
 #include <vector>
 
 class SparseLMSolver : public MatrixOptimizer {
 private:
     SparseLSMTask* c_task;
     std::vector<double> m_result;
+    SparseMatrix<> m_dampedNormalMatrix;
+    std::unique_ptr<SparseQR> m_linearSolver;
     bool converged;
     double currentError;
     double initialLambda;
