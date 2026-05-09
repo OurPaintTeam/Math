@@ -30,6 +30,12 @@ private:
         double* hessianValue = nullptr;
     };
 
+    struct ResidualHessianContribution {
+        size_t residualIndex = 0;
+        Function* secondDerivative = nullptr;
+        double* hessianValue = nullptr;
+    };
+
     std::vector<Function*> m_functions;
     std::vector<Variable*> m_X;
     std::vector<JacobianEntry> m_jacobianEntries;
@@ -43,12 +49,18 @@ private:
     mutable Matrix<> m_normalGradient;
     mutable Matrix<> m_objectiveGradient;
     mutable SparseMatrix<> m_approximateHessian;
+    mutable SparseMatrix<> m_objectiveHessian;
     mutable Matrix<> m_denseObjectiveHessian;
+    mutable std::vector<HessianContribution> m_objectiveJtjContributions;
+    mutable std::vector<ResidualHessianContribution> m_residualHessianContributions;
+    mutable std::vector<double*> m_objectiveHessianValueRefs;
     mutable double m_error = 0.0;
     mutable std::vector<double> m_cachedVariableValues;
     mutable bool m_linearizationDirty = true;
     mutable bool m_objectiveGradientDirty = true;
     mutable bool m_approximateHessianDirty = true;
+    mutable bool m_objectiveHessianSymbolicBuilt = false;
+    mutable bool m_objectiveHessianDirty = true;
     mutable bool m_denseObjectiveHessianDirty = true;
 
     static bool isZeroFunction(const Function* function) {
@@ -204,10 +216,125 @@ private:
         }
     }
 
+    void buildSymbolicObjectiveHessian() const {
+        if (m_objectiveHessianSymbolicBuilt) {
+            return;
+        }
+
+        struct PendingResidualHessian {
+            size_t residualIndex = 0;
+            size_t row = 0;
+            size_t col = 0;
+            Function* secondDerivative = nullptr;
+        };
+
+        const size_t variableCount = m_X.size();
+        std::vector<std::vector<size_t>> columnRows(variableCount);
+        std::vector<PendingResidualHessian> pendingResidualHessians;
+
+        for (size_t col = 0; col < variableCount; ++col) {
+            columnRows[col].push_back(col);
+        }
+
+        const auto& approximateOuter = m_approximateHessian.outerIndexData();
+        const auto& approximateInner = m_approximateHessian.innerIndexData();
+        for (size_t col = 0; col < variableCount; ++col) {
+            for (size_t pos = approximateOuter[col]; pos < approximateOuter[col + 1]; ++pos) {
+                columnRows[col].push_back(approximateInner[pos]);
+            }
+        }
+
+        for (const JacobianEntry& entry : m_jacobianEntries) {
+            for (size_t col = 0; col < variableCount; ++col) {
+                Function* derivative = entry.derivative->derivative(m_X[col]);
+                Function* simplified = derivative->simplify();
+                delete derivative;
+
+                if (isZeroFunction(simplified)) {
+                    delete simplified;
+                    continue;
+                }
+
+                pendingResidualHessians.push_back({
+                    entry.residualIndex,
+                    entry.variableIndex,
+                    col,
+                    simplified
+                });
+                columnRows[col].push_back(entry.variableIndex);
+            }
+        }
+
+        std::vector<size_t> outer(variableCount + 1, 0);
+        std::vector<size_t> inner;
+        std::vector<double> values;
+        for (size_t col = 0; col < variableCount; ++col) {
+            auto& rows = columnRows[col];
+            std::sort(rows.begin(), rows.end());
+            rows.erase(std::unique(rows.begin(), rows.end()), rows.end());
+
+            outer[col] = inner.size();
+            for (size_t row : rows) {
+                inner.push_back(row);
+                values.push_back(0.0);
+            }
+        }
+        outer[variableCount] = inner.size();
+
+        m_objectiveHessian = SparseMatrix<>::fromCSC(
+            variableCount,
+            variableCount,
+            std::move(values),
+            std::move(inner),
+            std::move(outer));
+
+        m_objectiveHessianValueRefs.clear();
+        m_objectiveHessianValueRefs.reserve(m_objectiveHessian.nonZeros());
+        for (size_t col = 0; col < m_objectiveHessian.cols_size(); ++col) {
+            for (SparseMatrix<>::InnerIterator it(m_objectiveHessian, col); it; ++it) {
+                m_objectiveHessianValueRefs.push_back(
+                    &m_objectiveHessian.coeffRef(it.row(), col));
+            }
+        }
+
+        m_objectiveJtjContributions.clear();
+        m_objectiveJtjContributions.reserve(m_hessianContributions.size());
+        for (size_t residualIndex = 0; residualIndex < m_functions.size(); ++residualIndex) {
+            const size_t begin = m_rowEntryOffsets[residualIndex];
+            const size_t end = m_rowEntryOffsets[residualIndex + 1];
+            for (size_t left = begin; left < end; ++left) {
+                for (size_t right = begin; right < end; ++right) {
+                    const size_t row = m_jacobianEntries[left].variableIndex;
+                    const size_t col = m_jacobianEntries[right].variableIndex;
+                    m_objectiveJtjContributions.push_back({
+                        m_jacobianEntries[left].jacobianValue,
+                        m_jacobianEntries[right].jacobianValue,
+                        &m_objectiveHessian.coeffRef(row, col)
+                    });
+                }
+            }
+        }
+
+        m_residualHessianContributions.clear();
+        m_residualHessianContributions.reserve(pendingResidualHessians.size());
+        for (PendingResidualHessian& pending : pendingResidualHessians) {
+            m_residualHessianContributions.push_back({
+                pending.residualIndex,
+                pending.secondDerivative,
+                &m_objectiveHessian.coeffRef(pending.row, pending.col)
+            });
+            pending.secondDerivative = nullptr;
+        }
+
+        m_objectiveHessianSymbolicBuilt = true;
+        m_objectiveHessianDirty = true;
+    }
+
     void invalidateNumericCaches() const {
         m_linearizationDirty = true;
         m_objectiveGradientDirty = true;
         m_approximateHessianDirty = true;
+        m_objectiveHessianDirty = true;
         m_denseObjectiveHessianDirty = true;
     }
 
@@ -256,6 +383,7 @@ private:
         m_linearizationDirty = false;
         m_objectiveGradientDirty = true;
         m_approximateHessianDirty = true;
+        m_objectiveHessianDirty = true;
         m_denseObjectiveHessianDirty = true;
     }
 
@@ -291,20 +419,46 @@ private:
         m_denseObjectiveHessianDirty = true;
     }
 
+    void ensureObjectiveHessian() const {
+        ensureLinearization();
+        buildSymbolicObjectiveHessian();
+        if (!m_objectiveHessianDirty) {
+            return;
+        }
+
+        for (double* valueRef : m_objectiveHessianValueRefs) {
+            *valueRef = 0.0;
+        }
+
+        for (const HessianContribution& contribution : m_objectiveJtjContributions) {
+            const double value =
+                2.0 * (*contribution.leftJacobianValue) * (*contribution.rightJacobianValue);
+            *contribution.hessianValue += value;
+        }
+
+        for (const ResidualHessianContribution& contribution : m_residualHessianContributions) {
+            const double residual = m_residualVector(contribution.residualIndex, 0);
+            *contribution.hessianValue += 2.0 * residual * contribution.secondDerivative->evaluate();
+        }
+
+        m_objectiveHessianDirty = false;
+        m_denseObjectiveHessianDirty = true;
+    }
+
     void ensureDenseObjectiveHessian() const {
-        ensureApproximateHessian();
+        ensureObjectiveHessian();
         if (!m_denseObjectiveHessianDirty) {
             return;
         }
 
         m_denseObjectiveHessian.setZeroes();
-        const auto& outer = m_approximateHessian.outerIndexData();
-        const auto& inner = m_approximateHessian.innerIndexData();
-        const auto& values = m_approximateHessian.valueData();
+        const auto& outer = m_objectiveHessian.outerIndexData();
+        const auto& inner = m_objectiveHessian.innerIndexData();
+        const auto& values = m_objectiveHessian.valueData();
 
-        for (size_t col = 0; col < m_approximateHessian.cols_size(); ++col) {
+        for (size_t col = 0; col < m_objectiveHessian.cols_size(); ++col) {
             for (size_t pos = outer[col]; pos < outer[col + 1]; ++pos) {
-                m_denseObjectiveHessian(inner[pos], col) = 2.0 * values[pos];
+                m_denseObjectiveHessian(inner[pos], col) = values[pos];
             }
         }
 
@@ -320,6 +474,7 @@ public:
           m_normalGradient(m_X.size(), 1),
           m_objectiveGradient(m_X.size(), 1),
           m_approximateHessian(m_X.size(), m_X.size()),
+          m_objectiveHessian(m_X.size(), m_X.size()),
           m_denseObjectiveHessian(m_X.size(), m_X.size()),
           m_cachedVariableValues(m_X.size(), 0.0)
     {
@@ -340,6 +495,10 @@ public:
 
         for (const JacobianEntry& entry : m_jacobianEntries) {
             delete entry.derivative;
+        }
+
+        for (const ResidualHessianContribution& contribution : m_residualHessianContributions) {
+            delete contribution.secondDerivative;
         }
     }
 
@@ -386,6 +545,53 @@ public:
             std::move(values),
             std::vector<size_t>(m_approximateHessian.innerIndexData()),
             std::vector<size_t>(m_approximateHessian.outerIndexData()));
+    }
+
+    void fillApproximateHessian(SparseMatrix<>& target) const {
+        ensureApproximateHessian();
+        const bool samePattern =
+            !target.rowMutableMode()
+            && target.rows_size() == m_approximateHessian.rows_size()
+            && target.cols_size() == m_approximateHessian.cols_size()
+            && target.innerIndexData() == m_approximateHessian.innerIndexData()
+            && target.outerIndexData() == m_approximateHessian.outerIndexData();
+
+        if (!samePattern) {
+            target = m_approximateHessian;
+            return;
+        }
+
+        target.mutableValueData() = m_approximateHessian.valueData();
+    }
+
+    void fillDampedNormalMatrix(double lambda, SparseMatrix<>& target) const {
+        fillApproximateHessian(target);
+        std::vector<double>& values = target.mutableValueData();
+        for (size_t position : m_hessianDiagonalPositions) {
+            values[position] += lambda;
+        }
+    }
+
+    SparseMatrix<> objectiveHessian() const {
+        ensureObjectiveHessian();
+        return m_objectiveHessian;
+    }
+
+    void fillObjectiveHessian(SparseMatrix<>& target) const {
+        ensureObjectiveHessian();
+        const bool samePattern =
+            !target.rowMutableMode()
+            && target.rows_size() == m_objectiveHessian.rows_size()
+            && target.cols_size() == m_objectiveHessian.cols_size()
+            && target.innerIndexData() == m_objectiveHessian.innerIndexData()
+            && target.outerIndexData() == m_objectiveHessian.outerIndexData();
+
+        if (!samePattern) {
+            target = m_objectiveHessian;
+            return;
+        }
+
+        target.mutableValueData() = m_objectiveHessian.valueData();
     }
 
     LinearizationView linearizationView() const {
