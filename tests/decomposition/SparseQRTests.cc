@@ -223,6 +223,29 @@ TEST(SparseQRTests, wideSparseMatrixDecomposition) {
     CheckFactorization(dense, 1e-8);
 }
 
+TEST(SparseQRTests, wideSparseMatrixWithLateTreeParentsDoesNotReadPastReflectors) {
+    SparseMatrix<double> sparse = SparseMatrix<double>::fromCSC(
+        6,
+        16,
+        {
+            -200.0, 1.0, -4.0, 200.0, -4.0, -1.0, 4.0, -100.0,
+            1.0, -1.0, 1.0, -1.0, 4.0, 100.0, 1.0, -1.0
+        },
+        {
+            4, 0, 4, 4, 5, 0, 4, 5,
+            1, 1, 2, 2, 5, 5, 3, 3
+        },
+        {
+            0, 1, 3, 5, 8, 8, 9, 9, 10,
+            11, 11, 13, 14, 15, 15, 16, 16
+        });
+
+    SparseQR qr(sparse);
+    ASSERT_NO_THROW(qr.qr());
+    EXPECT_LE(qr.rank(), sparse.rows_size());
+    EXPECT_LE(qr.rank(), sparse.cols_size());
+}
+
 TEST(SparseQRTests, matrixWithZeroColumnsDecomposition) {
     Matrix<double> dense = {
         {0.0, 1.0, 0.0, 2.0},

@@ -25,13 +25,14 @@ size_t findRoot(size_t index, std::vector<size_t>& parent) {
 void appendReachPath(
     size_t start,
     size_t column,
+    size_t reflector_limit,
     const std::vector<size_t>& etree,
     std::vector<size_t>& marks,
     size_t stamp,
     std::vector<size_t>& reach)
 {
     const size_t begin = reach.size();
-    while (start < marks.size() && start < column && marks[start] != stamp) {
+    while (start < reflector_limit && start < marks.size() && start < column && marks[start] != stamp) {
         reach.push_back(start);
         marks[start] = stamp;
         start = etree[start];
@@ -645,7 +646,7 @@ void SparseQR::factorizeNumeric() {
 
             const size_t start = _first_row_elt[row];
             if (start < _min_mn && start < col) {
-                appendReachPath(start, col, _etree, _factor_marks, stamp, _factor_reach);
+                appendReachPath(start, col, _min_mn, _etree, _factor_marks, stamp, _factor_reach);
             }
         }
 
