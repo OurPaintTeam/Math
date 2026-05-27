@@ -99,10 +99,14 @@ Matrix<double> BuildRankDeficient(size_t rows, size_t cols, size_t target_rank,
     }
 
     for (size_t col = target_rank; col < cols; ++col) {
-        const size_t source_col = (col - target_rank) % target_rank;
-        const double scale = ((col - target_rank) % 2 == 0) ? -1.0 : 1.0;
+        const size_t offset = col - target_rank;
+        const size_t source_col = offset % target_rank;
+        const size_t mix_col = (source_col + 1 + (offset / target_rank)) % target_rank;
+        const double source_scale = (offset % 2 == 0) ? -1.0 : 1.0;
+        const double mix_scale = (target_rank == 1) ? 0.0 : ((offset % 3 == 0) ? 0.35 : -0.2);
         for (size_t row = 0; row < rows; ++row) {
-            result(row, col) = scale * result(row, source_col);
+            result(row, col) = source_scale * result(row, source_col)
+                             + mix_scale * result(row, mix_col);
         }
     }
 
@@ -874,7 +878,7 @@ void RunRankDeficientCase(size_t rows, size_t cols, size_t targetRank,
     const int eigenRank = eigenQr.rank();
 
     std::cout << "rank_deficient_bench"
-              << " scenario=known_rank_by_column_copies"
+              << " scenario=known_rank_by_linear_combinations"
               << " rows=" << rows
               << " cols=" << cols
               << " target_rank=" << targetRank
