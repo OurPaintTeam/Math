@@ -1,6 +1,7 @@
 #pragma once
 #include "Function.h"
 #include <memory>
+#include <span>
 #include <unordered_map>
 #include <vector>
 
@@ -74,6 +75,7 @@ protected:
     PointPointDistanceError(Equation equation, std::vector<double*> coordinates, double target)
         : ErrorFunction(equation,std::move(coordinates),target) {}
 public:
+    static double distance(std::span<const double> first, std::span<const double> second);
     explicit PointPointDistanceError(std::vector<Variable*> variables, double target = 0)
         : PointPointDistanceError(coordinatePointers(variables),target) {}
     explicit PointPointDistanceError(std::vector<double*> coordinates, double target = 0)

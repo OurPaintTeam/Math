@@ -18,6 +18,11 @@ struct Jet {
     std::array<long double, N * N> h{};
     Jet(long double v = 0) : value(v) {}
 };
+long double euclideanNorm(std::span<const long double> coordinates) {
+    long double result = 0;
+    for (long double coordinate : coordinates) result = std::hypot(result,coordinate);
+    return result;
+}
 Jet operator+(const Jet& a, const Jet& b) {
     Jet r(a.value + b.value);
     for (std::size_t i = 0; i < N; ++i) r.g[i] = a.g[i] + b.g[i];
@@ -50,7 +55,8 @@ Jet operator/(const Jet& a, const Jet& b) {
     return r;
 }
 Jet norm(const Jet& x, const Jet& y) {
-    const long double length = std::hypot(x.value, y.value);
+    const std::array<long double,2> coordinates{x.value,y.value};
+    const long double length = euclideanNorm(coordinates);
     if (length == 0) return Jet(0); // Selected zero subgradient at the norm cusp.
     Jet r(length);
     const long double ux = x.value/length, uy = y.value/length;
@@ -299,4 +305,15 @@ std::vector<Variable*> ErrorFunction::getVariables() {
     std::vector<Variable*> variables;
     for (auto& variable : _variables) variables.push_back(&variable);
     return variables;
+}
+
+double PointPointDistanceError::distance(std::span<const double> first, std::span<const double> second) {
+    if (first.size() != second.size()) throw std::invalid_argument("Point dimensions must agree");
+    std::vector<long double> differences;
+    differences.reserve(first.size());
+    for (std::size_t i = 0; i < first.size(); ++i) {
+        if (!std::isfinite(first[i]) || !std::isfinite(second[i])) return undefined;
+        differences.push_back(static_cast<long double>(second[i])-first[i]);
+    }
+    return checked(euclideanNorm(differences));
 }

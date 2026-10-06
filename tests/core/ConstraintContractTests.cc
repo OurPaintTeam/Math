@@ -4,11 +4,24 @@
 #include <memory>
 #include <numbers>
 #include <functional>
+#include <array>
 #include <type_traits>
 
 static_assert(std::is_base_of_v<PointSectionDistanceError,PointOnSectionError>);
 static_assert(std::is_base_of_v<PointPointDistanceError,PointOnPointError>);
 static_assert(std::is_base_of_v<SectionCircleDistanceError,SectionOnCircleError>);
+
+TEST(ConstraintContract, PointDistanceUtilityPreservesDimensionsScalesAndDomainChecks) {
+    for (double scale : {1e-200,1.0,1e200}) {
+        const std::array<double,3> a{0,0,0}, b{2*scale,3*scale,6*scale};
+        EXPECT_NEAR(PointPointDistanceError::distance(a,b)/scale,7,1e-12);
+    }
+    const std::array<double,1> a{0};
+    const std::array<double,2> b{3,4};
+    EXPECT_THROW(PointPointDistanceError::distance(a,b),std::invalid_argument);
+    const std::array<double,1> invalid{std::numeric_limits<double>::quiet_NaN()};
+    EXPECT_FALSE(std::isfinite(PointPointDistanceError::distance(a,invalid)));
+}
 
 
 TEST(ConstraintContract, ConstructionAndParameterChangesValidateTheMathematicalDomain) {
