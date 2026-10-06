@@ -4,6 +4,7 @@
 #include <cmath>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 enum FunctionType {
     CONSTANT,
@@ -37,6 +38,9 @@ public:
     // String representation
     virtual std::string to_string() const = 0;
     virtual FunctionType getType() const {return OTHER;}
+    // Inputs used to invalidate task caches, including coordinates not optimized.
+    virtual std::vector<double*> referencedCoordinates() const { return {}; }
+    virtual std::size_t revision() const { return 0; }
 };
 // Class for unary operation
 class Unary: public Function {
@@ -53,6 +57,8 @@ public:
     virtual std::string to_string() const override = 0;
 
     virtual FunctionType getType() const override {return UNARY;}
+    std::vector<double*> referencedCoordinates() const override { return operand->referencedCoordinates(); }
+    std::size_t revision() const override { return operand->revision(); }
 };
 // Class for binary operation
 class Binary: public Function {
@@ -72,6 +78,13 @@ public:
     virtual std::string to_string() const override = 0;
 
     virtual FunctionType getType() const override {return BINARY;}
+    std::vector<double*> referencedCoordinates() const override {
+        auto refs = left->referencedCoordinates();
+        auto other = right->referencedCoordinates();
+        refs.insert(refs.end(),other.begin(),other.end());
+        return refs;
+    }
+    std::size_t revision() const override { return left->revision()+right->revision(); }
 };
 // Class Constant (constant function)
 class Constant : public Function {
@@ -118,6 +131,7 @@ public:
     }
 
     FunctionType getType() const override{ return VARIABLE;}
+    std::vector<double*> referencedCoordinates() const override { return {value}; }
 };
 
 // Class Addition
@@ -290,10 +304,6 @@ public:
 
 // Class Modulo
 class Mod : public Binary {
-private:
-    Function* numerator;
-    Function* denominator;
-
 public:
     explicit Mod(Function* numerator, Function* denominator): Binary(numerator, denominator){}
 
@@ -303,7 +313,7 @@ public:
 
     Function* clone() const override;
     Function* simplify() const override {
-        return new Mod(numerator->simplify(), denominator->simplify());
+        return new Mod(left->simplify(), right->simplify());
     }
 
 
@@ -378,7 +388,7 @@ public:
 
 
     // Disable copy constructor and copy assignment to prevent shallow copies
-    Log(const Ln&) = delete;
+    Log(const Log&) = delete;
     Log& operator=(const Log&) = delete;
 };
 

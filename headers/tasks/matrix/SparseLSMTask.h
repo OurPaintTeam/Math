@@ -3,15 +3,22 @@
 
 #include "SparseMatrix.h"
 #include "TaskMatrix.h"
+#include "ErrorFunction.h"
+#include "SparseQR.h"
+#include <Eigen/Sparse>
+#include <unordered_set>
 
 #include <algorithm>
 #include <functional>
+#include <memory>
 #include <stdexcept>
 #include <utility>
 #include <vector>
 
 class SparseLSMTask : public TaskMatrix {
 public:
+    enum class DiagnosticStatus { EMPTY, WELL_CONSTRAINED, SINGULAR_SYSTEM, UNDER_CONSTRAINED, OVER_CONSTRAINED, UNKNOWN };
+
     using LinearizationView =
         std::pair<std::reference_wrapper<const Matrix<>>,
                   std::reference_wrapper<const SparseMatrix<>>>;
@@ -21,7 +28,7 @@ private:
         size_t residualIndex = 0;
         size_t variableIndex = 0;
         double* jacobianValue = nullptr;
-        Function* derivative = nullptr;
+        std::unique_ptr<Function> derivative;
     };
 
     struct HessianContribution {
@@ -32,11 +39,21 @@ private:
 
     struct ResidualHessianContribution {
         size_t residualIndex = 0;
-        Function* secondDerivative = nullptr;
+        std::unique_ptr<Function> secondDerivative;
         double* hessianValue = nullptr;
     };
 
     std::vector<Function*> m_functions;
+    std::vector<std::unique_ptr<Function>> m_functionOwners;
+
+    static std::vector<std::unique_ptr<Function>> ownFunctions(const std::vector<Function*>& functions) {
+        std::vector<std::unique_ptr<Function>> owners;
+        owners.reserve(functions.size());
+        for (Function* function : functions) {
+            if (function && function->getType() != VARIABLE) owners.emplace_back(function);
+        }
+        return owners;
+    }
     std::vector<Variable*> m_X;
     std::vector<JacobianEntry> m_jacobianEntries;
     std::vector<size_t> m_rowEntryOffsets;
@@ -56,12 +73,30 @@ private:
     mutable std::vector<double*> m_objectiveHessianValueRefs;
     mutable double m_error = 0.0;
     mutable std::vector<double> m_cachedVariableValues;
+    std::vector<double*> m_inputCoordinates;
+    mutable std::vector<double> m_cachedInputs;
+    mutable std::vector<std::size_t> m_cachedRevisions;
     mutable bool m_linearizationDirty = true;
     mutable bool m_objectiveGradientDirty = true;
     mutable bool m_approximateHessianDirty = true;
     mutable bool m_objectiveHessianSymbolicBuilt = false;
     mutable bool m_objectiveHessianDirty = true;
     mutable bool m_denseObjectiveHessianDirty = true;
+
+    static bool isDisabled(const Function* function) {
+        const auto* error = dynamic_cast<const ErrorFunction*>(function);
+        return error && error->weight() == 0;
+    }
+    static Eigen::SparseMatrix<double> toEigen(const SparseMatrix<>& matrix) {
+        std::vector<Eigen::Triplet<double>> entries;
+        entries.reserve(matrix.nonZeros());
+        for (size_t col = 0; col < matrix.cols_size(); ++col)
+            for (SparseMatrix<>::InnerIterator it(matrix,col); it; ++it)
+                entries.emplace_back(it.row(),col,it.value());
+        Eigen::SparseMatrix<double> result(matrix.rows_size(),matrix.cols_size());
+        result.setFromTriplets(entries.begin(),entries.end());
+        return result;
+    }
 
     static bool isZeroFunction(const Function* function) {
         const auto* constant = dynamic_cast<const Constant*>(function);
@@ -80,12 +115,10 @@ private:
 
         for (size_t residualIndex = 0; residualIndex < m_functions.size(); ++residualIndex) {
             for (size_t variableIndex = 0; variableIndex < m_X.size(); ++variableIndex) {
-                Function* derivative = m_functions[residualIndex]->derivative(m_X[variableIndex]);
-                Function* simplified = derivative->simplify();
-                delete derivative;
+                std::unique_ptr<Function> derivative(m_functions[residualIndex]->derivative(m_X[variableIndex]));
+                std::unique_ptr<Function> simplified(derivative->simplify());
 
-                if (isZeroFunction(simplified)) {
-                    delete simplified;
+                if (isZeroFunction(simplified.get())) {
                     continue;
                 }
 
@@ -93,7 +126,7 @@ private:
                     residualIndex,
                     variableIndex,
                     nullptr,
-                    simplified
+                    std::move(simplified)
                 });
                 ++columnCounts[variableIndex];
             }
@@ -225,7 +258,7 @@ private:
             size_t residualIndex = 0;
             size_t row = 0;
             size_t col = 0;
-            Function* secondDerivative = nullptr;
+            std::unique_ptr<Function> secondDerivative;
         };
 
         const size_t variableCount = m_X.size();
@@ -246,12 +279,10 @@ private:
 
         for (const JacobianEntry& entry : m_jacobianEntries) {
             for (size_t col = 0; col < variableCount; ++col) {
-                Function* derivative = entry.derivative->derivative(m_X[col]);
-                Function* simplified = derivative->simplify();
-                delete derivative;
+                std::unique_ptr<Function> derivative(entry.derivative->derivative(m_X[col]));
+                std::unique_ptr<Function> simplified(derivative->simplify());
 
-                if (isZeroFunction(simplified)) {
-                    delete simplified;
+                if (isZeroFunction(simplified.get())) {
                     continue;
                 }
 
@@ -259,7 +290,7 @@ private:
                     entry.residualIndex,
                     entry.variableIndex,
                     col,
-                    simplified
+                    std::move(simplified)
                 });
                 columnRows[col].push_back(entry.variableIndex);
             }
@@ -320,10 +351,9 @@ private:
         for (PendingResidualHessian& pending : pendingResidualHessians) {
             m_residualHessianContributions.push_back({
                 pending.residualIndex,
-                pending.secondDerivative,
+                std::move(pending.secondDerivative),
                 &m_objectiveHessian.coeffRef(pending.row, pending.col)
             });
-            pending.secondDerivative = nullptr;
         }
 
         m_objectiveHessianSymbolicBuilt = true;
@@ -340,6 +370,18 @@ private:
 
     void refreshDirtyState() const {
         bool changed = false;
+        for (size_t i = 0; i < m_inputCoordinates.size(); ++i) {
+            if (*m_inputCoordinates[i] != m_cachedInputs[i]) {
+                m_cachedInputs[i] = *m_inputCoordinates[i];
+                changed = true;
+            }
+        }
+        for (size_t i = 0; i < m_functions.size(); ++i) {
+            if (m_functions[i]->revision() != m_cachedRevisions[i]) {
+                m_cachedRevisions[i] = m_functions[i]->revision();
+                changed = true;
+            }
+        }
         for (size_t i = 0; i < m_X.size(); ++i) {
             const double currentValue = m_X[i]->evaluate();
             if (currentValue != m_cachedVariableValues[i]) {
@@ -468,6 +510,7 @@ private:
 public:
     SparseLSMTask(std::vector<Function*> functions, std::vector<Variable*> x)
         : m_functions(std::move(functions)),
+          m_functionOwners(ownFunctions(m_functions)),
           m_X(std::move(x)),
           m_residualVector(m_functions.size(), 1),
           m_jacobian(m_functions.size(), m_X.size()),
@@ -478,6 +521,15 @@ public:
           m_denseObjectiveHessian(m_X.size(), m_X.size()),
           m_cachedVariableValues(m_X.size(), 0.0)
     {
+        for (const auto* function : m_functions) {
+            for (double* coordinate : function->referencedCoordinates()) {
+                if (std::find(m_inputCoordinates.begin(),m_inputCoordinates.end(),coordinate) == m_inputCoordinates.end()) {
+                    m_inputCoordinates.push_back(coordinate);
+                    m_cachedInputs.push_back(*coordinate);
+                }
+            }
+            m_cachedRevisions.push_back(function->revision());
+        }
         buildSymbolicJacobian();
         buildSymbolicHessian();
 
@@ -486,21 +538,90 @@ public:
         }
     }
 
-    ~SparseLSMTask() override {
-        for (Function* function : m_functions) {
-            if (function != nullptr && function->getType() != VARIABLE) {
-                delete function;
+    ~SparseLSMTask() override = default;
+
+    Eigen::SparseMatrix<double> J() const { return toEigen(jacobianRef()); }
+    Eigen::SparseMatrix<double> JTJ() const { return toEigen(approximateHessian()); }
+    Eigen::VectorXd residualVector() const {
+        const auto& values = residualsRef();
+        Eigen::VectorXd result(values.rows_size());
+        for (size_t i = 0; i < values.rows_size(); ++i) result[i] = values(i,0);
+        return result;
+    }
+    DiagnosticStatus diagnose() const {
+        for (const auto& f : m_functions) {
+            if (!std::isfinite(f->evaluate())) return DiagnosticStatus::SINGULAR_SYSTEM;
+        }
+        ensureLinearization();
+        for (size_t col = 0; col < m_jacobian.cols_size(); ++col)
+            for (SparseMatrix<>::InnerIterator it(m_jacobian,col); it; ++it)
+                if (!std::isfinite(it.value())) return DiagnosticStatus::SINGULAR_SYSTEM;
+        std::vector<std::size_t> activeRows;
+        std::unordered_set<double*> activeVars;
+        for (std::size_t i = 0; i < m_functions.size(); ++i) {
+            if (isDisabled(m_functions[i])) {
+                continue;
+            }
+            activeRows.push_back(i);
+            for (double* variable : m_functions[i]->referencedCoordinates()) {
+                activeVars.insert(variable);
+            }
+        }
+        if (activeRows.empty() || activeVars.empty()) {
+            return DiagnosticStatus::EMPTY;
+        }
+
+        std::vector<std::size_t> activeColumns;
+        for (std::size_t j = 0; j < m_X.size(); ++j) {
+            if (activeVars.contains(m_X[j]->value)) {
+                activeColumns.push_back(j);
             }
         }
 
-        for (const JacobianEntry& entry : m_jacobianEntries) {
-            delete entry.derivative;
+        std::vector<std::size_t> rowMap(m_functions.size(), m_functions.size());
+        for (std::size_t i = 0; i < activeRows.size(); ++i) {
+            rowMap[activeRows[i]] = i;
         }
 
-        for (const ResidualHessianContribution& contribution : m_residualHessianContributions) {
-            delete contribution.secondDerivative;
+        std::vector<std::size_t> outer(activeColumns.size() + 1);
+        std::vector<std::size_t> inner;
+        std::vector<double> values;
+        inner.reserve(m_jacobian.nonZeros());
+        values.reserve(m_jacobian.nonZeros());
+        for (std::size_t j = 0; j < activeColumns.size(); ++j) {
+            outer[j] = values.size();
+            for (SparseMatrix<>::InnerIterator it(
+                     m_jacobian, activeColumns[j]); it; ++it) {
+                const auto row = rowMap[static_cast<std::size_t>(it.row())];
+                if (row != m_functions.size() && it.value() != 0) {
+                    inner.push_back(row);
+                    values.push_back(it.value());
+                }
+            }
         }
+        outer.back() = values.size();
+
+        auto activeJ = ::SparseMatrix<>::fromCSC(
+            activeRows.size(), activeColumns.size(),
+            std::move(values), std::move(inner), std::move(outer));
+        SparseQR qr(activeJ);
+        qr.setPivotThreshold(1e-8);
+        qr.qr();
+        const auto rank = qr.rank();
+        const auto m = activeRows.size();
+        const auto n = activeColumns.size();
+
+        if (m == n && rank == n)
+            return DiagnosticStatus::WELL_CONSTRAINED;
+        if (rank < std::min(m, n))
+            return DiagnosticStatus::SINGULAR_SYSTEM;
+        if (m < n)
+            return DiagnosticStatus::UNDER_CONSTRAINED;
+        if (m > n)
+            return DiagnosticStatus::OVER_CONSTRAINED;
+        return DiagnosticStatus::UNKNOWN;
     }
+
 
     Matrix<> residuals() const {
         ensureLinearization();

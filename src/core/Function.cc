@@ -1,4 +1,39 @@
 #include "Function.h"
+#include <memory>
+
+namespace {
+// Selection stays live when coordinates cross a min/max branch after creation.
+class SelectedDerivative final : public Function {
+    std::unique_ptr<Function> a, b, da, db;
+    bool maximum;
+public:
+    SelectedDerivative(Function* a, Function* b, Function* da, Function* db, bool maximum)
+        : a(a), b(b), da(da), db(db), maximum(maximum) {}
+    double evaluate() const override {
+        const double av = a->evaluate(), bv = b->evaluate();
+        if (av == bv) return 0;
+        return ((av > bv) == maximum ? da : db)->evaluate();
+    }
+    Function* derivative(Variable* var) const override {
+        return new SelectedDerivative(a->clone(), b->clone(), da->derivative(var), db->derivative(var), maximum);
+    }
+    Function* clone() const override {
+        return new SelectedDerivative(a->clone(),b->clone(),da->clone(),db->clone(),maximum);
+    }
+    std::vector<double*> referencedCoordinates() const override {
+        std::vector<double*> refs;
+        for (const auto* child : {a.get(), b.get(), da.get(), db.get()}) {
+            auto coordinates = child->referencedCoordinates();
+            refs.insert(refs.end(), coordinates.begin(), coordinates.end());
+        }
+        return refs;
+    }
+    std::size_t revision() const override {
+        return a->revision()+b->revision()+da->revision()+db->revision();
+    }
+    std::string to_string() const override { return "live min/max derivative"; }
+};
+}
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -22,7 +57,9 @@ Function* Constant::clone() const {
 
 // -------------------- Variable Implementations --------------------
 
-Variable::Variable(double* value) : value(value) {}
+Variable::Variable(double* value) : value(value) {
+    if (!value) throw std::invalid_argument("Variable coordinate must not be null");
+}
 
 double Variable::evaluate() const {
     return *value;
@@ -220,11 +257,16 @@ double Power::evaluate() const {
 }
 
 Function* Power::derivative(Variable* var) const {
-    Function* left_derivative = left->derivative(var);
-    Function* exp = new Constant(right->evaluate());
-    Function* new_power = new Power(left->clone(), new Constant(right->evaluate() - 1));
-    // n * u^(n-1) * u'
-    return new Multiplication(exp, new Multiplication(new_power, left_derivative));
+    if (const auto* exponent = dynamic_cast<const Constant*>(right)) {
+        const double n = exponent->evaluate();
+        if (n == 0) return new Constant(0);
+        if (n == 1) return left->derivative(var);
+        return new Multiplication(new Constant(n),
+            new Multiplication(new Power(left->clone(),new Constant(n-1)),left->derivative(var)));
+    }
+    return new Multiplication(clone(),new Addition(
+        new Multiplication(right->derivative(var),new Ln(left->clone())),
+        new Multiplication(right->clone(),new Division(left->derivative(var),left->clone()))));
 }
 Function* Power::simplify() const {
   Function* b = left->simplify();
@@ -345,7 +387,7 @@ double Mod::evaluate() const {
 }
 
 Function* Mod::derivative(Variable*) const {
-    return new Constant(0.0);
+    throw std::logic_error("Symbolic modulo differentiation is unsupported");
 }
 
 Function* Mod::clone() const {
@@ -404,12 +446,8 @@ double Log::evaluate() const {
 }
 
 Function* Log::derivative(Variable* var) const {
-    // d/dx log_b(f(x)) = f'(x) / (f(x) * ln(b))
-    Function* f_prime = right->derivative(var);
-    Function * right_clone = right->clone();
-    Function* ln_b = new Ln(left->clone());
-    Function* right = new Multiplication(right_clone, ln_b);
-    return new Division(f_prime, right);
+    Division equivalent(new Ln(right->clone()),new Ln(left->clone()));
+    return equivalent.derivative(var);
 }
 
 Function* Log::clone() const {
@@ -665,18 +703,7 @@ double Max::evaluate() const {
 }
 
 Function *Max::derivative(Variable *var) const {
-    double left_val = left->evaluate();
-    double right_val = right->evaluate();
-
-    if (left_val > right_val) {
-        return left->derivative(var);
-    } else if (right_val > left_val) {
-        return right->derivative(var);
-    } else {
-        // At points where left == right, derivative is undefined.
-        // Here we choose to return a zero function by convention.
-        return new Constant(0.0);
-    }
+    return new SelectedDerivative(left->clone(),right->clone(),left->derivative(var),right->derivative(var),true);
 }
 
 Function *Max::clone() const {
@@ -693,18 +720,7 @@ double Min::evaluate() const {
 }
 
 Function *Min::derivative(Variable *var) const {
-    double left_val = left->evaluate();
-    double right_val = right->evaluate();
-
-    if (left_val < right_val) {
-        return left->derivative(var);
-    } else if (right_val < left_val) {
-        return right->derivative(var);
-    } else {
-        // At points where left == right, derivative is undefined.
-        // Here we choose to return a zero function by convention.
-        return new Constant(0.0);
-    }
+    return new SelectedDerivative(left->clone(),right->clone(),left->derivative(var),right->derivative(var),false);
 }
 
 Function *Min::clone() const {

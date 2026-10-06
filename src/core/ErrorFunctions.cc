@@ -1,273 +1,302 @@
 #include "ErrorFunction.h"
+#include <array>
+#include <algorithm>
+#include <cmath>
+#include <limits>
+#include <numbers>
+#include <stdexcept>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
+namespace {
+constexpr std::size_t N = 8;
+constexpr double undefined = std::numeric_limits<double>::infinity();
 
-//------------------------- POINTSECDIST IMPLEMENTATION -------------------------
-PointSectionDistanceError::PointSectionDistanceError(std::vector<Variable* > x, double error) : ErrorFunction(x) {
-    v_error = error;
-    if (x.size() != 6) {
-        throw std::invalid_argument("PointSectionDistanceError: wrong number of x");
-    }
-    Function* err = new Constant(error);
-    Function* sq = new Constant(0.5);
-    Function* pow2 = new Constant(2);
-    Function* A = new Subtraction(x[5], x[3]);
-    Function* B = new Subtraction(x[4], x[2]);
-    Function* C = new Subtraction(new Multiplication(x[4]->clone(), x[3]->clone()), new Multiplication(x[5]->clone(), x[2]->clone()));
-    Function* E = new Addition(new Subtraction(new Multiplication(A, x[0]), new Multiplication(B, x[1])), C);
-    Function* F = new Division(E, new Power(new Addition(new Power(A->clone(), pow2), new Power(B->clone(), pow2->clone())),sq));
-    Function* G = new Subtraction(F, err);
-    c_f = G;
+// Second-order forward differentiation of the same expression used for values.
+// Seeds are coordinate identities, so repeated arguments sum automatically.
+struct Jet {
+    long double value = 0;
+    std::array<long double, N> g{};
+    std::array<long double, N * N> h{};
+    Jet(long double v = 0) : value(v) {}
+};
+Jet operator+(const Jet& a, const Jet& b) {
+    Jet r(a.value + b.value);
+    for (std::size_t i = 0; i < N; ++i) r.g[i] = a.g[i] + b.g[i];
+    for (std::size_t i = 0; i < N*N; ++i) r.h[i] = a.h[i] + b.h[i];
+    return r;
 }
-Function *PointSectionDistanceError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new PointSectionDistanceError(m_X_clone, v_error);
+Jet operator-(const Jet& a, const Jet& b) {
+    Jet r(a.value - b.value);
+    for (std::size_t i = 0; i < N; ++i) r.g[i] = a.g[i] - b.g[i];
+    for (std::size_t i = 0; i < N*N; ++i) r.h[i] = a.h[i] - b.h[i];
+    return r;
 }
-
-// ------------------------- POINTONSECTION IMPLEMENTATION -------------------------
-PointOnSectionError::PointOnSectionError([[maybe_unused]] std::vector<Variable* > x) : PointSectionDistanceError(x, 0){}
-Function *PointOnSectionError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
+Jet operator*(const Jet& a, const Jet& b) {
+    Jet r(a.value * b.value);
+    for (std::size_t i = 0; i < N; ++i) {
+        r.g[i] = a.g[i]*b.value + a.value*b.g[i];
+        for (std::size_t j = 0; j < N; ++j)
+            r.h[i*N+j] = a.h[i*N+j]*b.value + a.g[i]*b.g[j] +
+                         a.g[j]*b.g[i] + a.value*b.h[i*N+j];
     }
-    return new PointOnSectionError(m_X_clone);
+    return r;
 }
-
-// ------------------------- POINTPOINTDIST IMPLEMENTATION -------------------------
-
-PointPointDistanceError::PointPointDistanceError(std::vector<Variable* > x, double error) : ErrorFunction(x) {
-    if (x.size() != 4) {
-        throw std::invalid_argument("PointPointDistanceError: wrong number of x");
-    }
-    v_error = error;
-    Function* dx = new Subtraction(x[2], x[0]);  // x2 - x1
-    Function* dy = new Subtraction(x[3], x[1]);  // y2 - y1
-    Function* dx2 = new Multiplication(dx, dx->clone());  // (x2 - x1)(x2 - x1)
-    Function* dy2 = new Multiplication(dy, dy->clone());  // (y2 - y1)(y2 - y1)
-    Function* dist2 = new Addition(dx2, dy2);    // (x2 - x1)(x2 - x1) + (y2 - y1)(y2 - y1)
-    Function* target = new Constant(error * error);
-    c_f = new Subtraction(dist2, target);
+Jet operator/(const Jet& a, const Jet& b) {
+    Jet r(a.value / b.value);
+    for (std::size_t i = 0; i < N; ++i) r.g[i] = (a.g[i] - r.value*b.g[i])/b.value;
+    for (std::size_t i = 0; i < N; ++i)
+        for (std::size_t j = 0; j < N; ++j)
+            r.h[i*N+j] = (a.h[i*N+j] - r.g[i]*b.g[j] - r.g[j]*b.g[i] -
+                         r.value*b.h[i*N+j])/b.value;
+    return r;
 }
-Function *PointPointDistanceError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new PointPointDistanceError(m_X_clone, v_error);
-}
-
-// ------------------------- POINTONPOINT IMPLEMENTATION -------------------------
-PointOnPointError::PointOnPointError([[maybe_unused]] std::vector<Variable *> x) : PointPointDistanceError(x, 0){}
-Function *PointOnPointError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new PointOnPointError(m_X_clone);
+Jet norm(const Jet& x, const Jet& y) {
+    const long double length = std::hypot(x.value, y.value);
+    if (length == 0) return Jet(0); // Selected zero subgradient at the norm cusp.
+    Jet r(length);
+    const long double ux = x.value/length, uy = y.value/length;
+    for (std::size_t i = 0; i < N; ++i) r.g[i] = ux*x.g[i] + uy*y.g[i];
+    for (std::size_t i = 0; i < N; ++i)
+        for (std::size_t j = 0; j < N; ++j)
+            r.h[i*N+j] = ux*x.h[i*N+j] + uy*y.h[i*N+j] +
+                ((uy*x.g[i] - ux*y.g[i])*(uy*x.g[j] - ux*y.g[j]))/length;
+    return r;
 }
 
-// ------------------------- SECSECPARALLEL IMPLEMENTATION -------------------------
-SectionSectionParallelError::SectionSectionParallelError(std::vector<Variable* > x): ErrorFunction(x) {
-    if (x.size() != 8) {
-        throw std::invalid_argument("SectionSectionParallelError: wrong number of x");
-    }
-    Function* F = new Subtraction(
-            new Multiplication(
-                    new Subtraction(x[2], x[0]),
-                    new Subtraction(x[7], x[5])
-            ),
-            new Multiplication(
-                    new Subtraction(x[3], x[1]),
-                    new Subtraction(x[6], x[4])
-            )
-    );
+double checked(long double value) {
+    if (!std::isfinite(value) || std::abs(value) > std::numeric_limits<double>::max()) return undefined;
+    return static_cast<double>(value);
+}
+} // namespace
 
-    c_f = F;
-}
-Function *SectionSectionParallelError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
+struct ErrorFunction::State {
+    static std::size_t arity(Equation kind) {
+        switch (kind) {
+            case Equation::FixCoordinate: return 1;
+            case Equation::PointPointDistance: case Equation::PointOnPoint:
+            case Equation::Vertical: case Equation::Horizontal: return 4;
+            case Equation::PointOnCircle: return 5;
+            case Equation::PointLineDistance: case Equation::PointOnLine:
+            case Equation::ArcBisector: return 6;
+            case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle: return 7;
+            case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle: return 8;
+            case Equation::SegmentInCircle:
+                throw std::logic_error("SegmentInCircle is unsupported");
+        }
+        throw std::invalid_argument("Unknown constraint kind");
     }
-    return new SectionSectionParallelError(m_X_clone);
+    static void validateTarget(Equation kind, double target) {
+        if (!std::isfinite(target)) throw std::invalid_argument("Constraint target must be finite");
+        if ((kind == Equation::PointPointDistance || kind == Equation::SegmentCircleDistance) && target < 0)
+            throw std::invalid_argument("Distance/clearance must be non-negative");
+        if (kind == Equation::Angle && (target < 0 || target > std::numbers::pi))
+            throw std::invalid_argument("Angle must be in [0, pi] radians");
+        if (kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
+            kind != Equation::PointLineDistance && kind != Equation::Angle &&
+            kind != Equation::FixCoordinate && target != 0)
+            throw std::invalid_argument("This equation has no target parameter");
+    }
+    static bool hasRadius(Equation kind) {
+        return kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
+               kind == Equation::SegmentCircleDistance;
+    }
+
+    static Jet equation(Equation kind, const std::vector<Jet>& x, double target) {
+        switch (kind) {
+            case Equation::FixCoordinate: return x[0] - Jet(target);
+            case Equation::PointPointDistance: case Equation::PointOnPoint:
+                return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
+            case Equation::PointOnCircle:
+                return norm(x[0]-x[2], x[1]-x[3]) - x[4];
+            case Equation::SegmentOnCircle:
+                return norm(norm(x[0]-x[4], x[1]-x[5])-x[6],
+                            norm(x[2]-x[4], x[3]-x[5])-x[6]);
+            case Equation::PointLineDistance: case Equation::PointOnLine: {
+                const Jet dx = x[4]-x[2], dy = x[5]-x[3], length = norm(dx,dy);
+                if (length.value == 0) return norm(x[0]-x[2],x[1]-x[3])-Jet(target);
+                return (x[0]-x[2])*(dy/length) - (x[1]-x[3])*(dx/length) - Jet(target);
+            }
+            case Equation::SegmentCircleDistance: {
+                const Jet dx = x[2]-x[0], dy = x[3]-x[1], length = norm(dx,dy);
+                if (length.value == 0) return norm(x[0]-x[4],x[1]-x[5])-x[6]-Jet(target);
+                const Jet ux = dx/length, uy = dy/length;
+                const Jet projection = (x[4]-x[0])*ux + (x[5]-x[1])*uy;
+                if (projection.value <= 0) return norm(x[0]-x[4],x[1]-x[5])-x[6]-Jet(target);
+                if (projection.value >= length.value) return norm(x[2]-x[4],x[3]-x[5])-x[6]-Jet(target);
+                const Jet t = projection/length;
+                return norm((x[0]-x[4])+t*dx,(x[1]-x[5])+t*dy)-x[6]-Jet(target);
+            }
+            case Equation::Vertical: case Equation::Horizontal: {
+                const Jet dx = x[2]-x[0], dy = x[3]-x[1], length = norm(dx,dy);
+                if (length.value == 0) return Jet(undefined);
+                return (kind == Equation::Vertical ? dx : dy)/length;
+            }
+            case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle: {
+                const Jet dx = x[2]-x[0], dy = x[3]-x[1], length = norm(dx,dy);
+                const Jet ex = x[6]-x[4], ey = x[7]-x[5], otherLength = norm(ex,ey);
+                if (length.value == 0 || otherLength.value == 0) return Jet(undefined);
+                const Jet ux = dx/length, uy = dy/length, vx = ex/otherLength, vy = ey/otherLength;
+                if (kind == Equation::Parallel) return ux*vy-uy*vx;
+                return ux*vx+uy*vy - Jet(kind == Equation::Angle ? std::cos(target) : 0);
+            }
+            case Equation::ArcBisector: {
+                const Jet dx = x[2]-x[0], dy = x[3]-x[1], length = norm(dx,dy);
+                if (length.value == 0) return Jet(undefined);
+                // Differences before averaging avoid overflowing a midpoint sum.
+                const Jet mx = (x[4]-x[0])*Jet(0.5)+(x[4]-x[2])*Jet(0.5);
+                const Jet my = (x[5]-x[1])*Jet(0.5)+(x[5]-x[3])*Jet(0.5);
+                return (dx/length)*mx+(dy/length)*my;
+            }
+            case Equation::SegmentInCircle: break;
+        }
+        throw std::logic_error("Unsupported constraint equation");
+    }
+
+    Equation kind;
+    std::vector<double*> variables, unique;
+    double target, weight = 1;
+    std::size_t revision = 0;
+    mutable std::size_t invalidEvaluations = 0;
+    mutable std::vector<double> cachedValues;
+    mutable Jet result;
+    mutable bool dirty = true;
+
+    const Jet& current() const {
+        bool changed = dirty || cachedValues.size() != variables.size();
+        for (std::size_t i = 0; !changed && i < variables.size(); ++i)
+            changed = *variables[i] != cachedValues[i];
+        if (!changed) return result;
+        std::vector<Jet> x;
+        cachedValues.clear();
+        bool valid = true;
+        for (double* coordinate : variables) {
+            cachedValues.push_back(*coordinate);
+            valid = valid && std::isfinite(*coordinate);
+            Jet seed(*coordinate);
+            seed.g[std::find(unique.begin(),unique.end(),coordinate)-unique.begin()] = 1;
+            x.push_back(seed);
+        }
+        if (hasRadius(kind) && *variables.back() <= 0) valid = false;
+        result = valid ? equation(kind,x,target) : Jet(undefined);
+        if (!std::isfinite(checked(result.value))) { result = Jet(undefined); ++invalidEvaluations; }
+        dirty = false;
+        return result;
+    }
+    std::size_t index(double* variable) const {
+        return std::find(unique.begin(),unique.end(),variable)-unique.begin();
+    }
+};
+
+ErrorFunction::ErrorFunction(Equation kind, std::vector<double*> variables, double target)
+    : _state(std::make_shared<State>()) {
+    if (variables.size() != State::arity(kind)) throw std::invalid_argument("Wrong constraint variable count");
+    State::validateTarget(kind,target);
+    for (double* variable : variables) {
+        if (!variable || !std::isfinite(*variable)) throw std::invalid_argument("Constraint coordinates must be finite and non-null");
+        if (std::find(_state->unique.begin(),_state->unique.end(),variable) == _state->unique.end())
+            _state->unique.push_back(variable);
+    }
+    if (State::hasRadius(kind) && *variables.back() <= 0) throw std::invalid_argument("Circle radius must be positive");
+    _state->kind = kind;
+    _state->variables = std::move(variables);
+    _state->target = target;
+    for (double* coordinate : _state->variables) _variables.emplace_back(coordinate);
+}
+double ErrorFunction::evaluate() const {
+    if (_weighted && weight() == 0) return 0;
+    if (_withRespectTo.empty()) return _weighted ? weightedValue() : checked(_state->current().value);
+    const auto i = _state->index(_withRespectTo[0]);
+    if (i == _state->unique.size()) return 0;
+    const auto& result = _state->current();
+    long double value = result.g[i];
+    if (_withRespectTo.size() == 2) {
+        const auto j = _state->index(_withRespectTo[1]);
+        if (j == _state->unique.size()) return 0;
+        value = result.h[i*N+j];
+    }
+    const double converted = checked(value * (_weighted ? weight() : 1));
+    if (!std::isfinite(converted)) ++_state->invalidEvaluations;
+    return converted;
+}
+ErrorFunction::Gradient ErrorFunction::gradient() const {
+    Gradient result;
+    const auto& jet = _state->current();
+    for (std::size_t i = 0; i < _state->unique.size(); ++i) {
+        const double value = checked(jet.g[i]);
+        if (!std::isfinite(value)) ++_state->invalidEvaluations;
+        result[_state->unique[i]] = value;
+    }
+    return result;
+}
+double ErrorFunction::secondDerivative(double* first, double* second) const {
+    const auto i = _state->index(first), j = _state->index(second);
+    if (i == _state->unique.size() || j == _state->unique.size()) return 0;
+    const double value = checked(_state->current().h[i*N+j]);
+    if (!std::isfinite(value)) ++_state->invalidEvaluations;
+    return value;
+}
+::Function* ErrorFunction::derivative(Variable* variable) const {
+    if (!variable || !variable->value) throw std::invalid_argument("Null derivative variable");
+    if (_state->index(variable->value) == _state->unique.size()) return new Constant(0);
+    if (_withRespectTo.size() == 2) throw std::logic_error("ErrorFunction derivatives above order two are unsupported");
+    auto derivative = std::make_unique<ErrorFunction>(*this);
+    derivative->_withRespectTo.push_back(variable->value);
+    return derivative.release();
+}
+ErrorFunction* ErrorFunction::clone() const { return new ErrorFunction(*this); }
+std::string ErrorFunction::to_string() const { return "constraint("+std::to_string(static_cast<int>(_state->kind))+")"; }
+const std::vector<double*>& ErrorFunction::variables() const { return _state->variables; }
+bool ErrorFunction::assignment(double*& variable, double& target) const {
+    if (_state->kind != Equation::FixCoordinate) return false;
+    variable = variables()[0]; target = _state->target; return true;
+}
+void ErrorFunction::setTarget(double target) { State::validateTarget(_state->kind,target); _state->target = target; _state->dirty = true; ++_state->revision; }
+double ErrorFunction::weight() const { return _state->weight; }
+std::size_t ErrorFunction::revision() const { return _state->revision; }
+std::size_t ErrorFunction::invalidEvaluations() const { return _state->invalidEvaluations; }
+void ErrorFunction::setWeight(double weight) {
+    if (!std::isfinite(weight) || weight < 0) throw std::invalid_argument("Weight must be finite and non-negative");
+    _state->weight = weight;
+    ++_state->revision;
+}
+double ErrorFunction::weightedValue() const {
+    if (weight() == 0) return 0;
+    const double result = checked(_state->current().value*static_cast<long double>(weight()));
+    if (!std::isfinite(result)) ++_state->invalidEvaluations;
+    return result;
+}
+ErrorFunction::Gradient ErrorFunction::weightedGradient() const {
+    if (weight() == 0) { Gradient g; for (double* v : variables()) g[v] = 0; return g; }
+    Gradient g;
+    const auto& jet = _state->current();
+    for (std::size_t i = 0; i < _state->unique.size(); ++i) {
+        const double value = checked(jet.g[i]*static_cast<long double>(weight()));
+        if (!std::isfinite(value)) ++_state->invalidEvaluations;
+        g[_state->unique[i]] = value;
+    }
+    return g;
+}
+::Function* ErrorFunction::weightedFunction() const {
+    auto function = std::make_unique<ErrorFunction>(*this);
+    function->_weighted = true;
+    return function.release();
+}
+bool ErrorFunction::satisfied(double tolerance) const {
+    if (!std::isfinite(tolerance) || tolerance < 0) throw std::invalid_argument("Tolerance must be finite and non-negative");
+    const double value = weightedValue();
+    return std::isfinite(value) && std::abs(value) <= tolerance;
 }
 
-//------------------------- SECSECPERPENDICULAR IMPLEMENTATION -------------------------
-SectionSectionPerpendicularError::SectionSectionPerpendicularError(std::vector<Variable* > x): ErrorFunction(x) {
-    if (x.size() != 8) {
-        throw std::invalid_argument("SectionSectionPerpendicularError: wrong number of x");
-    }
 
-    Function* F = new Addition(
-            new Multiplication(
-                    new Subtraction(x[2], x[0]),
-                    new Subtraction(x[6], x[4])
-            ),
-            new Multiplication(
-                    new Subtraction(x[3], x[1]),
-                    new Subtraction(x[7], x[5])
-            )
-    );
-    c_f = F;
-}
-Function *SectionSectionPerpendicularError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
+std::vector<double*> ErrorFunction::coordinatePointers(const std::vector<Variable*>& variables) {
+    std::vector<double*> coordinates;
+    for (const auto* variable : variables) {
+        if (!variable || !variable->value) throw std::invalid_argument("Null ErrorFunction variable");
+        coordinates.push_back(variable->value);
     }
-    return new SectionSectionPerpendicularError(m_X_clone);
+    return coordinates;
 }
-
-//------------------------- SECTIONCIRCLEDISTANCE IMPLEMENTATION -------------------------
-SectionCircleDistanceError::SectionCircleDistanceError(std::vector<Variable* > x, double error):ErrorFunction(x) {
-    if (x.size() != 7) {
-        throw std::invalid_argument("SectionCircleDistanceError: wrong number of x");
-    }
-    delete x[4];
-    delete x[5];
-    // xs ys xe ye xc yc r
-    v_error = error;
-    Function *dist = new Addition(new Constant(error), new Constant(x[6]->evaluate()));
-    delete x[6];
-    Function *A = new Subtraction(x[3], x[1]);
-    Function *B = new Subtraction(x[2], x[0]);
-    Function *C = new Subtraction(new Multiplication(x[2]->clone(), x[1]->clone()), new Multiplication(x[0]->clone(), x[3]->clone()));
-    Function *e = new Division(new Addition(new Subtraction(A, B), C), new Sqrt(new Addition(new Power(A->clone(),A->clone()), new Power(B->clone(), B->clone()))));
-    Function *F = new Subtraction(e, dist);
-    c_f = F;
-}
-Function *SectionCircleDistanceError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new SectionCircleDistanceError(m_X_clone, v_error);
-}
-
-// ------------------------- SECTIONONCIRCLE IMPLEMENTATION -------------------------
-SectionOnCircleError::SectionOnCircleError([[maybe_unused]] std::vector<Variable *> x) : SectionCircleDistanceError(x, 0) {}
-Function *SectionOnCircleError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new SectionOnCircleError(m_X_clone);
-}
-
-//------------------------- SECTIONINCIRCLE IMPLEMENTATION -------------------------
-SectionInCircleError::SectionInCircleError([[maybe_unused]] std::vector<Variable *> x) : ErrorFunction(x) {
-    for (auto& v : x) {
-        delete v;
-    }
-}
-Function *SectionInCircleError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new SectionInCircleError(m_X_clone);
-}
-
-//------------------------- SECTIONSECTIONANGLE IMPLEMENTATION -------------------------
-SectionSectionAngleError::SectionSectionAngleError(std::vector<Variable *> x, double error):ErrorFunction(x){
-    if (x.size() != 8) {
-        throw std::invalid_argument("SectionSectionAngleError: wrong number of x");
-    }
-    // x1s y1s x1e y1e x2s y2s x2e y2e
-    v_error = error;
-    Function *err = new Constant(error);
-    Constant *PI = new Constant(M_PI);
-    Constant *PI_2deg = new Constant(180);
-    Function *pow2 = new Constant(2);
-    Function *v1 =  new Subtraction(x[2], x[0]);
-    Function *v2 =  new Subtraction(x[3], x[1]);
-    Function *w1 =  new Subtraction(x[6], x[4]);
-    Function *w2 =  new Subtraction(x[7], x[5]);
-    Function *dot_product = new Addition(new Multiplication(v1, w1), new Multiplication(v2, w2));
-    Function* mag_v = new Sqrt(new Addition(new Power(v1->clone(), pow2), new Power(v2->clone(), pow2->clone())));
-    Function* mag_w = new Sqrt(new Addition(new Power(w1->clone(), pow2->clone()), new Power(w2->clone(), pow2->clone())));
-    Function* cos_angle = new Division(dot_product, new Multiplication(mag_v, mag_w));
-    Function* angle = new Multiplication(new Division(new Acos(cos_angle), PI), PI_2deg);
-    c_f = new Subtraction(angle, err);
-}
-Function *SectionSectionAngleError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new SectionSectionAngleError(m_X_clone, v_error);
-}
-
-ArcCenterOnPerpendicularError::ArcCenterOnPerpendicularError(std::vector<Variable *> x) : ErrorFunction(x) {
-    if (x.size() != 6) {
-        throw std::invalid_argument("ArcCenterOnPerpendicularError: wrong number of x");
-    }
-    // Вычисляем середину отрезка p1p2
-    Function* midX = new Division(new Addition(x[0], x[2]), new Constant(2));
-    Function* midY = new Division(new Addition(x[1], x[3]), new Constant(2));
-    // Вычисляем вектор от середины к p3
-    Function* vecX = new Subtraction(x[4], midX);
-    Function* vecY = new Subtraction(x[5], midY);
-    // Вычисляем вектор от p1 к p2
-    Function* segX = new Subtraction(x[2]->clone(), x[0]->clone());
-    Function* segY = new Subtraction(x[3]->clone(), x[1]->clone());
-    // Проверяем, что векторы перпендикулярны (скалярное произведение равно 0)
-    Function* dotProduct = new Addition(new Multiplication(vecX, segX), new Multiplication(vecY, segY));
-    c_f = dotProduct;
-}
-
-Function* ArcCenterOnPerpendicularError::clone() const {
-    std::vector<Variable*> m_X_clone;
-    for (auto& v : m_X) {
-        m_X_clone.push_back(v->clone());
-    }
-    return new ArcCenterOnPerpendicularError(m_X_clone);
-} 
-
-// ------------------------- VERTICAL ERROR IMPLEMENTATION -------------------------
-VerticalError::VerticalError(std::vector<Variable*> x) : ErrorFunction(x) {
-  if (x.size() != 4) {
-    throw std::invalid_argument("VerticalError: wrong number of x");
-  }
-  Function* F = new Subtraction(x[0], x[2]);
-  c_f = F;
-}
-
-Function* VerticalError::clone() const {
-  std::vector<Variable*> m_X_clone;
-  for (auto& v : m_X) {
-    m_X_clone.push_back(v->clone());
-  }
-  return new VerticalError(m_X_clone);
-}
-VerticalError::~VerticalError(){
-    delete m_X[1];
-    delete m_X[3];
-}
-// ------------------------- GORIZONTAL ERROR IMPLEMENTATION -------------------------
-HorizontalError::HorizontalError(std::vector<Variable*> x) : ErrorFunction(x) {
-  if (x.size() != 4) {
-    throw std::invalid_argument("HorizontalError: wrong number of x");
-  }
-  // Проверка: y1 == y2
-  Function* F = new Subtraction(x[1], x[3]);  // y1 - y2
-  c_f = F;
-}
-
-Function* HorizontalError::clone() const {
-  std::vector<Variable*> m_X_clone;
-  for (auto& v : m_X) {
-    m_X_clone.push_back(v->clone());
-  }
-  return new HorizontalError(m_X_clone);
-}
-HorizontalError::~HorizontalError(){
-    delete m_X[0];
-    delete m_X[2];
+std::vector<Variable*> ErrorFunction::getVariables() {
+    std::vector<Variable*> variables;
+    for (auto& variable : _variables) variables.push_back(&variable);
+    return variables;
 }

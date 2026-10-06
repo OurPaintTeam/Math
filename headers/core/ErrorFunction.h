@@ -1,146 +1,193 @@
-#ifndef MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_
-#define MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_
-
+#pragma once
 #include "Function.h"
-#include <map>
+#include <memory>
+#include <unordered_map>
 #include <vector>
 
-/*
-    ET_POINTSECTIONDIST,
-    ET_POINTONSECTION,
-    ET_POINTPOINTDIST,
-    ET_POINTONPOINT,
-    ET_SECTIONCIRCLEDIST,
-    ET_SECTIONONCIRCLE,
-    ET_SECTIONINCIRCLE,
-    ET_SECTIONSECTIONPARALLEL,
-    ET_SECTIONSECTIONPERPENDICULAR,
-    ET_SECTIONSECTIONANGEL,
-    ET_POINTONCIRCLE
- */
-
-
+// Existing mathematical API. Coordinates and caller Variable wrappers are borrowed.
+// Copies and derivatives share live coordinates, targets and weights.
 class ErrorFunction : public Function {
 protected:
-    Function *c_f;
-    std::vector<Variable *> m_X;
-    double v_error;
+    enum class Equation {
+        PointLineDistance, PointOnLine, PointPointDistance, PointOnPoint,
+        SegmentCircleDistance, PointOnCircle, SegmentOnCircle,
+        Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
+        FixCoordinate, SegmentInCircle
+    };
+    ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
+    static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
+private:
+    struct State;
+    std::shared_ptr<State> _state;
+    std::vector<Variable> _variables;
+    std::vector<double*> _withRespectTo;
+    bool _weighted = false;
 public:
-    ErrorFunction(std::vector<Variable *> x, double error = 0) : c_f(nullptr), m_X(x), v_error(error) {}
-
-    ~ErrorFunction() {
-        delete c_f;
-    }
-
-    std::vector<Variable*> getVariables() {
-        return m_X;
-    }
-
-    double evaluate() const override{
-        return c_f->evaluate();
-    }
-    std::string to_string() const override {
-        return c_f->to_string();
-    }
-
-    Function *derivative(Variable *var) const override{
-        return c_f->derivative(var);
-    }
-    Function* simplify() const override {
-        return c_f->simplify();
-    }
-    Function* clone() const override {
-        throw std::runtime_error("Not implemented");
-    }
+    using Gradient = std::unordered_map<double*, double>;
+    ErrorFunction(const ErrorFunction&) = default;
+    ErrorFunction& operator=(const ErrorFunction&) = default;
+    std::vector<Variable*> getVariables();
+    const std::vector<double*>& variables() const;
+    double evaluate() const override;
+    virtual Gradient gradient() const;
+    double secondDerivative(double* first, double* second) const;
+    Function* derivative(Variable* variable) const override;
+    ErrorFunction* clone() const override;
+    Function* simplify() const override { return clone(); }
+    std::string to_string() const override;
+    std::vector<double*> referencedCoordinates() const override { return variables(); }
+    std::size_t revision() const override;
+    std::size_t invalidEvaluations() const;
+    bool assignment(double*& coordinate, double& target) const;
+    void setTarget(double target);
+    double weight() const;
+    void setWeight(double weight);
+    virtual double weightedValue() const;
+    virtual Gradient weightedGradient() const;
+    virtual Function* weightedFunction() const;
+    bool satisfied(double tolerance) const;
 };
 
-//1
 class PointSectionDistanceError : public ErrorFunction {
+protected:
+    PointSectionDistanceError(Equation equation, std::vector<double*> coordinates, double target)
+        : ErrorFunction(equation,std::move(coordinates),target) {}
 public:
-    PointSectionDistanceError(std::vector<Variable *> x, double error);
-    Function* clone() const override;
+    explicit PointSectionDistanceError(std::vector<Variable*> variables, double target = 0)
+        : PointSectionDistanceError(coordinatePointers(variables),target) {}
+    explicit PointSectionDistanceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::PointLineDistance,std::move(coordinates),target) {}
+    PointSectionDistanceError* clone() const override { return new PointSectionDistanceError(*this); }
 };
 
-//2
 class PointOnSectionError : public PointSectionDistanceError {
 public:
-    PointOnSectionError(std::vector<Variable *> x);
-    Function* clone() const override;
+    explicit PointOnSectionError(std::vector<Variable*> variables, double target = 0)
+        : PointOnSectionError(coordinatePointers(variables),target) {}
+    explicit PointOnSectionError(std::vector<double*> coordinates, double target = 0)
+        : PointSectionDistanceError(Equation::PointOnLine,std::move(coordinates),target) {}
+    PointOnSectionError* clone() const override { return new PointOnSectionError(*this); }
 };
 
-//3
 class PointPointDistanceError : public ErrorFunction {
+protected:
+    PointPointDistanceError(Equation equation, std::vector<double*> coordinates, double target)
+        : ErrorFunction(equation,std::move(coordinates),target) {}
 public:
-    PointPointDistanceError(std::vector<Variable *> x, double error);
-    Function* clone() const override;
+    explicit PointPointDistanceError(std::vector<Variable*> variables, double target = 0)
+        : PointPointDistanceError(coordinatePointers(variables),target) {}
+    explicit PointPointDistanceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::PointPointDistance,std::move(coordinates),target) {}
+    PointPointDistanceError* clone() const override { return new PointPointDistanceError(*this); }
 };
 
-//4
 class PointOnPointError : public PointPointDistanceError {
 public:
-    PointOnPointError(std::vector<Variable *> x);
-    Function* clone() const override;
+    explicit PointOnPointError(std::vector<Variable*> variables, double target = 0)
+        : PointOnPointError(coordinatePointers(variables),target) {}
+    explicit PointOnPointError(std::vector<double*> coordinates, double target = 0)
+        : PointPointDistanceError(Equation::PointOnPoint,std::move(coordinates),target) {}
+    PointOnPointError* clone() const override { return new PointOnPointError(*this); }
 };
 
-//5
 class SectionCircleDistanceError : public ErrorFunction {
+protected:
+    SectionCircleDistanceError(Equation equation, std::vector<double*> coordinates, double target)
+        : ErrorFunction(equation,std::move(coordinates),target) {}
 public:
-    SectionCircleDistanceError(std::vector<Variable *> x, double error);
-    Function* clone() const override;
+    explicit SectionCircleDistanceError(std::vector<Variable*> variables, double target = 0)
+        : SectionCircleDistanceError(coordinatePointers(variables),target) {}
+    explicit SectionCircleDistanceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::SegmentCircleDistance,std::move(coordinates),target) {}
+    SectionCircleDistanceError* clone() const override { return new SectionCircleDistanceError(*this); }
 };
 
-//6
+class PointOnCircleError : public ErrorFunction {
+public:
+    explicit PointOnCircleError(std::vector<Variable*> variables, double target = 0)
+        : PointOnCircleError(coordinatePointers(variables),target) {}
+    explicit PointOnCircleError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::PointOnCircle,std::move(coordinates),target) {}
+    PointOnCircleError* clone() const override { return new PointOnCircleError(*this); }
+};
+
 class SectionOnCircleError : public SectionCircleDistanceError {
 public:
-    SectionOnCircleError(std::vector<Variable *> x);
-    Function* clone() const override;
+    explicit SectionOnCircleError(std::vector<Variable*> variables, double target = 0)
+        : SectionOnCircleError(coordinatePointers(variables),target) {}
+    explicit SectionOnCircleError(std::vector<double*> coordinates, double target = 0)
+        : SectionCircleDistanceError(Equation::SegmentOnCircle,std::move(coordinates),target) {}
+    SectionOnCircleError* clone() const override { return new SectionOnCircleError(*this); }
 };
 
-//7
-class SectionInCircleError : public ErrorFunction {
-public:
-    SectionInCircleError(std::vector<Variable *> x);
-    Function* clone() const override;
-};
-
-//8
 class SectionSectionParallelError : public ErrorFunction {
 public:
-    SectionSectionParallelError(std::vector<Variable *> x);
-    Function* clone() const override;
+    explicit SectionSectionParallelError(std::vector<Variable*> variables, double target = 0)
+        : SectionSectionParallelError(coordinatePointers(variables),target) {}
+    explicit SectionSectionParallelError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::Parallel,std::move(coordinates),target) {}
+    SectionSectionParallelError* clone() const override { return new SectionSectionParallelError(*this); }
 };
 
-//9
 class SectionSectionPerpendicularError : public ErrorFunction {
 public:
-    SectionSectionPerpendicularError(std::vector<Variable *> x);
-    Function* clone() const override;
+    explicit SectionSectionPerpendicularError(std::vector<Variable*> variables, double target = 0)
+        : SectionSectionPerpendicularError(coordinatePointers(variables),target) {}
+    explicit SectionSectionPerpendicularError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::Perpendicular,std::move(coordinates),target) {}
+    SectionSectionPerpendicularError* clone() const override { return new SectionSectionPerpendicularError(*this); }
 };
 
-//10
 class SectionSectionAngleError : public ErrorFunction {
 public:
-    SectionSectionAngleError(std::vector<Variable *> x, double error);
-    Function* clone() const override;
+    explicit SectionSectionAngleError(std::vector<Variable*> variables, double target = 0)
+        : SectionSectionAngleError(coordinatePointers(variables),target) {}
+    explicit SectionSectionAngleError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::Angle,std::move(coordinates),target) {}
+    SectionSectionAngleError* clone() const override { return new SectionSectionAngleError(*this); }
 };
 
-//11
-class ArcCenterOnPerpendicularError : public ErrorFunction {
-public:
-    ArcCenterOnPerpendicularError(std::vector<Variable *> x);
-    Function* clone() const override;
-};
 class VerticalError : public ErrorFunction {
 public:
-  VerticalError(std::vector<Variable *> x);
-  Function* clone() const override;
-  ~VerticalError();
+    explicit VerticalError(std::vector<Variable*> variables, double target = 0)
+        : VerticalError(coordinatePointers(variables),target) {}
+    explicit VerticalError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::Vertical,std::move(coordinates),target) {}
+    VerticalError* clone() const override { return new VerticalError(*this); }
 };
 
 class HorizontalError : public ErrorFunction {
 public:
-  HorizontalError(std::vector<Variable *> x);
-  Function* clone() const override;
-  ~HorizontalError();
+    explicit HorizontalError(std::vector<Variable*> variables, double target = 0)
+        : HorizontalError(coordinatePointers(variables),target) {}
+    explicit HorizontalError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::Horizontal,std::move(coordinates),target) {}
+    HorizontalError* clone() const override { return new HorizontalError(*this); }
 };
-#endif // ! MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTIONS_H_
+
+class ArcCenterOnPerpendicularError : public ErrorFunction {
+public:
+    explicit ArcCenterOnPerpendicularError(std::vector<Variable*> variables, double target = 0)
+        : ArcCenterOnPerpendicularError(coordinatePointers(variables),target) {}
+    explicit ArcCenterOnPerpendicularError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::ArcBisector,std::move(coordinates),target) {}
+    ArcCenterOnPerpendicularError* clone() const override { return new ArcCenterOnPerpendicularError(*this); }
+};
+
+class FixCoordinateError : public ErrorFunction {
+public:
+    explicit FixCoordinateError(std::vector<Variable*> variables, double target = 0)
+        : FixCoordinateError(coordinatePointers(variables),target) {}
+    explicit FixCoordinateError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::FixCoordinate,std::move(coordinates),target) {}
+    FixCoordinateError* clone() const override { return new FixCoordinateError(*this); }
+};
+
+class SectionInCircleError : public ErrorFunction {
+public:
+    explicit SectionInCircleError(std::vector<Variable*> variables, double target = 0)
+        : SectionInCircleError(coordinatePointers(variables),target) {}
+    explicit SectionInCircleError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::SegmentInCircle,std::move(coordinates),target) {}
+    SectionInCircleError* clone() const override { return new SectionInCircleError(*this); }
+};
