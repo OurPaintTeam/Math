@@ -24,6 +24,8 @@ private:
     int maxIterations;
     int performedIterations;
 
+    bool tryEscapeStationaryPoint();
+
 public:
     SparseLMSolver(int maxIterations = 100,
                    double initLambda = 1e-3,

@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <limits>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -129,6 +130,109 @@ TEST(SparseLMSolverTest, DoesNotReportConvergenceAtStationaryPointWithResidual) 
     EXPECT_FALSE(optimizer.isConverged());
     EXPECT_EQ(optimizer.getIterationCount(), 0);
     EXPECT_NEAR(optimizer.getCurrentError(), 1.0, 1e-12);
+    EXPECT_DOUBLE_EQ(xValue, 0); // Rejected escape probes must restore the input.
+}
+
+TEST(SparseLMSolverTest, EscapesStationaryMaximumAndResetsRecoveryWhenReused) {
+    double xValue = 0;
+    Variable x(&xValue);
+    auto* residual = new Subtraction(new Power(x.clone(), new Constant(2)), new Constant(1));
+    SparseLSMTask task({residual}, {&x});
+    SparseLMSolver optimizer(100, 1e-3, 1e-10, 1e-10, 1e-14);
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        xValue = 0;
+        EXPECT_DOUBLE_EQ(task.normalGradient()(0, 0), 0);
+        optimizer.setTask(&task);
+        optimizer.optimize();
+        EXPECT_TRUE(optimizer.isConverged());
+        EXPECT_NEAR(std::abs(xValue), 1, 1e-7);
+        EXPECT_GT(optimizer.getIterationCount(), 0);
+        EXPECT_LE(optimizer.getIterationCount(), 100);
+    }
+}
+
+TEST(SparseLMSolverTest, CoincidentPointCuspRecoversUsingOnlyTaskVariables) {
+    double ax = 3, ay = 4, bx = 3, by = 4;
+    Variable bxVar(&bx), byVar(&by);
+    auto* residual = new PointPointDistanceError(std::vector<double*>{&ax, &ay, &bx, &by}, 5);
+    SparseLSMTask task({residual}, {&bxVar, &byVar});
+    SparseLMSolver optimizer(100, 1e-3, 1e-10, 1e-10, 1e-14);
+    optimizer.setTask(&task);
+    optimizer.optimize();
+    EXPECT_TRUE(optimizer.isConverged());
+    EXPECT_NEAR(std::hypot(bx - ax, by - ay), 5, 1e-7);
+    EXPECT_DOUBLE_EQ(ax, 3);
+    EXPECT_DOUBLE_EQ(ay, 4);
+}
+
+TEST(SparseLMSolverTest, ConstantUnsatisfiedResidualDoesNotMoveOrConverge) {
+    double xValue = 2;
+    Variable x(&xValue);
+    SparseLSMTask task({new Constant(1)}, {&x});
+    SparseLMSolver optimizer;
+    optimizer.setTask(&task);
+    optimizer.optimize();
+    EXPECT_FALSE(optimizer.isConverged());
+    EXPECT_EQ(optimizer.getIterationCount(), 0);
+    EXPECT_DOUBLE_EQ(xValue, 2);
+    EXPECT_DOUBLE_EQ(optimizer.getCurrentError(), 1);
+}
+
+namespace {
+
+// A first-order residual whose selected derivative is zero at a domain boundary.
+class BoundaryResidual final : public Function {
+    double* _x;
+    int* _invalidProbes;
+    bool _derivative;
+public:
+    BoundaryResidual(double* x, int* invalidProbes, bool derivative = false)
+        : _x(x), _invalidProbes(invalidProbes), _derivative(derivative) {}
+    double evaluate() const override {
+        if (_derivative) return *_x == 0 ? 0 : 1;
+        if (*_x > 0) {
+            ++*_invalidProbes;
+            return std::numeric_limits<double>::infinity();
+        }
+        return *_x + 1;
+    }
+    Function* derivative(Variable* variable) const override {
+        if (variable->value != _x) return new Constant(0);
+        if (_derivative) throw std::logic_error("Second derivatives unavailable");
+        return new BoundaryResidual(_x, _invalidProbes, true);
+    }
+    Function* clone() const override { return new BoundaryResidual(*this); }
+    std::string to_string() const override { return "boundary residual"; }
+    std::vector<double*> referencedCoordinates() const override { return {_x}; }
+};
+
+} // namespace
+
+TEST(SparseLMSolverTest, RejectsNonfiniteProbesAndSupportsFirstOrderOnlyResiduals) {
+    double xValue = 0;
+    int invalidProbes = 0;
+    Variable x(&xValue);
+    SparseLSMTask task({new BoundaryResidual(&xValue, &invalidProbes)}, {&x});
+    SparseLMSolver optimizer(100, 1e-3, 1e-10, 1e-10, 1e-14);
+    optimizer.setTask(&task);
+    ASSERT_NO_THROW(optimizer.optimize());
+    EXPECT_TRUE(optimizer.isConverged());
+    EXPECT_GT(invalidProbes, 0);
+    EXPECT_NEAR(xValue, -1, 1e-7);
+    EXPECT_NEAR(task.getError(), optimizer.getCurrentError(), 1e-14);
+}
+
+TEST(SparseLMSolverTest, RecoveryUsesTheIterationBudgetAndDoesNotReportEarlySuccess) {
+    double xValue = 0;
+    Variable x(&xValue);
+    SparseLSMTask task({new Subtraction(new Power(x.clone(), new Constant(2)), new Constant(1))}, {&x});
+    SparseLMSolver optimizer(1, 1e-3, 1e-10, 1e-10, 1e-14);
+    optimizer.setTask(&task);
+    optimizer.optimize();
+    EXPECT_FALSE(optimizer.isConverged());
+    EXPECT_EQ(optimizer.getIterationCount(), 1);
+    EXPECT_LT(optimizer.getCurrentError(), 1);
+    EXPECT_GT(optimizer.getCurrentError(), 1e-14);
 }
 
 TEST(SparseLMSolverTest, ReusingOptimizerResetsDampingForRankDeficientProblems) {
