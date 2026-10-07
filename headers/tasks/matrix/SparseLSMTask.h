@@ -744,13 +744,25 @@ public:
             throw std::invalid_argument("Vector of variables has incorrect size.");
         }
 
+        const auto previousValues = getValues();
         for (size_t i = 0; i < x.size(); ++i) {
             m_X[i]->setValue(x[i]);
             m_cachedVariableValues[i] = x[i];
         }
 
         invalidateNumericCaches();
-        return getError();
+        try {
+            return getError();
+        } catch (...) {
+            // Evaluation can fail midway through the residual/Jacobian rows.
+            // Restore coordinates without evaluating again or masking the exception.
+            for (size_t i = 0; i < previousValues.size(); ++i) {
+                m_X[i]->setValue(previousValues[i]);
+                m_cachedVariableValues[i] = previousValues[i];
+            }
+            invalidateNumericCaches();
+            throw;
+        }
     }
 
     Matrix<> gradient() const override {

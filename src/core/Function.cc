@@ -220,7 +220,7 @@ Function * Multiplication::simplify() const{
 double Division::evaluate() const {
     double den = right->evaluate();
     if (den == 0.0) {
-        throw std::runtime_error("Division by zero");
+        throw FunctionDomainError("Division by zero");
     }
     return left->evaluate() / den;
 }
@@ -415,7 +415,7 @@ Function* Exp::clone() const {
 double Ln::evaluate() const {
     double arg_value = operand->evaluate();
     if (arg_value <= 0.0) {
-        throw std::runtime_error("Logarithm of non-positive value");
+        throw FunctionDomainError("Logarithm of non-positive value");
     }
     return std::log(arg_value);
 }
@@ -437,10 +437,10 @@ double Log::evaluate() const {
     double left_val = left->evaluate();
     double arg_val = right->evaluate();
     if (left_val <= 0.0 || left_val == 1.0) {
-        throw std::runtime_error("Invalid left for logarithm");
+        throw FunctionDomainError("Invalid left for logarithm");
     }
     if (arg_val <= 0.0) {
-        throw std::runtime_error("Logarithm of non-positive value");
+        throw FunctionDomainError("Logarithm of non-positive value");
     }
     return std::log(arg_val) / std::log(left_val);
 }

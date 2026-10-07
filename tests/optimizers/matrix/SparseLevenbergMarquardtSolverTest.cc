@@ -235,6 +235,92 @@ TEST(SparseLMSolverTest, RecoveryUsesTheIterationBudgetAndDoesNotReportEarlySucc
     EXPECT_GT(optimizer.getCurrentError(), 1e-14);
 }
 
+namespace {
+
+Function* logarithmicProbeResidual(Variable& x, double coefficient = 1e6) {
+    return new Addition(new Constant(1), new Ln(new Subtraction(new Constant(1),
+        new Multiplication(new Constant(coefficient), new Power(x.clone(), new Constant(4))))));
+}
+
+class ProbeExceptionResidual final : public Function {
+    double* _x;
+public:
+    explicit ProbeExceptionResidual(double* x) : _x(x) {}
+    double evaluate() const override {
+        if (*_x != 0) throw std::runtime_error("Unexpected probe evaluation failure");
+        return 1;
+    }
+    Function* derivative(Variable*) const override { return new Constant(0); }
+    Function* clone() const override { return new ProbeExceptionResidual(*this); }
+    std::string to_string() const override { return "throwing probe residual"; }
+    std::vector<double*> referencedCoordinates() const override { return {_x}; }
+};
+
+} // namespace
+
+TEST(SparseLSMTaskTest, EvaluationExceptionRestoresAllCoordinatesAndInvalidatesPartialLinearization) {
+    double xValue = 0, yValue = 2;
+    Variable x(&xValue), y(&yValue);
+    SparseLSMTask task({new Subtraction(y.clone(), new Constant(1)), logarithmicProbeResidual(x)}, {&x, &y});
+    EXPECT_DOUBLE_EQ(task.getError(), 2);
+    EXPECT_THROW(task.setError({0.1, 5}), std::runtime_error);
+    EXPECT_DOUBLE_EQ(xValue, 0);
+    EXPECT_DOUBLE_EQ(yValue, 2);
+    ASSERT_NO_THROW(task.getError());
+    EXPECT_DOUBLE_EQ(task.getError(), 2);
+    EXPECT_DOUBLE_EQ(task.residualsRef()(0, 0), 1);
+    EXPECT_DOUBLE_EQ(task.residualsRef()(1, 0), 1);
+    EXPECT_DOUBLE_EQ(task.normalGradient()(0, 0), 0);
+    EXPECT_DOUBLE_EQ(task.normalGradient()(1, 0), 1);
+}
+
+TEST(SparseLMSolverTest, LogarithmicDomainFailuresRejectProbesAndLMStepsThenConverge) {
+    double xValue = 0;
+    Variable x(&xValue);
+    SparseLSMTask task({logarithmicProbeResidual(x)}, {&x});
+    SparseLMSolver optimizer(200, 1e-3, 1e-10, 1e-10, 1e-12);
+    const double root = std::pow((1 - std::exp(-1.0)) / 1e6, 0.25);
+    for (int attempt = 0; attempt < 2; ++attempt) {
+        xValue = 0;
+        EXPECT_DOUBLE_EQ(task.normalGradient()(0, 0), 0);
+        optimizer.setTask(&task);
+        ASSERT_NO_THROW(optimizer.optimize());
+        ASSERT_TRUE(optimizer.isConverged());
+        EXPECT_NEAR(std::abs(xValue), root, 1e-8);
+        EXPECT_DOUBLE_EQ(optimizer.getResult().at(0), xValue);
+        EXPECT_DOUBLE_EQ(optimizer.getCurrentError(), task.getError());
+        EXPECT_LE(task.getError(), 1e-12);
+    }
+}
+
+TEST(SparseLMSolverTest, UnexpectedProbeExceptionPropagatesAfterRestoringAcceptedState) {
+    double xValue = 0;
+    Variable x(&xValue);
+    SparseLSMTask task({new ProbeExceptionResidual(&xValue)}, {&x});
+    SparseLMSolver optimizer;
+    optimizer.setTask(&task);
+    EXPECT_THROW(optimizer.optimize(), std::runtime_error);
+    EXPECT_DOUBLE_EQ(xValue, 0);
+    EXPECT_EQ(task.getValues(), optimizer.getResult());
+    EXPECT_DOUBLE_EQ(task.getError(), optimizer.getCurrentError());
+    EXPECT_FALSE(optimizer.isConverged());
+}
+
+TEST(SparseLMSolverTest, AllProbesOutsideDomainLeaveAcceptedStateWithoutFalseConvergence) {
+    double xValue = 0;
+    Variable x(&xValue);
+    // The valid interval is narrower than the smallest stationary probe.
+    SparseLSMTask task({logarithmicProbeResidual(x, 1e32)}, {&x});
+    SparseLMSolver optimizer;
+    optimizer.setTask(&task);
+    ASSERT_NO_THROW(optimizer.optimize());
+    EXPECT_FALSE(optimizer.isConverged());
+    EXPECT_DOUBLE_EQ(xValue, 0);
+    EXPECT_EQ(task.getValues(), optimizer.getResult());
+    EXPECT_DOUBLE_EQ(task.getError(), 1);
+    EXPECT_DOUBLE_EQ(task.getError(), optimizer.getCurrentError());
+}
+
 TEST(SparseLMSolverTest, ReusingOptimizerResetsDampingForRankDeficientProblems) {
     double xValue = 0.0;
     double yValue = 0.0;

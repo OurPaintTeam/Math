@@ -21,6 +21,13 @@ enum FunctionType {
 // Forward declaration
 class Variable;
 
+// Recoverable numerical domain failure. Deriving from runtime_error preserves
+// the existing elementary-function exception contract for callers.
+class FunctionDomainError : public std::runtime_error {
+public:
+    using std::runtime_error::runtime_error;
+};
+
 // Base abstract class Function
 class Function {
 public:

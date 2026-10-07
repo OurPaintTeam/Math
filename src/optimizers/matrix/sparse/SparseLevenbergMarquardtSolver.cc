@@ -44,6 +44,18 @@ double computeGainDenominator(const Matrix<>& step, const Matrix<>& gradient, do
     return 0.5 * gain;
 }
 
+double evaluateCandidate(SparseLSMTask& task, const std::vector<double>& candidate) {
+    try {
+        return task.setError(candidate);
+    } catch (const FunctionDomainError&) {
+        // setError has already restored the accepted coordinates and invalidated caches.
+        return std::numeric_limits<double>::infinity();
+    } catch (const std::domain_error&) {
+        return std::numeric_limits<double>::infinity();
+    }
+    // Unexpected exceptions propagate with the task restored by setError.
+}
+
 } // namespace
 
 SparseLMSolver::SparseLMSolver(int maxIterations,
@@ -114,7 +126,7 @@ bool SparseLMSolver::tryEscapeStationaryPoint() {
             for (const double sign : {1.0, -1.0}) {
                 candidate[i] = m_result[i] + sign * step;
                 if (!std::isfinite(candidate[i]) || candidate[i] == m_result[i]) continue;
-                const double candidateError = c_task->setError(candidate);
+                const double candidateError = evaluateCandidate(*c_task, candidate);
                 if (std::isfinite(candidateError) && currentError - candidateError > improvementFloor) {
                     m_result = candidate;
                     currentError = candidateError;
@@ -212,7 +224,7 @@ void SparseLMSolver::optimize() {
             candidate[i] += step(i, 0);
         }
 
-        const double candidateError = c_task->setError(candidate);
+        const double candidateError = evaluateCandidate(*c_task, candidate);
         // Task error is ||r||^2 (no 1/2 factor); match numerator to denominator scaling.
         const double gainNumerator = currentError - candidateError;
         const double rho = gainNumerator
