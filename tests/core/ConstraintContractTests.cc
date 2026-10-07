@@ -12,7 +12,7 @@ static_assert(std::is_base_of_v<PointPointDistanceError,PointOnPointError>);
 static_assert(std::is_base_of_v<SectionCircleDistanceError,SectionOnCircleError>);
 
 TEST(ConstraintContract, PointDistanceUtilityPreservesDimensionsScalesAndDomainChecks) {
-    for (double scale : {1e-200,1.0,1e200}) {
+    for (double scale : {1e-300,1e-200,1.0,1e200,1e300}) {
         const std::array<double,3> a{0,0,0}, b{2*scale,3*scale,6*scale};
         EXPECT_NEAR(PointPointDistanceError::distance(a,b)/scale,7,1e-12);
     }
@@ -136,7 +136,7 @@ TEST(ConstraintContract, AliasedArgumentsSumFirstAndSecondDerivatives) {
 }
 
 TEST(ConstraintContract, ScalesDoNotChangeDirectionOrOverflowDistance) {
-    for (double scale : {1e-200,1e-13,1.0,1e200}) {
+    for (double scale : {1e-300,1e-200,1e-13,1.0,1e200,1e300}) {
         double ax=0, ay=0, bx=3*scale, by=4*scale, cx=6*scale, cy=8*scale, radius=scale;
         HorizontalError horizontal({&ax,&ay,&bx,&by});
         EXPECT_NEAR(horizontal.evaluate(),0.8,1e-12);

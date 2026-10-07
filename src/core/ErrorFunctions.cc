@@ -19,9 +19,20 @@ struct Jet {
     Jet(long double v = 0) : value(v) {}
 };
 long double euclideanNorm(std::span<const long double> coordinates) {
-    long double result = 0;
-    for (long double coordinate : coordinates) result = std::hypot(result,coordinate);
-    return result;
+    long double scale = 0;
+    for (long double coordinate : coordinates) {
+        const long double magnitude = std::abs(coordinate);
+        if (!std::isfinite(magnitude)) return magnitude;
+        scale = std::max(scale,magnitude);
+    }
+    if (scale == 0) return 0;
+    // Scaling also keeps intermediates finite when long double has double's range.
+    long double sumSquares = 0;
+    for (long double coordinate : coordinates) {
+        const long double scaled = coordinate/scale;
+        sumSquares += scaled*scaled;
+    }
+    return scale*std::sqrt(sumSquares);
 }
 Jet operator+(const Jet& a, const Jet& b) {
     Jet r(a.value + b.value);

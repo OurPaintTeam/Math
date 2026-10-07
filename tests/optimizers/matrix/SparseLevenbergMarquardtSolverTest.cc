@@ -6,6 +6,7 @@
 #include <algorithm>
 #include <cmath>
 #include <memory>
+#include <ostream>
 #include <string>
 #include <vector>
 
@@ -170,6 +171,13 @@ struct TriangleScenario {
     bool addRightAngleConstraint;
     bool addCrossTriangleDistanceConstraint;
 };
+
+void PrintTo(const TriangleScenario& scenario, std::ostream* stream) {
+    *stream << scenario.name << " {triangles=" << scenario.triangleCount
+            << ", scale=" << scenario.scale << ", perturbation=" << scenario.perturbation
+            << ", right_angles=" << scenario.addRightAngleConstraint
+            << ", cross_links=" << scenario.addCrossTriangleDistanceConstraint << '}';
+}
 
 struct PointVar {
     size_t xIndex;
