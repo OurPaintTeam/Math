@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <functional>
 #include <memory>
+#include <optional>
 #include <stdexcept>
 #include <utility>
 #include <vector>
@@ -18,6 +19,15 @@
 class SparseLSMTask : public TaskMatrix {
 public:
     enum class DiagnosticStatus { EMPTY, WELL_CONSTRAINED, SINGULAR_SYSTEM, UNDER_CONSTRAINED, OVER_CONSTRAINED, UNKNOWN };
+    enum class DiagnosticScope { ACTIVE_CONSTRAINTS, ALL_VARIABLES };
+    struct Diagnosis {
+        DiagnosticStatus status = DiagnosticStatus::UNKNOWN;
+        std::size_t variableCount = 0;
+        std::size_t constraintCount = 0;
+        // Undefined when the residuals or their linearization are outside the domain.
+        std::optional<std::size_t> rank;
+        std::optional<std::size_t> degreesOfFreedom;
+    };
 
     using LinearizationView =
         std::pair<std::reference_wrapper<const Matrix<>>,
@@ -549,13 +559,11 @@ public:
         return result;
     }
     DiagnosticStatus diagnose() const {
-        for (const auto& f : m_functions) {
-            if (!std::isfinite(f->evaluate())) return DiagnosticStatus::SINGULAR_SYSTEM;
-        }
-        ensureLinearization();
-        for (size_t col = 0; col < m_jacobian.cols_size(); ++col)
-            for (SparseMatrix<>::InnerIterator it(m_jacobian,col); it; ++it)
-                if (!std::isfinite(it.value())) return DiagnosticStatus::SINGULAR_SYSTEM;
+        return diagnoseDetailed().status;
+    }
+
+    // ALL_VARIABLES includes zero columns: unused coordinates still have freedom.
+    Diagnosis diagnoseDetailed(DiagnosticScope scope = DiagnosticScope::ACTIVE_CONSTRAINTS) const {
         std::vector<std::size_t> activeRows;
         std::unordered_set<double*> activeVars;
         for (std::size_t i = 0; i < m_functions.size(); ++i) {
@@ -567,15 +575,41 @@ public:
                 activeVars.insert(variable);
             }
         }
-        if (activeRows.empty() || activeVars.empty()) {
-            return DiagnosticStatus::EMPTY;
-        }
-
         std::vector<std::size_t> activeColumns;
         for (std::size_t j = 0; j < m_X.size(); ++j) {
-            if (activeVars.contains(m_X[j]->value)) {
+            if (scope == DiagnosticScope::ALL_VARIABLES || activeVars.contains(m_X[j]->value)) {
                 activeColumns.push_back(j);
             }
+        }
+
+        Diagnosis result;
+        result.variableCount = activeColumns.size();
+        result.constraintCount = activeRows.size();
+        result.status = DiagnosticStatus::SINGULAR_SYSTEM;
+        for (auto column : activeColumns) {
+            if (!std::isfinite(m_X[column]->evaluate())) return result;
+        }
+        try {
+            for (auto row : activeRows) {
+                if (!std::isfinite(m_functions[row]->evaluate())) return result;
+            }
+            ensureLinearization();
+        } catch (const FunctionDomainError&) {
+            return result;
+        } catch (const std::domain_error&) {
+            return result;
+        }
+        for (auto col : activeColumns)
+            for (SparseMatrix<>::InnerIterator it(m_jacobian, col); it; ++it)
+                if (!std::isfinite(it.value())) return result;
+
+        if (activeRows.empty() || activeColumns.empty()) {
+            result.rank = 0;
+            result.degreesOfFreedom = activeColumns.size();
+            result.status = !activeColumns.empty() ? DiagnosticStatus::UNDER_CONSTRAINED
+                : (scope == DiagnosticScope::ALL_VARIABLES && !activeRows.empty()
+                    ? DiagnosticStatus::OVER_CONSTRAINED : DiagnosticStatus::EMPTY);
+            return result;
         }
 
         std::vector<std::size_t> rowMap(m_functions.size(), m_functions.size());
@@ -610,16 +644,20 @@ public:
         const auto rank = qr.rank();
         const auto m = activeRows.size();
         const auto n = activeColumns.size();
+        result.rank = rank;
+        result.degreesOfFreedom = n - rank;
 
         if (m == n && rank == n)
-            return DiagnosticStatus::WELL_CONSTRAINED;
-        if (rank < std::min(m, n))
-            return DiagnosticStatus::SINGULAR_SYSTEM;
-        if (m < n)
-            return DiagnosticStatus::UNDER_CONSTRAINED;
-        if (m > n)
-            return DiagnosticStatus::OVER_CONSTRAINED;
-        return DiagnosticStatus::UNKNOWN;
+            result.status = DiagnosticStatus::WELL_CONSTRAINED;
+        else if (rank < std::min(m, n))
+            result.status = DiagnosticStatus::SINGULAR_SYSTEM;
+        else if (m < n)
+            result.status = DiagnosticStatus::UNDER_CONSTRAINED;
+        else if (m > n)
+            result.status = DiagnosticStatus::OVER_CONSTRAINED;
+        else
+            result.status = DiagnosticStatus::UNKNOWN;
+        return result;
     }
 
 

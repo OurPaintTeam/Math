@@ -63,6 +63,64 @@ TEST(ConstraintSystem, RankDiagnosisIgnoresStructuralZeroEntriesInTheCachedJacob
     EXPECT_EQ(task.diagnose(),SparseLSMTask::DiagnosticStatus::UNDER_CONSTRAINED);
 }
 
+TEST(ConstraintSystem, WholeVariableDiagnosisCountsUnreferencedAndDisabledCoordinates) {
+    double x = 0, y = 2;
+    Variable vx(&x), vy(&y);
+    FixCoordinateError fix({&x}, 0);
+    SparseLSMTask task({fix.weightedFunction()}, {&vx, &vy});
+    auto report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(report.status, SparseLSMTask::DiagnosticStatus::UNDER_CONSTRAINED);
+    EXPECT_EQ(report.variableCount, 2u);
+    EXPECT_EQ(report.constraintCount, 1u);
+    EXPECT_EQ(report.rank, 1u);
+    EXPECT_EQ(report.degreesOfFreedom, 1u);
+    EXPECT_EQ(task.diagnose(), SparseLSMTask::DiagnosticStatus::WELL_CONSTRAINED);
+
+    fix.setWeight(0);
+    report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(report.status, SparseLSMTask::DiagnosticStatus::UNDER_CONSTRAINED);
+    EXPECT_EQ(report.constraintCount, 0u);
+    EXPECT_EQ(report.rank, 0u);
+    EXPECT_EQ(report.degreesOfFreedom, 2u);
+    EXPECT_EQ(task.diagnose(), SparseLSMTask::DiagnosticStatus::EMPTY);
+}
+
+TEST(ConstraintSystem, WholeVariableDiagnosisDistinguishesFreeVariablesFromEmptyTask) {
+    double value = 3;
+    Variable variable(&value);
+    SparseLSMTask freeTask({}, {&variable});
+    const auto freeReport = freeTask.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(freeReport.status, SparseLSMTask::DiagnosticStatus::UNDER_CONSTRAINED);
+    EXPECT_EQ(freeReport.rank, 0u);
+    EXPECT_EQ(freeReport.degreesOfFreedom, 1u);
+    SparseLSMTask emptyTask({}, {});
+    const auto emptyReport = emptyTask.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(emptyReport.status, SparseLSMTask::DiagnosticStatus::EMPTY);
+    EXPECT_EQ(emptyReport.degreesOfFreedom, 0u);
+}
+
+TEST(ConstraintSystem, DiagnosisReportsNullityEvenForDependentRows) {
+    double x = 0, y = 0, z = 0;
+    Variable vx(&x), vy(&y), vz(&z);
+    FixCoordinateError fix({&x}, 0);
+    SparseLSMTask task({fix.weightedFunction(), fix.weightedFunction()}, {&vx, &vy, &vz});
+    const auto report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(report.status, SparseLSMTask::DiagnosticStatus::SINGULAR_SYSTEM);
+    EXPECT_EQ(report.rank, 1u);
+    EXPECT_EQ(report.degreesOfFreedom, 2u);
+}
+
+TEST(ConstraintSystem, DiagnosisDoesNotInventFreedomOutsideTheDomain) {
+    double x = -1;
+    Variable variable(&x);
+    SparseLSMTask task({new Ln(variable.clone())}, {&variable});
+    const auto report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(report.status, SparseLSMTask::DiagnosticStatus::SINGULAR_SYSTEM);
+    EXPECT_FALSE(report.rank.has_value());
+    EXPECT_FALSE(report.degreesOfFreedom.has_value());
+    EXPECT_DOUBLE_EQ(x, -1);
+}
+
 namespace {
 class TrackedExpression final : public Function {
     int& live;
