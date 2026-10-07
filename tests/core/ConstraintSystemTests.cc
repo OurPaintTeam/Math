@@ -76,6 +76,11 @@ TEST(ConstraintSystem, WholeVariableDiagnosisCountsUnreferencedAndDisabledCoordi
     EXPECT_EQ(report.degreesOfFreedom, 1u);
     EXPECT_EQ(task.diagnose(), SparseLSMTask::DiagnosticStatus::WELL_CONSTRAINED);
 
+    fix.setWeight(1e-12);
+    report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(report.rank, 1u);
+    EXPECT_EQ(report.degreesOfFreedom, 1u);
+
     fix.setWeight(0);
     report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
     EXPECT_EQ(report.status, SparseLSMTask::DiagnosticStatus::UNDER_CONSTRAINED);
@@ -119,6 +124,19 @@ TEST(ConstraintSystem, DiagnosisDoesNotInventFreedomOutsideTheDomain) {
     EXPECT_FALSE(report.rank.has_value());
     EXPECT_FALSE(report.degreesOfFreedom.has_value());
     EXPECT_DOUBLE_EQ(x, -1);
+}
+
+TEST(ConstraintSystem, DiagnosisFindsIndependentColumnsAfterDependentColumnsInWideJacobian) {
+    double a = 0, b = 0, c = 0, d = 0, e = 0, f = 0;
+    Variable va(&a), vb(&b), vc(&c), vd(&d), ve(&e), vf(&f);
+    FixCoordinateError fixE({&e}, 0), fixF({&f}, 0);
+    SparseLSMTask task({fixE.weightedFunction(), fixF.weightedFunction(),
+        new Addition(new Addition(va.clone(), vb.clone()), new Addition(vc.clone(), vd.clone()))},
+        {&va, &vb, &vc, &vd, &ve, &vf});
+    const auto report = task.diagnoseDetailed(SparseLSMTask::DiagnosticScope::ALL_VARIABLES);
+    EXPECT_EQ(report.status, SparseLSMTask::DiagnosticStatus::UNDER_CONSTRAINED);
+    EXPECT_EQ(report.rank, 3u);
+    EXPECT_EQ(report.degreesOfFreedom, 3u);
 }
 
 namespace {

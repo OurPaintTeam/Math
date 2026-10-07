@@ -6,6 +6,7 @@
 #include "ErrorFunction.h"
 #include "SparseQR.h"
 #include <Eigen/Sparse>
+#include <Eigen/SparseQR>
 #include <unordered_set>
 
 #include <algorithm>
@@ -635,13 +636,25 @@ public:
         }
         outer.back() = values.size();
 
+        // Nonzero residual weights change solver priorities, not geometric freedom.
+        // Normalize rows so the rank tolerance does not discard small weights.
+        std::vector<double> rowScales(activeRows.size(), 0.0);
+        for (std::size_t i = 0; i < values.size(); ++i)
+            rowScales[inner[i]] = std::max(rowScales[inner[i]], std::abs(values[i]));
+        for (std::size_t i = 0; i < values.size(); ++i)
+            values[i] /= rowScales[inner[i]];
+
         auto activeJ = ::SparseMatrix<>::fromCSC(
             activeRows.size(), activeColumns.size(),
             std::move(values), std::move(inner), std::move(outer));
-        SparseQR qr(activeJ);
+        // Rank must include independent columns after dependent/zero columns.
+        // A triangular factor without numerical column pivoting can miss them
+        // in the wide Jacobians of under-constrained sketches.
+        Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr;
         qr.setPivotThreshold(1e-8);
-        qr.qr();
-        const auto rank = qr.rank();
+        qr.compute(toEigen(activeJ));
+        if (qr.info() != Eigen::Success) return result;
+        const auto rank = static_cast<std::size_t>(qr.rank());
         const auto m = activeRows.size();
         const auto n = activeColumns.size();
         result.rank = rank;
