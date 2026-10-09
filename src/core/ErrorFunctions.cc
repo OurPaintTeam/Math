@@ -88,7 +88,7 @@ double checked(long double value) {
 struct ErrorFunction::State {
     static std::size_t arity(Equation kind) {
         switch (kind) {
-            case Equation::FixCoordinate: return 1;
+            case Equation::FixCoordinate: case Equation::CircleRadius: return 1;
             case Equation::PointPointDistance: case Equation::PointOnPoint:
             case Equation::Vertical: case Equation::Horizontal: return 4;
             case Equation::PointOnCircle: return 5;
@@ -103,23 +103,29 @@ struct ErrorFunction::State {
     }
     static void validateTarget(Equation kind, double target) {
         if (!std::isfinite(target)) throw std::invalid_argument("Constraint target must be finite");
+        if (kind == Equation::CircleRadius && target <= 0)
+            throw std::invalid_argument("Circle radius target must be positive");
         if ((kind == Equation::PointPointDistance || kind == Equation::SegmentCircleDistance) && target < 0)
             throw std::invalid_argument("Distance/clearance must be non-negative");
         if (kind == Equation::Angle && (target < 0 || target > std::numbers::pi))
             throw std::invalid_argument("Angle must be in [0, pi] radians");
         if (kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
             kind != Equation::PointLineDistance && kind != Equation::Angle &&
-            kind != Equation::FixCoordinate && target != 0)
+            kind != Equation::FixCoordinate && kind != Equation::CircleRadius && target != 0)
             throw std::invalid_argument("This equation has no target parameter");
     }
-    static bool hasRadius(Equation kind) {
-        return kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
-               kind == Equation::SegmentCircleDistance;
+    static bool validRadii(Equation kind, const std::vector<double*>& coordinates) {
+        const std::size_t count = (kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
+               kind == Equation::SegmentCircleDistance || kind == Equation::CircleRadius ? 1 : 0);
+        for (std::size_t i = coordinates.size() - count; i < coordinates.size(); ++i)
+            if (!std::isfinite(*coordinates[i]) || *coordinates[i] <= 0) return false;
+        return true;
     }
 
     static Jet equation(Equation kind, const std::vector<Jet>& x, double target) {
         switch (kind) {
             case Equation::FixCoordinate: return x[0] - Jet(target);
+            case Equation::CircleRadius: return x[0] - Jet(target);
             case Equation::PointPointDistance: case Equation::PointOnPoint:
                 return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
             case Equation::PointOnCircle:
@@ -192,7 +198,7 @@ struct ErrorFunction::State {
             seed.g[std::find(unique.begin(),unique.end(),coordinate)-unique.begin()] = 1;
             x.push_back(seed);
         }
-        if (hasRadius(kind) && *variables.back() <= 0) valid = false;
+        if (!validRadii(kind,variables)) valid = false;
         result = valid ? equation(kind,x,target) : Jet(undefined);
         if (!std::isfinite(checked(result.value))) { result = Jet(undefined); ++invalidEvaluations; }
         dirty = false;
@@ -212,7 +218,7 @@ ErrorFunction::ErrorFunction(Equation kind, std::vector<double*> variables, doub
         if (std::find(_state->unique.begin(),_state->unique.end(),variable) == _state->unique.end())
             _state->unique.push_back(variable);
     }
-    if (State::hasRadius(kind) && *variables.back() <= 0) throw std::invalid_argument("Circle radius must be positive");
+    if (!State::validRadii(kind,variables)) throw std::invalid_argument("Circle radii must be positive");
     _state->kind = kind;
     _state->variables = std::move(variables);
     _state->target = target;

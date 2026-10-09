@@ -13,7 +13,7 @@ protected:
         PointLineDistance, PointOnLine, PointPointDistance, PointOnPoint,
         SegmentCircleDistance, PointOnCircle, SegmentOnCircle,
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
-        FixCoordinate, SegmentInCircle
+        FixCoordinate, SegmentInCircle, CircleRadius
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -111,6 +111,15 @@ public:
     explicit PointOnCircleError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::PointOnCircle,std::move(coordinates),target) {}
     PointOnCircleError* clone() const override { return new PointOnCircleError(*this); }
+};
+
+class CircleRadiusError : public ErrorFunction {
+public:
+    CircleRadiusError(std::vector<Variable*> variables, double target)
+        : CircleRadiusError(coordinatePointers(variables),target) {}
+    CircleRadiusError(std::vector<double*> coordinates, double target)
+        : ErrorFunction(Equation::CircleRadius,std::move(coordinates),target) {}
+    CircleRadiusError* clone() const override { return new CircleRadiusError(*this); }
 };
 
 class SectionOnCircleError : public SectionCircleDistanceError {

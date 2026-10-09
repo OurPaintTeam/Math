@@ -35,3 +35,56 @@ TEST(SizeConstraints, PointOnCircleRecoversFromTheCenterWithoutMovingFixedCircle
     EXPECT_DOUBLE_EQ(cy, 0);
     EXPECT_DOUBLE_EQ(radius, 5);
 }
+
+TEST(SizeConstraints, RadiusIsAWeightedResidualWithoutDirectAssignment) {
+    double radius = 3;
+    Variable variable(&radius);
+    CircleRadiusError f({&radius}, 5);
+    EXPECT_DOUBLE_EQ(f.evaluate(), -2);
+    EXPECT_DOUBLE_EQ(f.gradient().at(&radius), 1);
+    double* coordinate = nullptr;
+    double target = 0;
+    EXPECT_FALSE(f.assignment(coordinate, target));
+    auto clone = std::unique_ptr<CircleRadiusError>(f.clone());
+    auto weighted = std::unique_ptr<Function>(f.weightedFunction());
+    auto derivative = std::unique_ptr<Function>(weighted->derivative(&variable));
+    f.setWeight(2);
+    f.setTarget(4);
+    EXPECT_DOUBLE_EQ(clone->evaluate(), -1);
+    EXPECT_DOUBLE_EQ(weighted->evaluate(), -2);
+    EXPECT_DOUBLE_EQ(derivative->evaluate(), 2);
+    radius = -1;
+    EXPECT_FALSE(std::isfinite(f.evaluate()));
+    f.setWeight(0);
+    EXPECT_DOUBLE_EQ(weighted->evaluate(), 0);
+    EXPECT_DOUBLE_EQ(derivative->evaluate(), 0);
+}
+
+TEST(SizeConstraints, RadiusTargetsMustBePositiveAndFinite) {
+    double first = 2, second = 3;
+    const double inf = std::numeric_limits<double>::infinity();
+    for (double invalid : {0.0, -1.0, inf, std::numeric_limits<double>::quiet_NaN()}) {
+        EXPECT_THROW(CircleRadiusError({&first}, invalid), std::invalid_argument);
+        CircleRadiusError f({&first}, 4);
+        EXPECT_THROW(f.setTarget(invalid), std::invalid_argument);
+        EXPECT_DOUBLE_EQ(f.evaluate(), -2);
+
+    }
+}
+
+TEST(SizeConstraints, AnInvalidRadiusTrialRestoresTheAcceptedCoordinatesAndCaches) {
+    double value = 1;
+    Variable radius(&value);
+    CircleRadiusError positive({&value}, 1);
+    SparseLSMTask task({positive.weightedFunction(), new Multiplication(new Constant(10),
+        new Addition(radius.clone(), new Constant(5)))}, {&radius});
+    SparseLMSolver optimizer(1);
+    optimizer.setTask(&task);
+    ASSERT_NO_THROW(optimizer.optimize());
+    EXPECT_FALSE(optimizer.isConverged());
+    EXPECT_GT(positive.invalidEvaluations(), 0u);
+    EXPECT_DOUBLE_EQ(value, 1);
+    EXPECT_EQ(task.getValues(), optimizer.getResult());
+    EXPECT_DOUBLE_EQ(task.getError(), optimizer.getCurrentError());
+    EXPECT_DOUBLE_EQ(task.normalGradient()(0, 0), 600);
+}
