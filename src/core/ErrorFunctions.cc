@@ -89,6 +89,7 @@ struct ErrorFunction::State {
     static std::size_t arity(Equation kind) {
         switch (kind) {
             case Equation::FixCoordinate: case Equation::CircleRadius: return 1;
+            case Equation::EqualRadius: return 2;
             case Equation::PointPointDistance: case Equation::PointOnPoint:
             case Equation::Vertical: case Equation::Horizontal: return 4;
             case Equation::PointOnCircle: return 5;
@@ -116,7 +117,8 @@ struct ErrorFunction::State {
             throw std::invalid_argument("This equation has no target parameter");
     }
     static bool validRadii(Equation kind, const std::vector<double*>& coordinates) {
-        const std::size_t count = (kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
+        const std::size_t count = kind == Equation::EqualRadius ? 2
+            : (kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
                kind == Equation::SegmentCircleDistance || kind == Equation::CircleRadius ? 1 : 0);
         for (std::size_t i = coordinates.size() - count; i < coordinates.size(); ++i)
             if (!std::isfinite(*coordinates[i]) || *coordinates[i] <= 0) return false;
@@ -127,6 +129,7 @@ struct ErrorFunction::State {
         switch (kind) {
             case Equation::FixCoordinate: return x[0] - Jet(target);
             case Equation::CircleRadius: return x[0] - Jet(target);
+            case Equation::EqualRadius: return x[0] - x[1];
             case Equation::EqualLength:
                 return norm(x[2]-x[0], x[3]-x[1]) - norm(x[6]-x[4], x[7]-x[5]);
             case Equation::PointPointDistance: case Equation::PointOnPoint:

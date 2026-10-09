@@ -81,7 +81,7 @@ TEST(SizeConstraints, DiameterUsesRadiusUnitsForEquivalentAndConflictingSizes) {
     }
 }
 
-TEST(SizeConstraints, RadiusTargetsMustBePositiveAndFinite) {
+TEST(SizeConstraints, RadiusTargetsAndBothEqualRadiiMustBePositiveAndFinite) {
     double first = 2, second = 3;
     const double inf = std::numeric_limits<double>::infinity();
     for (double invalid : {0.0, -1.0, inf, std::numeric_limits<double>::quiet_NaN()}) {
@@ -89,8 +89,24 @@ TEST(SizeConstraints, RadiusTargetsMustBePositiveAndFinite) {
         CircleRadiusError f({&first}, 4);
         EXPECT_THROW(f.setTarget(invalid), std::invalid_argument);
         EXPECT_DOUBLE_EQ(f.evaluate(), -2);
-
+        for (auto* radius : {&first, &second}) {
+            const double original = *radius;
+            *radius = invalid;
+            EXPECT_THROW(EqualRadiusError(std::vector<double*>{&first, &second}), std::invalid_argument);
+            *radius = original;
+            EqualRadiusError equal(std::vector<double*>{&first, &second});
+            *radius = invalid;
+            EXPECT_FALSE(equal.satisfied(100));
+            equal.setWeight(0);
+            EXPECT_TRUE(equal.satisfied(0));
+            *radius = original;
+        }
     }
+    EqualRadiusError equal(std::vector<double*>{&first, &second});
+    EXPECT_DOUBLE_EQ(equal.evaluate(), -1);
+    EXPECT_DOUBLE_EQ(equal.gradient().at(&first), 1);
+    EXPECT_DOUBLE_EQ(equal.gradient().at(&second), -1);
+    EXPECT_THROW(equal.setTarget(1), std::invalid_argument);
 }
 
 TEST(SizeConstraints, EqualLengthsSumSharedCoordinatesAndAllowZeroLengths) {
@@ -119,14 +135,20 @@ TEST(SizeConstraints, EqualLengthsSumSharedCoordinatesAndAllowZeroLengths) {
     for (const auto& [coordinate, derivative] : equal.gradient()) EXPECT_DOUBLE_EQ(derivative, 0);
     EXPECT_TRUE(equal.satisfied(0));
     EXPECT_THROW(equal.setTarget(1), std::invalid_argument);
+    double radius = 3;
+    EqualRadiusError same(std::vector<double*>{&radius, &radius});
+    EXPECT_DOUBLE_EQ(same.evaluate(), 0);
+    EXPECT_DOUBLE_EQ(same.gradient().at(&radius), 0);
 }
 
-TEST(SizeConstraints, EqualLengthsRemainStableAcrossScales) {
+TEST(SizeConstraints, EqualLengthsAndRadiiRemainStableAcrossScales) {
     for (double scale : {1e-300, 1e-200, 1.0, 1e200, 1e300}) {
         double zero = 0, x = 3 * scale, y = 4 * scale, other = 2 * scale;
         EqualLengthError equal({&zero, &zero, &x, &y, &zero, &zero, &other, &zero});
         EXPECT_NEAR(equal.evaluate() / scale, 3, 1e-12);
         EXPECT_NEAR(equal.gradient().at(&x), 0.6, 1e-12);
+        EqualRadiusError radii(std::vector<double*>{&x, &other});
+        EXPECT_NEAR(radii.evaluate() / scale, 1, 1e-12);
     }
 }
 
