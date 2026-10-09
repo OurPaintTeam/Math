@@ -57,6 +57,7 @@ TEST(ConstraintContract, EveryEquationHasIndependentFirstAndSecondDerivativeChec
         {[](auto vars) { return std::make_unique<SectionCircleDistanceError>(vars,0); },{1,2,5,4,2,7,2}}, {[](auto vars) { return std::make_unique<PointOnCircleError>(vars,0); },{2,7,1,2,2}},
         {[](auto vars) { return std::make_unique<SectionOnCircleError>(vars,0); },{1,2,5,4,2,7,2}},
         {[](auto vars) { return std::make_unique<CircleRadiusError>(vars,5); },{3}},
+        {[](auto vars) { return std::make_unique<EqualLengthError>(vars); },{1,2,4,6,2,7,8,3}},
         {[](auto vars) { return std::make_unique<SectionSectionParallelError>(vars,0); },{1,2,5,4,2,7,8,3}}, {[](auto vars) { return std::make_unique<SectionSectionPerpendicularError>(vars,0); },{1,2,5,4,2,7,8,3}},
         {[](auto vars) { return std::make_unique<SectionSectionAngleError>(vars,1); },{1,2,5,4,2,7,8,3}}, {[](auto vars) { return std::make_unique<VerticalError>(vars,0); },{1,2,5,4}},
         {[](auto vars) { return std::make_unique<HorizontalError>(vars,0); },{1,2,5,4}}, {[](auto vars) { return std::make_unique<ArcCenterOnPerpendicularError>(vars,0); },{1,2,5,4,2,7}}, {[](auto vars) { return std::make_unique<FixCoordinateError>(vars,0); },{3}}

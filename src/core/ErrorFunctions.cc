@@ -95,7 +95,8 @@ struct ErrorFunction::State {
             case Equation::PointLineDistance: case Equation::PointOnLine:
             case Equation::ArcBisector: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle: return 7;
-            case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle: return 8;
+            case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
+            case Equation::EqualLength: return 8;
             case Equation::SegmentInCircle:
                 throw std::logic_error("SegmentInCircle is unsupported");
         }
@@ -126,6 +127,8 @@ struct ErrorFunction::State {
         switch (kind) {
             case Equation::FixCoordinate: return x[0] - Jet(target);
             case Equation::CircleRadius: return x[0] - Jet(target);
+            case Equation::EqualLength:
+                return norm(x[2]-x[0], x[3]-x[1]) - norm(x[6]-x[4], x[7]-x[5]);
             case Equation::PointPointDistance: case Equation::PointOnPoint:
                 return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
             case Equation::PointOnCircle:
