@@ -60,6 +60,27 @@ TEST(SizeConstraints, RadiusIsAWeightedResidualWithoutDirectAssignment) {
     EXPECT_DOUBLE_EQ(derivative->evaluate(), 0);
 }
 
+TEST(SizeConstraints, DiameterUsesRadiusUnitsForEquivalentAndConflictingSizes) {
+    for (double diameter : {20.0, 30.0}) {
+        double radius = 3;
+        Variable variable(&radius);
+        CircleRadiusError prescribedRadius({&radius}, 10);
+        CircleRadiusError prescribedDiameter({&radius}, diameter / 2);
+        EXPECT_DOUBLE_EQ(prescribedDiameter.gradient().at(&radius), 1);
+        if (diameter == 20) {
+            EXPECT_DOUBLE_EQ(prescribedRadius.evaluate(), prescribedDiameter.evaluate());
+            EXPECT_EQ(prescribedRadius.weightedGradient(), prescribedDiameter.weightedGradient());
+        }
+        SparseLSMTask task({prescribedRadius.weightedFunction(), prescribedDiameter.weightedFunction()}, {&variable});
+        SparseLMSolver optimizer;
+        optimizer.setTask(&task);
+        ASSERT_NO_THROW(optimizer.optimize());
+        EXPECT_EQ(optimizer.isConverged(), diameter == 20);
+        EXPECT_NEAR(radius, diameter == 20 ? 10 : 12.5, 1e-6);
+        EXPECT_NEAR(task.getError(), diameter == 20 ? 0 : 12.5, 1e-8);
+    }
+}
+
 TEST(SizeConstraints, RadiusTargetsMustBePositiveAndFinite) {
     double first = 2, second = 3;
     const double inf = std::numeric_limits<double>::infinity();
