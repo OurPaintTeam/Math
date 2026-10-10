@@ -96,11 +96,13 @@ struct ErrorFunction::State {
             case Equation::Vertical: case Equation::Horizontal: return 4;
             case Equation::PointOnCircle: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
-            case Equation::ArcBisector: case Equation::CircleCircleTangent: return 6;
+            case Equation::ArcBisector: case Equation::CircleCircleTangent:
+            case Equation::ArcArcTangent: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle:
             case Equation::LineCircleTangent: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
-            case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross: return 8;
+            case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross:
+            case Equation::ArcLineTangent: return 8;
             case Equation::SegmentInCircle:
                 throw std::logic_error("SegmentInCircle is unsupported");
         }
@@ -182,6 +184,18 @@ struct ErrorFunction::State {
                 const Jet dx=x[2]-x[0], dy=x[3]-x[1], length=norm(dx,dy);
                 if (length.value == 0) return Jet(undefined);
                 return (x[5]-x[1])*(dx/length)-(x[4]-x[0])*(dy/length)-Jet(target)*x[6];
+            }
+            case Equation::ArcLineTangent: {
+                const Jet rx=x[0]-x[2],ry=x[1]-x[3];
+                const Jet dx=x[6]-x[4],dy=x[7]-x[5],length=norm(dx,dy);
+                if (length.value == 0 || norm(rx,ry).value == 0) return Jet(undefined);
+                return rx*(dx/length)+ry*(dy/length);
+            }
+            case Equation::ArcArcTangent: {
+                const Jet rx=x[0]-x[2],ry=x[1]-x[3],radius=norm(rx,ry);
+                const Jet sx=x[0]-x[4],sy=x[1]-x[5];
+                if (radius.value == 0 || norm(sx,sy).value == 0) return Jet(undefined);
+                return (rx/radius)*sy-(ry/radius)*sx;
             }
             case Equation::SegmentOnCircle:
                 return norm(norm(x[0]-x[4], x[1]-x[5])-x[6],

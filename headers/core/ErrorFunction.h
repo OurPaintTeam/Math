@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -125,6 +125,25 @@ public:
     CircleCircleTangentError(std::vector<double*> coordinates, double kind)
         : ErrorFunction(Equation::CircleCircleTangent,std::move(coordinates),kind) {}
     CircleCircleTangentError* clone() const override { return new CircleCircleTangentError(*this); }
+};
+
+// Endpoint T, arc center C, line A,B (xy pairs). Endpoints are connected by the caller.
+class ArcLineTangentError : public ErrorFunction {
+public:
+    explicit ArcLineTangentError(std::vector<Variable*> variables, double target = 0)
+        : ArcLineTangentError(coordinatePointers(variables),target) {}
+    explicit ArcLineTangentError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::ArcLineTangent,std::move(coordinates),target) {}
+    ArcLineTangentError* clone() const override { return new ArcLineTangentError(*this); }
+};
+// Common endpoint T and centers C1,C2 (xy pairs); no traversal direction is imposed.
+class ArcArcTangentError : public ErrorFunction {
+public:
+    explicit ArcArcTangentError(std::vector<Variable*> variables, double target = 0)
+        : ArcArcTangentError(coordinatePointers(variables),target) {}
+    explicit ArcArcTangentError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::ArcArcTangent,std::move(coordinates),target) {}
+    ArcArcTangentError* clone() const override { return new ArcArcTangentError(*this); }
 };
 
 class PointOnCircleError : public ErrorFunction {
