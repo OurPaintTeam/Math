@@ -210,6 +210,13 @@ void SparseLMSolver::optimize() {
 
         const double stepNorm = step.norm();
         if (stepNorm < epsilon2) {
+            // Some coordinates can be stationary at a norm cusp while other
+            // residuals still have a nonzero gradient (e.g. a prescribed radius).
+            // Before stopping, also try the bounded descent probes in that case.
+            if (currentError > errorTolerance && tryEscapeStationaryPoint()) {
+                ++iteration;
+                continue;
+            }
             if (currentError <= errorTolerance) {
                 converged = true;
                 stopReason = StopReason::ResidualTolerance;

@@ -96,7 +96,7 @@ struct ErrorFunction::State {
             case Equation::Vertical: case Equation::Horizontal: return 4;
             case Equation::PointOnCircle: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
-            case Equation::ArcBisector: return 6;
+            case Equation::ArcBisector: case Equation::CircleCircleTangent: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle:
             case Equation::LineCircleTangent: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
@@ -108,6 +108,11 @@ struct ErrorFunction::State {
     }
     static void validateTarget(Equation kind, double target) {
         if (!std::isfinite(target)) throw std::invalid_argument("Constraint target must be finite");
+        if (kind == Equation::CircleCircleTangent) {
+            if (target != 0 && target != 1 && target != 2)
+                throw std::invalid_argument("Circle tangency kind must be 0, 1 or 2");
+            return;
+        }
         if (kind == Equation::LineCircleTangent) {
             if (target != -1 && target != 1) throw std::invalid_argument("Tangency side must be -1 or +1");
             return;
@@ -125,6 +130,9 @@ struct ErrorFunction::State {
             throw std::invalid_argument("This equation has no target parameter");
     }
     static bool validRadii(Equation kind, const std::vector<double*>& coordinates) {
+        if (kind == Equation::CircleCircleTangent)
+            return std::isfinite(*coordinates[2]) && *coordinates[2] > 0 &&
+                   std::isfinite(*coordinates[5]) && *coordinates[5] > 0;
         const std::size_t count = kind == Equation::EqualRadius ? 2
             : (kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
                kind == Equation::SegmentCircleDistance || kind == Equation::CircleRadius ||
@@ -160,6 +168,16 @@ struct ErrorFunction::State {
                 return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
             case Equation::PointOnCircle:
                 return norm(x[0]-x[2], x[1]-x[3]) - x[4];
+            case Equation::CircleCircleTangent: {
+                const Jet distance=norm(x[3]-x[0],x[4]-x[1]);
+                if (target == 0) return distance-x[2]-x[5];
+                if (target == 1) {
+                    if (x[2].value <= x[5].value) return Jet(undefined);
+                    return distance-x[2]+x[5];
+                }
+                if (x[5].value <= x[2].value) return Jet(undefined);
+                return distance-x[5]+x[2];
+            }
             case Equation::LineCircleTangent: {
                 const Jet dx=x[2]-x[0], dy=x[3]-x[1], length=norm(dx,dy);
                 if (length.value == 0) return Jet(undefined);

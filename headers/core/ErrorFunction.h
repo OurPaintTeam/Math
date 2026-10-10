@@ -14,7 +14,8 @@ protected:
         SegmentCircleDistance, PointOnCircle, SegmentOnCircle,
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
-        SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent
+        SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
+        CircleCircleTangent
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -113,6 +114,17 @@ public:
     LineCircleTangentError(std::vector<double*> coordinates, double side)
         : ErrorFunction(Equation::LineCircleTangent,std::move(coordinates),side) {}
     LineCircleTangentError* clone() const override { return new LineCircleTangentError(*this); }
+};
+
+// Arguments C1x,C1y,r1,C2x,C2y,r2. Kind: 0 external, 1 first contains second, 2 reverse.
+// Internal branches require a strictly larger containing radius (unique contact).
+class CircleCircleTangentError : public ErrorFunction {
+public:
+    CircleCircleTangentError(std::vector<Variable*> variables, double kind)
+        : CircleCircleTangentError(coordinatePointers(variables),kind) {}
+    CircleCircleTangentError(std::vector<double*> coordinates, double kind)
+        : ErrorFunction(Equation::CircleCircleTangent,std::move(coordinates),kind) {}
+    CircleCircleTangentError* clone() const override { return new CircleCircleTangentError(*this); }
 };
 
 class PointOnCircleError : public ErrorFunction {
