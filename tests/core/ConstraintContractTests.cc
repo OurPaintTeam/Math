@@ -57,6 +57,8 @@ TEST(ConstraintContract, EveryEquationHasIndependentFirstAndSecondDerivativeChec
         {[](auto vars) { return std::make_unique<SectionCircleDistanceError>(vars,0); },{1,2,5,4,2,7,2}}, {[](auto vars) { return std::make_unique<PointOnCircleError>(vars,0); },{2,7,1,2,2}},
         {[](auto vars) { return std::make_unique<SectionOnCircleError>(vars,0); },{1,2,5,4,2,7,2}},
         {[](auto vars) { return std::make_unique<CircleRadiusError>(vars,5); },{3}},
+        {[](auto vars) { return std::make_unique<LineCircleTangentError>(vars,1); },{1,2,5,4,2,7,2}},
+        {[](auto vars) { return std::make_unique<LineCircleTangentError>(vars,-1); },{1,2,5,4,2,7,2}},
         {[](auto vars) { return std::make_unique<MidpointCoordinateError>(vars); },{3,1,4}},
         {[](auto vars) { return std::make_unique<SymmetryAlongError>(vars); },{2,7,8,3,1,2,5,4}},
         {[](auto vars) { return std::make_unique<SymmetryAcrossError>(vars); },{2,7,8,3,1,2,5,4}},

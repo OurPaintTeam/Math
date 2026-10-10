@@ -14,7 +14,7 @@ protected:
         SegmentCircleDistance, PointOnCircle, SegmentOnCircle,
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
-        SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage
+        SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -103,6 +103,16 @@ public:
     explicit SectionCircleDistanceError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::SegmentCircleDistance,std::move(coordinates),target) {}
     SectionCircleDistanceError* clone() const override { return new SectionCircleDistanceError(*this); }
+};
+
+// Supporting infinite line A,B and circle C,r. Side is +1 (left of A->B) or -1.
+class LineCircleTangentError : public ErrorFunction {
+public:
+    LineCircleTangentError(std::vector<Variable*> variables, double side)
+        : LineCircleTangentError(coordinatePointers(variables),side) {}
+    LineCircleTangentError(std::vector<double*> coordinates, double side)
+        : ErrorFunction(Equation::LineCircleTangent,std::move(coordinates),side) {}
+    LineCircleTangentError* clone() const override { return new LineCircleTangentError(*this); }
 };
 
 class PointOnCircleError : public ErrorFunction {
