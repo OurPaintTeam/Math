@@ -13,7 +13,8 @@ protected:
         PointLineDistance, PointOnLine, PointPointDistance, PointOnPoint,
         SegmentCircleDistance, PointOnCircle, SegmentOnCircle,
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
-        FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate
+        FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
+        SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -130,6 +131,41 @@ public:
     explicit MidpointCoordinateError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::MidpointCoordinate,std::move(coordinates),target) {}
     MidpointCoordinateError* clone() const override { return new MidpointCoordinateError(*this); }
+};
+
+// Arguments P, Q, A, B (xy pairs); A and B define the symmetry axis.
+class SymmetryAlongError : public ErrorFunction {
+public:
+    explicit SymmetryAlongError(std::vector<Variable*> variables, double target = 0)
+        : SymmetryAlongError(coordinatePointers(variables),target) {}
+    explicit SymmetryAlongError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::SymmetryAlong,std::move(coordinates),target) {}
+    SymmetryAlongError* clone() const override { return new SymmetryAlongError(*this); }
+};
+class SymmetryAcrossError : public ErrorFunction {
+public:
+    explicit SymmetryAcrossError(std::vector<Variable*> variables, double target = 0)
+        : SymmetryAcrossError(coordinatePointers(variables),target) {}
+    explicit SymmetryAcrossError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::SymmetryAcross,std::move(coordinates),target) {}
+    SymmetryAcrossError* clone() const override { return new SymmetryAcrossError(*this); }
+};
+// Two coordinates: equality and average equal to the prescribed axis offset.
+class CoordinateDifferenceError : public ErrorFunction {
+public:
+    explicit CoordinateDifferenceError(std::vector<Variable*> variables, double target = 0)
+        : CoordinateDifferenceError(coordinatePointers(variables),target) {}
+    explicit CoordinateDifferenceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::CoordinateDifference,std::move(coordinates),target) {}
+    CoordinateDifferenceError* clone() const override { return new CoordinateDifferenceError(*this); }
+};
+class CoordinateAverageError : public ErrorFunction {
+public:
+    explicit CoordinateAverageError(std::vector<Variable*> variables, double target = 0)
+        : CoordinateAverageError(coordinatePointers(variables),target) {}
+    explicit CoordinateAverageError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::CoordinateAverage,std::move(coordinates),target) {}
+    CoordinateAverageError* clone() const override { return new CoordinateAverageError(*this); }
 };
 
 class EqualLengthError : public ErrorFunction {

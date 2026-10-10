@@ -89,7 +89,8 @@ struct ErrorFunction::State {
     static std::size_t arity(Equation kind) {
         switch (kind) {
             case Equation::FixCoordinate: case Equation::CircleRadius: return 1;
-            case Equation::EqualRadius: return 2;
+            case Equation::EqualRadius: case Equation::CoordinateDifference:
+            case Equation::CoordinateAverage: return 2;
             case Equation::MidpointCoordinate: return 3;
             case Equation::PointPointDistance: case Equation::PointOnPoint:
             case Equation::Vertical: case Equation::Horizontal: return 4;
@@ -98,7 +99,7 @@ struct ErrorFunction::State {
             case Equation::ArcBisector: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
-            case Equation::EqualLength: return 8;
+            case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross: return 8;
             case Equation::SegmentInCircle:
                 throw std::logic_error("SegmentInCircle is unsupported");
         }
@@ -114,7 +115,8 @@ struct ErrorFunction::State {
             throw std::invalid_argument("Angle must be in [0, pi] radians");
         if (kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
             kind != Equation::PointLineDistance && kind != Equation::Angle &&
-            kind != Equation::FixCoordinate && kind != Equation::CircleRadius && target != 0)
+            kind != Equation::FixCoordinate && kind != Equation::CircleRadius &&
+            kind != Equation::CoordinateAverage && target != 0)
             throw std::invalid_argument("This equation has no target parameter");
     }
     static bool validRadii(Equation kind, const std::vector<double*>& coordinates) {
@@ -133,6 +135,19 @@ struct ErrorFunction::State {
                 return (x[0]-x[1])*Jet(0.5) + (x[0]-x[2])*Jet(0.5);
             case Equation::CircleRadius: return x[0] - Jet(target);
             case Equation::EqualRadius: return x[0] - x[1];
+            case Equation::CoordinateDifference: return x[0] - x[1];
+            case Equation::CoordinateAverage:
+                return (x[0]-Jet(target))*Jet(0.5)+(x[1]-Jet(target))*Jet(0.5);
+            case Equation::SymmetryAlong: case Equation::SymmetryAcross: {
+                const Jet dx=x[6]-x[4], dy=x[7]-x[5], length=norm(dx,dy);
+                if (length.value == 0) return Jet(undefined);
+                const Jet tx=dx/length, ty=dy/length;
+                if (kind == Equation::SymmetryAlong)
+                    return (x[2]-x[0])*tx+(x[3]-x[1])*ty;
+                const Jet mx=(x[0]-x[4])*Jet(0.5)+(x[2]-x[4])*Jet(0.5);
+                const Jet my=(x[1]-x[5])*Jet(0.5)+(x[3]-x[5])*Jet(0.5);
+                return my*tx-mx*ty;
+            }
             case Equation::EqualLength:
                 return norm(x[2]-x[0], x[3]-x[1]) - norm(x[6]-x[4], x[7]-x[5]);
             case Equation::PointPointDistance: case Equation::PointOnPoint:
