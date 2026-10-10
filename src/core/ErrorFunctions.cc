@@ -90,6 +90,7 @@ struct ErrorFunction::State {
         switch (kind) {
             case Equation::FixCoordinate: case Equation::CircleRadius: return 1;
             case Equation::EqualRadius: return 2;
+            case Equation::MidpointCoordinate: return 3;
             case Equation::PointPointDistance: case Equation::PointOnPoint:
             case Equation::Vertical: case Equation::Horizontal: return 4;
             case Equation::PointOnCircle: return 5;
@@ -128,6 +129,8 @@ struct ErrorFunction::State {
     static Jet equation(Equation kind, const std::vector<Jet>& x, double target) {
         switch (kind) {
             case Equation::FixCoordinate: return x[0] - Jet(target);
+            case Equation::MidpointCoordinate:
+                return (x[0]-x[1])*Jet(0.5) + (x[0]-x[2])*Jet(0.5);
             case Equation::CircleRadius: return x[0] - Jet(target);
             case Equation::EqualRadius: return x[0] - x[1];
             case Equation::EqualLength:

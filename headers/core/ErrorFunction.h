@@ -13,7 +13,7 @@ protected:
         PointLineDistance, PointOnLine, PointPointDistance, PointOnPoint,
         SegmentCircleDistance, PointOnCircle, SegmentOnCircle,
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
-        FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius
+        FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -120,6 +120,16 @@ public:
     CircleRadiusError(std::vector<double*> coordinates, double target)
         : ErrorFunction(Equation::CircleRadius,std::move(coordinates),target) {}
     CircleRadiusError* clone() const override { return new CircleRadiusError(*this); }
+};
+
+// One independent coordinate of P = (A + B)/2; arguments are P, A, B.
+class MidpointCoordinateError : public ErrorFunction {
+public:
+    explicit MidpointCoordinateError(std::vector<Variable*> variables, double target = 0)
+        : MidpointCoordinateError(coordinatePointers(variables),target) {}
+    explicit MidpointCoordinateError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::MidpointCoordinate,std::move(coordinates),target) {}
+    MidpointCoordinateError* clone() const override { return new MidpointCoordinateError(*this); }
 };
 
 class EqualLengthError : public ErrorFunction {
