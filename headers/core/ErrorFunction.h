@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -127,24 +127,35 @@ public:
     CircleCircleTangentError* clone() const override { return new CircleCircleTangentError(*this); }
 };
 
-// Endpoint T, arc center C, line A,B (xy pairs). Endpoints are connected by the caller.
+// Radius point P, arc center C, line A,B (xy pairs). Uses the supporting circle.
 class ArcLineTangentError : public ErrorFunction {
 public:
-    explicit ArcLineTangentError(std::vector<Variable*> variables, double target = 0)
+    explicit ArcLineTangentError(std::vector<Variable*> variables, double target)
         : ArcLineTangentError(coordinatePointers(variables),target) {}
-    explicit ArcLineTangentError(std::vector<double*> coordinates, double target = 0)
+    explicit ArcLineTangentError(std::vector<double*> coordinates, double target)
         : ErrorFunction(Equation::ArcLineTangent,std::move(coordinates),target) {}
     ArcLineTangentError* clone() const override { return new ArcLineTangentError(*this); }
 };
-// Common endpoint T and centers C1,C2 (xy pairs); no traversal direction is imposed.
+// Radius point P1, center C1, radius point P2, center C2 (xy pairs).
 class ArcArcTangentError : public ErrorFunction {
 public:
-    explicit ArcArcTangentError(std::vector<Variable*> variables, double target = 0)
+    explicit ArcArcTangentError(std::vector<Variable*> variables, double target)
         : ArcArcTangentError(coordinatePointers(variables),target) {}
-    explicit ArcArcTangentError(std::vector<double*> coordinates, double target = 0)
+    explicit ArcArcTangentError(std::vector<double*> coordinates, double target)
         : ErrorFunction(Equation::ArcArcTangent,std::move(coordinates),target) {}
     ArcArcTangentError* clone() const override { return new ArcArcTangentError(*this); }
 };
+
+// Circle Cx,Cy,r followed by arc Px,Py,Cx,Cy; kind has the same ordered meaning.
+class CircleArcTangentError : public ErrorFunction {
+public:
+    CircleArcTangentError(std::vector<Variable*> variables, double kind)
+        : CircleArcTangentError(coordinatePointers(variables),kind) {}
+    CircleArcTangentError(std::vector<double*> coordinates, double kind)
+        : ErrorFunction(Equation::CircleArcTangent,std::move(coordinates),kind) {}
+    CircleArcTangentError* clone() const override { return new CircleArcTangentError(*this); }
+};
+
 
 class PointOnCircleError : public ErrorFunction {
 public:

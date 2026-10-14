@@ -96,13 +96,12 @@ struct ErrorFunction::State {
             case Equation::Vertical: case Equation::Horizontal: return 4;
             case Equation::PointOnCircle: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
-            case Equation::ArcBisector: case Equation::CircleCircleTangent:
-            case Equation::ArcArcTangent: return 6;
+            case Equation::ArcBisector: case Equation::CircleCircleTangent: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle:
-            case Equation::LineCircleTangent: return 7;
+            case Equation::LineCircleTangent: case Equation::CircleArcTangent: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
             case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross:
-            case Equation::ArcLineTangent: return 8;
+            case Equation::ArcLineTangent: case Equation::ArcArcTangent: return 8;
             case Equation::SegmentInCircle:
                 throw std::logic_error("SegmentInCircle is unsupported");
         }
@@ -110,12 +109,13 @@ struct ErrorFunction::State {
     }
     static void validateTarget(Equation kind, double target) {
         if (!std::isfinite(target)) throw std::invalid_argument("Constraint target must be finite");
-        if (kind == Equation::CircleCircleTangent) {
+        if (kind == Equation::CircleCircleTangent || kind == Equation::ArcArcTangent ||
+            kind == Equation::CircleArcTangent) {
             if (target != 0 && target != 1 && target != 2)
                 throw std::invalid_argument("Circle tangency kind must be 0, 1 or 2");
             return;
         }
-        if (kind == Equation::LineCircleTangent) {
+        if (kind == Equation::LineCircleTangent || kind == Equation::ArcLineTangent) {
             if (target != -1 && target != 1) throw std::invalid_argument("Tangency side must be -1 or +1");
             return;
         }
@@ -132,6 +132,8 @@ struct ErrorFunction::State {
             throw std::invalid_argument("This equation has no target parameter");
     }
     static bool validRadii(Equation kind, const std::vector<double*>& coordinates) {
+        if (kind == Equation::CircleArcTangent)
+            return std::isfinite(*coordinates[2]) && *coordinates[2] > 0;
         if (kind == Equation::CircleCircleTangent)
             return std::isfinite(*coordinates[2]) && *coordinates[2] > 0 &&
                    std::isfinite(*coordinates[5]) && *coordinates[5] > 0;
@@ -186,16 +188,23 @@ struct ErrorFunction::State {
                 return (x[5]-x[1])*(dx/length)-(x[4]-x[0])*(dy/length)-Jet(target)*x[6];
             }
             case Equation::ArcLineTangent: {
-                const Jet rx=x[0]-x[2],ry=x[1]-x[3];
-                const Jet dx=x[6]-x[4],dy=x[7]-x[5],length=norm(dx,dy);
-                if (length.value == 0 || norm(rx,ry).value == 0) return Jet(undefined);
-                return rx*(dx/length)+ry*(dy/length);
+                const Jet radius=norm(x[0]-x[2],x[1]-x[3]);
+                if (radius.value == 0) return Jet(undefined);
+                return equation(Equation::LineCircleTangent,
+                    {x[4],x[5],x[6],x[7],x[2],x[3],radius},target);
             }
             case Equation::ArcArcTangent: {
-                const Jet rx=x[0]-x[2],ry=x[1]-x[3],radius=norm(rx,ry);
-                const Jet sx=x[0]-x[4],sy=x[1]-x[5];
-                if (radius.value == 0 || norm(sx,sy).value == 0) return Jet(undefined);
-                return (rx/radius)*sy-(ry/radius)*sx;
+                const Jet r1=norm(x[0]-x[2],x[1]-x[3]);
+                const Jet r2=norm(x[4]-x[6],x[5]-x[7]);
+                if (r1.value == 0 || r2.value == 0) return Jet(undefined);
+                return equation(Equation::CircleCircleTangent,
+                    {x[2],x[3],r1,x[6],x[7],r2},target);
+            }
+            case Equation::CircleArcTangent: {
+                const Jet radius=norm(x[3]-x[5],x[4]-x[6]);
+                if (radius.value == 0) return Jet(undefined);
+                return equation(Equation::CircleCircleTangent,
+                    {x[0],x[1],x[2],x[5],x[6],radius},target);
             }
             case Equation::SegmentOnCircle:
                 return norm(norm(x[0]-x[4], x[1]-x[5])-x[6],
