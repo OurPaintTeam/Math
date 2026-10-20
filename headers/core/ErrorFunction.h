@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -327,4 +327,14 @@ public:
     explicit PointPointHorizontalDistanceError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::PointPointHorizontalDistance, std::move(coordinates), target) {}
     PointPointHorizontalDistanceError* clone() const override { return new PointPointHorizontalDistanceError(*this); }
+};
+
+// Coordinates: first point X/Y, second point X/Y. Target is non-negative.
+class PointPointVerticalDistanceError : public ErrorFunction {
+public:
+    explicit PointPointVerticalDistanceError(std::vector<Variable*> variables, double target = 0)
+        : PointPointVerticalDistanceError(coordinatePointers(variables), target) {}
+    explicit PointPointVerticalDistanceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::PointPointVerticalDistance, std::move(coordinates), target) {}
+    PointPointVerticalDistanceError* clone() const override { return new PointPointVerticalDistanceError(*this); }
 };
