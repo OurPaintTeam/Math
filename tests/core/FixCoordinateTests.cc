@@ -60,3 +60,23 @@ TEST(FixCoordinateFunctionTest, TracksVariableChanges) {
     EQ(f.evaluate(), 5.0);
 }
 
+TEST(FixCoordinateFunctionTest, ArcFixUsesSixIndependentCapturedAssignments) {
+    double coordinates[] = {0, 0, 10, 0, 5, 5};
+    std::vector<std::unique_ptr<FixCoordinateError>> rows;
+    for (auto& coordinate : coordinates)
+        rows.push_back(std::make_unique<FixCoordinateError>(std::vector<VAR>{&coordinate}, coordinate));
+    for (std::size_t i = 0; i < rows.size(); ++i) {
+        double* variable = nullptr;
+        double target = 0;
+        ASSERT_TRUE(rows[i]->assignment(variable, target));
+        EXPECT_EQ(variable, &coordinates[i]);
+        coordinates[i] += 3;
+        EXPECT_DOUBLE_EQ(rows[i]->evaluate(), 3);
+        *variable = target;
+        EXPECT_TRUE(rows[i]->satisfied(0));
+        for (auto& other : coordinates)
+            EXPECT_DOUBLE_EQ(rows[i]->gradient().contains(&other) ? rows[i]->gradient().at(&other) : 0,
+                             &other == variable ? 1 : 0);
+    }
+}
+
