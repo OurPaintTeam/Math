@@ -93,7 +93,8 @@ struct ErrorFunction::State {
             case Equation::CoordinateAverage: return 2;
             case Equation::MidpointCoordinate: return 3;
             case Equation::PointPointDistance: case Equation::PointOnPoint:
-            case Equation::Vertical: case Equation::Horizontal: return 4;
+            case Equation::Vertical: case Equation::Horizontal:
+            case Equation::PointPointHorizontalDistance: return 4;
             case Equation::PointOnCircle: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
             case Equation::ArcBisector: case Equation::CircleCircleTangent: return 6;
@@ -121,11 +122,13 @@ struct ErrorFunction::State {
         }
         if (kind == Equation::CircleRadius && target <= 0)
             throw std::invalid_argument("Circle radius target must be positive");
-        if ((kind == Equation::PointPointDistance || kind == Equation::SegmentCircleDistance) && target < 0)
+        if ((kind == Equation::PointPointDistance || kind == Equation::SegmentCircleDistance ||
+             kind == Equation::PointPointHorizontalDistance) && target < 0)
             throw std::invalid_argument("Distance/clearance must be non-negative");
         if (kind == Equation::Angle && (target < 0 || target > std::numbers::pi))
             throw std::invalid_argument("Angle must be in [0, pi] radians");
-        if (kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
+        if (kind != Equation::PointPointHorizontalDistance &&
+            kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
             kind != Equation::PointLineDistance && kind != Equation::Angle &&
             kind != Equation::FixCoordinate && kind != Equation::CircleRadius &&
             kind != Equation::CoordinateAverage && target != 0)
@@ -149,6 +152,8 @@ struct ErrorFunction::State {
     static Jet equation(Equation kind, const std::vector<Jet>& x, double target) {
         switch (kind) {
             case Equation::FixCoordinate: return x[0] - Jet(target);
+            case Equation::PointPointHorizontalDistance:
+                return norm(x[2]-x[0], Jet(0)) - Jet(target);
             case Equation::MidpointCoordinate:
                 return (x[0]-x[1])*Jet(0.5) + (x[0]-x[2])*Jet(0.5);
             case Equation::CircleRadius: return x[0] - Jet(target);
