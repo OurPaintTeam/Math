@@ -97,7 +97,8 @@ struct ErrorFunction::State {
             case Equation::PointPointHorizontalDistance: case Equation::PointPointVerticalDistance: return 4;
             case Equation::PointOnCircle: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
-            case Equation::ArcBisector: case Equation::CircleCircleTangent: return 6;
+            case Equation::ArcBisector: case Equation::CircleCircleTangent:
+            case Equation::PointOnArc: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle:
             case Equation::LineCircleTangent: case Equation::CircleArcTangent: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
@@ -177,6 +178,11 @@ struct ErrorFunction::State {
                 return norm(x[2]-x[0], x[3]-x[1]) - norm(x[6]-x[4], x[7]-x[5]);
             case Equation::PointPointDistance: case Equation::PointOnPoint:
                 return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
+            case Equation::PointOnArc: {
+                const Jet radius = norm(x[2]-x[4], x[3]-x[5]);
+                if (radius.value == 0) return Jet(undefined);
+                return norm(x[0]-x[4], x[1]-x[5]) - radius;
+            }
             case Equation::PointOnCircle:
                 return norm(x[0]-x[2], x[1]-x[3]) - x[4];
             case Equation::CircleCircleTangent: {

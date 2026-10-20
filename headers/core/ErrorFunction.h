@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -337,4 +337,14 @@ public:
     explicit PointPointVerticalDistanceError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::PointPointVerticalDistance, std::move(coordinates), target) {}
     PointPointVerticalDistanceError* clone() const override { return new PointPointVerticalDistanceError(*this); }
+};
+
+// Point X/Y, first arc endpoint X/Y, center X/Y; membership in the supporting circle.
+class PointOnArcError : public ErrorFunction {
+public:
+    explicit PointOnArcError(std::vector<Variable*> variables, double target = 0)
+        : PointOnArcError(coordinatePointers(variables), target) {}
+    explicit PointOnArcError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::PointOnArc, std::move(coordinates), target) {}
+    PointOnArcError* clone() const override { return new PointOnArcError(*this); }
 };
