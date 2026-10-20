@@ -103,7 +103,8 @@ struct ErrorFunction::State {
             case Equation::MidpointCoordinate: return 3;
             case Equation::PointPointDistance: case Equation::PointOnPoint:
             case Equation::Vertical: case Equation::Horizontal:
-            case Equation::PointPointHorizontalDistance: case Equation::PointPointVerticalDistance: return 4;
+            case Equation::PointPointHorizontalDistance: case Equation::PointPointVerticalDistance:
+            case Equation::MidpointDifference: return 4;
             case Equation::PointOnCircle: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
             case Equation::ArcBisector: case Equation::CircleCircleTangent:
@@ -167,6 +168,8 @@ struct ErrorFunction::State {
                 return norm(x[3]-x[1], Jet(0)) - Jet(target);
             case Equation::PointPointHorizontalDistance:
                 return norm(x[2]-x[0], Jet(0)) - Jet(target);
+            case Equation::MidpointDifference:
+                return (x[0]-x[2])*Jet(0.5) + (x[1]-x[3])*Jet(0.5);
             case Equation::MidpointCoordinate:
                 return (x[0]-x[1])*Jet(0.5) + (x[0]-x[2])*Jet(0.5);
             case Equation::CircleRadius: return x[0] - Jet(target);

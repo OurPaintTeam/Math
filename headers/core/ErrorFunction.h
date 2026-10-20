@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -367,4 +367,14 @@ public:
     explicit ArcMidpointYError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::ArcMidpointY, std::move(coordinates), target) {}
     ArcMidpointYError* clone() const override { return new ArcMidpointYError(*this); }
+};
+
+// One coordinate of each endpoint: first line A/B, second line C/D.
+class MidpointDifferenceError : public ErrorFunction {
+public:
+    explicit MidpointDifferenceError(std::vector<Variable*> variables, double target = 0)
+        : MidpointDifferenceError(coordinatePointers(variables), target) {}
+    explicit MidpointDifferenceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::MidpointDifference, std::move(coordinates), target) {}
+    MidpointDifferenceError* clone() const override { return new MidpointDifferenceError(*this); }
 };
