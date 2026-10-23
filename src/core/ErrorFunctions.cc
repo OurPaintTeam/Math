@@ -5,9 +5,10 @@
 #include <limits>
 #include <numbers>
 #include <stdexcept>
+#include <utility>
 
 namespace {
-constexpr std::size_t N = 8;
+constexpr std::size_t N = 12;
 constexpr double undefined = std::numeric_limits<double>::infinity();
 
 // Second-order forward differentiation of the same expression used for values.
@@ -115,6 +116,7 @@ struct ErrorFunction::State {
             case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross:
             case Equation::ArcLineTangent: case Equation::ArcArcTangent:
             case Equation::ArcMidpointX: case Equation::ArcMidpointY: return 8;
+            case Equation::ArcArcMidpointX: case Equation::ArcArcMidpointY: return 12;
             case Equation::SegmentInCircle:
                 throw std::logic_error("SegmentInCircle is unsupported");
         }
@@ -161,6 +163,30 @@ struct ErrorFunction::State {
         return true;
     }
 
+    static std::pair<Jet, Jet> arcMidpointOffset(const std::vector<Jet>& x, std::size_t offset) {
+        const Jet ax = x[offset]-x[offset+4], ay = x[offset+1]-x[offset+5];
+        const Jet bx = x[offset+2]-x[offset+4], by = x[offset+3]-x[offset+5];
+        const Jet radius = norm(ax, ay), otherRadius = norm(bx, by);
+        if (radius.value == 0 || otherRadius.value == 0 || norm(x[offset]-x[offset+2], x[offset+1]-x[offset+3]).value == 0)
+            return {Jet(undefined), Jet(undefined)};
+        const Jet ux = ax/radius, uy = ay/radius, vx = bx/otherRadius, vy = by/otherRadius;
+        const Jet cosine = ux*vx + uy*vy, sine = ux*vy - uy*vx;
+        Jet halfCosine, halfSine;
+        // Stable half-angle formulas; the chosen square root is at least sqrt(1/2).
+        // Positive half-sine selects the counterclockwise sweep, including major arcs.
+        if (cosine.value >= 0) {
+            halfCosine = squareRoot((Jet(1)+cosine)*Jet(0.5));
+            if (sine.value < 0) halfCosine = Jet(0)-halfCosine;
+            halfSine = sine/(Jet(2)*halfCosine);
+        } else {
+            halfSine = squareRoot((Jet(1)-cosine)*Jet(0.5));
+            halfCosine = sine/(Jet(2)*halfSine);
+        }
+        // Valid arcs have equal endpoint radii; averaging keeps intermediate steps symmetric.
+        const Jet midpointRadius = (radius+otherRadius)*Jet(0.5);
+        return {midpointRadius*(ux*halfCosine-uy*halfSine), midpointRadius*(uy*halfCosine+ux*halfSine)};
+    }
+
     static Jet equation(Equation kind, const std::vector<Jet>& x, double target) {
         switch (kind) {
             case Equation::FixCoordinate: return x[0] - Jet(target);
@@ -192,27 +218,13 @@ struct ErrorFunction::State {
             case Equation::PointPointDistance: case Equation::PointOnPoint:
                 return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
             case Equation::ArcMidpointX: case Equation::ArcMidpointY: {
-                const Jet ax = x[2]-x[6], ay = x[3]-x[7];
-                const Jet bx = x[4]-x[6], by = x[5]-x[7];
-                const Jet radius = norm(ax, ay), otherRadius = norm(bx, by);
-                if (radius.value == 0 || otherRadius.value == 0 || norm(x[2]-x[4], x[3]-x[5]).value == 0)
-                    return Jet(undefined);
-                const Jet ux = ax/radius, uy = ay/radius, vx = bx/otherRadius, vy = by/otherRadius;
-                const Jet cosine = ux*vx + uy*vy, sine = ux*vy - uy*vx;
-                Jet halfCosine, halfSine;
-                // Stable half-angle formulas; the chosen square root is at least sqrt(1/2).
-                // Positive half-sine selects the counterclockwise sweep, including major arcs.
-                if (cosine.value >= 0) {
-                    halfCosine = squareRoot((Jet(1)+cosine)*Jet(0.5));
-                    if (sine.value < 0) halfCosine = Jet(0)-halfCosine;
-                    halfSine = sine/(Jet(2)*halfCosine);
-                } else {
-                    halfSine = squareRoot((Jet(1)-cosine)*Jet(0.5));
-                    halfCosine = sine/(Jet(2)*halfSine);
-                }
-                return kind == Equation::ArcMidpointX
-                    ? x[0]-x[6]-radius*(ux*halfCosine-uy*halfSine)
-                    : x[1]-x[7]-radius*(uy*halfCosine+ux*halfSine);
+                const auto [dx, dy] = arcMidpointOffset(x, 2);
+                return kind == Equation::ArcMidpointX ? x[0]-x[6]-dx : x[1]-x[7]-dy;
+            }
+            case Equation::ArcArcMidpointX: case Equation::ArcArcMidpointY: {
+                const auto [dx1, dy1] = arcMidpointOffset(x, 0);
+                const auto [dx2, dy2] = arcMidpointOffset(x, 6);
+                return kind == Equation::ArcArcMidpointX ? (x[4]-x[10])+(dx1-dx2) : (x[5]-x[11])+(dy1-dy2);
             }
             case Equation::PointOnArc: {
                 const Jet radius = norm(x[2]-x[4], x[3]-x[5]);

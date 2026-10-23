@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -377,4 +377,24 @@ public:
     explicit MidpointDifferenceError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::MidpointDifference, std::move(coordinates), target) {}
     MidpointDifferenceError* clone() const override { return new MidpointDifferenceError(*this); }
+};
+
+// First arc A/B/center, second arc A/B/center (X/Y pairs).
+class ArcArcMidpointXError : public ErrorFunction {
+public:
+    explicit ArcArcMidpointXError(std::vector<Variable*> variables, double target = 0)
+        : ArcArcMidpointXError(coordinatePointers(variables), target) {}
+    explicit ArcArcMidpointXError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::ArcArcMidpointX, std::move(coordinates), target) {}
+    ArcArcMidpointXError* clone() const override { return new ArcArcMidpointXError(*this); }
+};
+
+// First arc A/B/center, second arc A/B/center (X/Y pairs).
+class ArcArcMidpointYError : public ErrorFunction {
+public:
+    explicit ArcArcMidpointYError(std::vector<Variable*> variables, double target = 0)
+        : ArcArcMidpointYError(coordinatePointers(variables), target) {}
+    explicit ArcArcMidpointYError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::ArcArcMidpointY, std::move(coordinates), target) {}
+    ArcArcMidpointYError* clone() const override { return new ArcArcMidpointYError(*this); }
 };
