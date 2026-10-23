@@ -116,6 +116,7 @@ struct ErrorFunction::State {
             case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross:
             case Equation::ArcLineTangent: case Equation::ArcArcTangent:
             case Equation::ArcMidpointX: case Equation::ArcMidpointY: return 8;
+            case Equation::LineArcMidpointX: case Equation::LineArcMidpointY: return 10;
             case Equation::ArcArcMidpointX: case Equation::ArcArcMidpointY: return 12;
             case Equation::SegmentInCircle:
                 throw std::logic_error("SegmentInCircle is unsupported");
@@ -220,6 +221,12 @@ struct ErrorFunction::State {
             case Equation::ArcMidpointX: case Equation::ArcMidpointY: {
                 const auto [dx, dy] = arcMidpointOffset(x, 2);
                 return kind == Equation::ArcMidpointX ? x[0]-x[6]-dx : x[1]-x[7]-dy;
+            }
+            case Equation::LineArcMidpointX: case Equation::LineArcMidpointY: {
+                const auto [dx, dy] = arcMidpointOffset(x, 4);
+                return kind == Equation::LineArcMidpointX
+                    ? (x[0]-x[8])*Jet(0.5)+(x[2]-x[8])*Jet(0.5)-dx
+                    : (x[1]-x[9])*Jet(0.5)+(x[3]-x[9])*Jet(0.5)-dy;
             }
             case Equation::ArcArcMidpointX: case Equation::ArcArcMidpointY: {
                 const auto [dx1, dy1] = arcMidpointOffset(x, 0);

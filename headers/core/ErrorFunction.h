@@ -15,7 +15,7 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY, LineArcMidpointX, LineArcMidpointY
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -397,4 +397,24 @@ public:
     explicit ArcArcMidpointYError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::ArcArcMidpointY, std::move(coordinates), target) {}
     ArcArcMidpointYError* clone() const override { return new ArcArcMidpointYError(*this); }
+};
+
+// Line A/B, arc A/B/center (X/Y pairs).
+class LineArcMidpointXError : public ErrorFunction {
+public:
+    explicit LineArcMidpointXError(std::vector<Variable*> variables, double target = 0)
+        : LineArcMidpointXError(coordinatePointers(variables), target) {}
+    explicit LineArcMidpointXError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::LineArcMidpointX, std::move(coordinates), target) {}
+    LineArcMidpointXError* clone() const override { return new LineArcMidpointXError(*this); }
+};
+
+// Line A/B, arc A/B/center (X/Y pairs).
+class LineArcMidpointYError : public ErrorFunction {
+public:
+    explicit LineArcMidpointYError(std::vector<Variable*> variables, double target = 0)
+        : LineArcMidpointYError(coordinatePointers(variables), target) {}
+    explicit LineArcMidpointYError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::LineArcMidpointY, std::move(coordinates), target) {}
+    LineArcMidpointYError* clone() const override { return new LineArcMidpointYError(*this); }
 };
