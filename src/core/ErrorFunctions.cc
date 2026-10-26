@@ -80,6 +80,21 @@ Jet norm(const Jet& x, const Jet& y) {
     return r;
 }
 
+Jet arcTangent2(const Jet& y, const Jet& x) {
+    const long double length = std::hypot(x.value, y.value);
+    if (length == 0) return Jet(undefined);
+    const long double ux = x.value / length, uy = y.value / length;
+    Jet r(std::atan2(y.value, x.value));
+    for (std::size_t i = 0; i < N; ++i)
+        r.g[i] = (ux * y.g[i] - uy * x.g[i]) / length;
+    for (std::size_t i = 0; i < N; ++i)
+        for (std::size_t j = 0; j < N; ++j)
+            r.h[i*N+j] = (ux * y.h[i*N+j] - uy * x.h[i*N+j]
+                - (ux * x.g[i] + uy * y.g[i]) * r.g[j]
+                - (ux * x.g[j] + uy * y.g[j]) * r.g[i]) / length;
+    return r;
+}
+
 Jet squareRoot(const Jet& x) {
     Jet r(std::sqrt(x.value));
     for (std::size_t i = 0; i < N; ++i) r.g[i] = x.g[i] / (2 * r.value);
@@ -109,7 +124,7 @@ struct ErrorFunction::State {
             case Equation::PointOnCircle: case Equation::PointCircleDistance: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
             case Equation::ArcBisector: case Equation::CircleCircleTangent:
-            case Equation::PointOnArc: return 6;
+            case Equation::PointOnArc: case Equation::ArcAngle: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle:
             case Equation::LineCircleTangent: case Equation::CircleArcTangent: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
@@ -125,6 +140,11 @@ struct ErrorFunction::State {
     }
     static void validateTarget(Equation kind, double target) {
         if (!std::isfinite(target)) throw std::invalid_argument("Constraint target must be finite");
+        if (kind == Equation::ArcAngle) {
+            if (target <= 0 || target >= 2 * std::numbers::pi)
+                throw std::invalid_argument("Arc angle must be in (0, 2*pi) radians");
+            return;
+        }
         if (kind == Equation::CircleCircleTangent || kind == Equation::ArcArcTangent ||
             kind == Equation::CircleArcTangent) {
             if (target != 0 && target != 1 && target != 2)
@@ -218,6 +238,19 @@ struct ErrorFunction::State {
                 return norm(x[2]-x[0], x[3]-x[1]) - norm(x[6]-x[4], x[7]-x[5]);
             case Equation::PointPointDistance: case Equation::PointOnPoint:
                 return norm(x[2]-x[0], x[3]-x[1]) - Jet(target);
+            case Equation::ArcAngle: {
+                const Jet ax = x[0]-x[4], ay = x[1]-x[5];
+                const Jet bx = x[2]-x[4], by = x[3]-x[5];
+                const Jet a = norm(ax, ay), b = norm(bx, by);
+                if (a.value == 0 || b.value == 0 || norm(x[0]-x[2], x[1]-x[3]).value == 0)
+                    return Jet(undefined);
+                const Jet ux = ax/a, uy = ay/a, vx = bx/b, vy = by/b;
+                const Jet cosine = ux*vx + uy*vy, sine = ux*vy - uy*vx;
+                const Jet c(std::cos(static_cast<long double>(target)));
+                const Jet s(std::sin(static_cast<long double>(target)));
+                // Shortest signed angular correction, in radians; its only zero is the target sweep.
+                return arcTangent2(sine*c - cosine*s, cosine*c + sine*s);
+            }
             case Equation::ArcMidpointX: case Equation::ArcMidpointY: {
                 const auto [dx, dy] = arcMidpointOffset(x, 2);
                 return kind == Equation::ArcMidpointX ? x[0]-x[6]-dx : x[1]-x[7]-dy;

@@ -16,7 +16,7 @@ protected:
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
         CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY, LineArcMidpointX, LineArcMidpointY,
-        PointCircleDistance
+        PointCircleDistance, ArcAngle
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -358,6 +358,16 @@ public:
     explicit PointOnArcError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::PointOnArc, std::move(coordinates), target) {}
     PointOnArcError* clone() const override { return new PointOnArcError(*this); }
+};
+
+// First endpoint, second endpoint, center (X/Y pairs). Counterclockwise angle in (0, 2*pi).
+class ArcAngleError : public ErrorFunction {
+public:
+    ArcAngleError(std::vector<Variable*> variables, double angle)
+        : ArcAngleError(coordinatePointers(variables), angle) {}
+    ArcAngleError(std::vector<double*> coordinates, double angle)
+        : ErrorFunction(Equation::ArcAngle, std::move(coordinates), angle) {}
+    ArcAngleError* clone() const override { return new ArcAngleError(*this); }
 };
 
 // Point, first endpoint, second endpoint, center (X/Y pairs), counterclockwise arc.
