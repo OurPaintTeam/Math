@@ -106,7 +106,7 @@ struct ErrorFunction::State {
             case Equation::Vertical: case Equation::Horizontal:
             case Equation::PointPointHorizontalDistance: case Equation::PointPointVerticalDistance:
             case Equation::MidpointDifference: return 4;
-            case Equation::PointOnCircle: return 5;
+            case Equation::PointOnCircle: case Equation::PointCircleDistance: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
             case Equation::ArcBisector: case Equation::CircleCircleTangent:
             case Equation::PointOnArc: return 6;
@@ -144,7 +144,7 @@ struct ErrorFunction::State {
             throw std::invalid_argument("Angle must be in [0, pi] radians");
         if (kind != Equation::PointPointVerticalDistance && kind != Equation::PointPointHorizontalDistance &&
             kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
-            kind != Equation::PointLineDistance && kind != Equation::Angle &&
+            kind != Equation::PointLineDistance && kind != Equation::PointCircleDistance && kind != Equation::Angle &&
             kind != Equation::FixCoordinate && kind != Equation::CircleRadius &&
             kind != Equation::CoordinateAverage && target != 0)
             throw std::invalid_argument("This equation has no target parameter");
@@ -156,7 +156,7 @@ struct ErrorFunction::State {
             return std::isfinite(*coordinates[2]) && *coordinates[2] > 0 &&
                    std::isfinite(*coordinates[5]) && *coordinates[5] > 0;
         const std::size_t count = kind == Equation::EqualRadius ? 2
-            : (kind == Equation::PointOnCircle || kind == Equation::SegmentOnCircle ||
+            : (kind == Equation::PointOnCircle || kind == Equation::PointCircleDistance || kind == Equation::SegmentOnCircle ||
                kind == Equation::SegmentCircleDistance || kind == Equation::CircleRadius ||
                kind == Equation::LineCircleTangent ? 1 : 0);
         for (std::size_t i = coordinates.size() - count; i < coordinates.size(); ++i)
@@ -238,8 +238,8 @@ struct ErrorFunction::State {
                 if (radius.value == 0) return Jet(undefined);
                 return norm(x[0]-x[4], x[1]-x[5]) - radius;
             }
-            case Equation::PointOnCircle:
-                return norm(x[0]-x[2], x[1]-x[3]) - x[4];
+            case Equation::PointOnCircle: case Equation::PointCircleDistance:
+                return norm(x[0]-x[2], x[1]-x[3]) - x[4] - Jet(target);
             case Equation::CircleCircleTangent: {
                 const Jet distance=norm(x[3]-x[0],x[4]-x[1]);
                 if (target == 0) return distance-x[2]-x[5];

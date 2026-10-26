@@ -15,7 +15,8 @@ protected:
         Parallel, Perpendicular, Angle, Vertical, Horizontal, ArcBisector,
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
-        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY, LineArcMidpointX, LineArcMidpointY
+        CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY, LineArcMidpointX, LineArcMidpointY,
+        PointCircleDistance
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -164,6 +165,16 @@ public:
     explicit PointOnCircleError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::PointOnCircle,std::move(coordinates),target) {}
     PointOnCircleError* clone() const override { return new PointOnCircleError(*this); }
+};
+
+// Arguments Px, Py, Cx, Cy, radius. Signed gap: |P-C| - radius = target.
+class PointCircleDistanceError : public ErrorFunction {
+public:
+    explicit PointCircleDistanceError(std::vector<Variable*> variables, double target = 0)
+        : PointCircleDistanceError(coordinatePointers(variables), target) {}
+    explicit PointCircleDistanceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::PointCircleDistance, std::move(coordinates), target) {}
+    PointCircleDistanceError* clone() const override { return new PointCircleDistanceError(*this); }
 };
 
 class CircleRadiusError : public ErrorFunction {
