@@ -130,7 +130,7 @@ struct ErrorFunction::State {
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
             case Equation::EqualLength: case Equation::SymmetryAlong: case Equation::SymmetryAcross:
             case Equation::ArcLineTangent: case Equation::ArcArcTangent:
-            case Equation::ArcMidpointX: case Equation::ArcMidpointY: return 8;
+            case Equation::ArcMidpointX: case Equation::ArcMidpointY: case Equation::SegmentArcDistance: return 8;
             case Equation::LineArcMidpointX: case Equation::LineArcMidpointY: return 10;
             case Equation::ArcArcMidpointX: case Equation::ArcArcMidpointY: return 12;
             case Equation::SegmentInCircle:
@@ -157,13 +157,13 @@ struct ErrorFunction::State {
         }
         if (kind == Equation::CircleRadius && target <= 0)
             throw std::invalid_argument("Circle radius target must be positive");
-        if ((kind == Equation::PointPointDistance || kind == Equation::SegmentCircleDistance ||
+        if ((kind == Equation::PointPointDistance || kind == Equation::SegmentCircleDistance || kind == Equation::SegmentArcDistance ||
              kind == Equation::PointPointHorizontalDistance || kind == Equation::PointPointVerticalDistance) && target < 0)
             throw std::invalid_argument("Distance/clearance must be non-negative");
         if (kind == Equation::Angle && (target < 0 || target > std::numbers::pi))
             throw std::invalid_argument("Angle must be in [0, pi] radians");
         if (kind != Equation::PointPointVerticalDistance && kind != Equation::PointPointHorizontalDistance &&
-            kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
+            kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance && kind != Equation::SegmentArcDistance &&
             kind != Equation::PointLineDistance && kind != Equation::PointCircleDistance && kind != Equation::Angle &&
             kind != Equation::PointArcDistance && kind != Equation::FixCoordinate && kind != Equation::CircleRadius &&
             kind != Equation::CoordinateAverage && target != 0)
@@ -314,6 +314,12 @@ struct ErrorFunction::State {
                 const Jet dx = x[4]-x[2], dy = x[5]-x[3], length = norm(dx,dy);
                 if (length.value == 0) return norm(x[0]-x[2],x[1]-x[3])-Jet(target);
                 return (x[0]-x[2])*(dy/length) - (x[1]-x[3])*(dx/length) - Jet(target);
+            }
+            case Equation::SegmentArcDistance: {
+                const Jet radius = norm(x[4]-x[6], x[5]-x[7]);
+                if (radius.value == 0) return Jet(undefined);
+                return equation(Equation::SegmentCircleDistance,
+                    {x[0], x[1], x[2], x[3], x[6], x[7], radius}, target);
             }
             case Equation::SegmentCircleDistance: {
                 const Jet dx = x[2]-x[0], dy = x[3]-x[1], length = norm(dx,dy);

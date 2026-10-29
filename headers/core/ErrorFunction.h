@@ -16,7 +16,7 @@ protected:
         FixCoordinate, SegmentInCircle, CircleRadius, EqualLength, EqualRadius, MidpointCoordinate,
         SymmetryAlong, SymmetryAcross, CoordinateDifference, CoordinateAverage, LineCircleTangent,
         CircleCircleTangent, ArcLineTangent, ArcArcTangent, CircleArcTangent, PointPointHorizontalDistance, PointPointVerticalDistance, PointOnArc, ArcMidpointX, ArcMidpointY, MidpointDifference, ArcArcMidpointX, ArcArcMidpointY, LineArcMidpointX, LineArcMidpointY,
-        PointCircleDistance, ArcAngle, PointArcDistance
+        PointCircleDistance, ArcAngle, PointArcDistance, SegmentArcDistance
     };
     ErrorFunction(Equation equation, std::vector<double*> coordinates, double target);
     static std::vector<double*> coordinatePointers(const std::vector<Variable*>& variables);
@@ -105,6 +105,16 @@ public:
     explicit SectionCircleDistanceError(std::vector<double*> coordinates, double target = 0)
         : ErrorFunction(Equation::SegmentCircleDistance,std::move(coordinates),target) {}
     SectionCircleDistanceError* clone() const override { return new SectionCircleDistanceError(*this); }
+};
+
+// Segment endpoints, first arc endpoint, center (X/Y pairs). No angular sector restriction.
+class SectionArcDistanceError : public ErrorFunction {
+public:
+    explicit SectionArcDistanceError(std::vector<Variable*> variables, double target = 0)
+        : SectionArcDistanceError(coordinatePointers(variables), target) {}
+    explicit SectionArcDistanceError(std::vector<double*> coordinates, double target = 0)
+        : ErrorFunction(Equation::SegmentArcDistance, std::move(coordinates), target) {}
+    SectionArcDistanceError* clone() const override { return new SectionArcDistanceError(*this); }
 };
 
 // Supporting infinite line A,B and circle C,r. Side is +1 (left of A->B) or -1.
