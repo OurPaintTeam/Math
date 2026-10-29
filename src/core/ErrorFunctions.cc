@@ -124,7 +124,7 @@ struct ErrorFunction::State {
             case Equation::PointOnCircle: case Equation::PointCircleDistance: return 5;
             case Equation::PointLineDistance: case Equation::PointOnLine:
             case Equation::ArcBisector: case Equation::CircleCircleTangent:
-            case Equation::PointOnArc: case Equation::ArcAngle: return 6;
+            case Equation::PointOnArc: case Equation::ArcAngle: case Equation::PointArcDistance: return 6;
             case Equation::SegmentCircleDistance: case Equation::SegmentOnCircle:
             case Equation::LineCircleTangent: case Equation::CircleArcTangent: return 7;
             case Equation::Parallel: case Equation::Perpendicular: case Equation::Angle:
@@ -165,7 +165,7 @@ struct ErrorFunction::State {
         if (kind != Equation::PointPointVerticalDistance && kind != Equation::PointPointHorizontalDistance &&
             kind != Equation::PointPointDistance && kind != Equation::SegmentCircleDistance &&
             kind != Equation::PointLineDistance && kind != Equation::PointCircleDistance && kind != Equation::Angle &&
-            kind != Equation::FixCoordinate && kind != Equation::CircleRadius &&
+            kind != Equation::PointArcDistance && kind != Equation::FixCoordinate && kind != Equation::CircleRadius &&
             kind != Equation::CoordinateAverage && target != 0)
             throw std::invalid_argument("This equation has no target parameter");
     }
@@ -266,10 +266,10 @@ struct ErrorFunction::State {
                 const auto [dx2, dy2] = arcMidpointOffset(x, 6);
                 return kind == Equation::ArcArcMidpointX ? (x[4]-x[10])+(dx1-dx2) : (x[5]-x[11])+(dy1-dy2);
             }
-            case Equation::PointOnArc: {
+            case Equation::PointOnArc: case Equation::PointArcDistance: {
                 const Jet radius = norm(x[2]-x[4], x[3]-x[5]);
                 if (radius.value == 0) return Jet(undefined);
-                return norm(x[0]-x[4], x[1]-x[5]) - radius;
+                return norm(x[0]-x[4], x[1]-x[5]) - radius - Jet(target);
             }
             case Equation::PointOnCircle: case Equation::PointCircleDistance:
                 return norm(x[0]-x[2], x[1]-x[3]) - x[4] - Jet(target);
