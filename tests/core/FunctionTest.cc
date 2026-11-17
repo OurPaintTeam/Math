@@ -470,9 +470,7 @@ TEST(FunctionTest, TestMod) {
 
 
 	// Derivative Mod(x, y) = 0
-	Function* modDerivative1 = modFunc1->derivative(num1);
-	double expected_derivative1 = 0.0;
-	EXPECT_EQ(modDerivative1->evaluate(), expected_derivative1);
+	EXPECT_THROW(modFunc1->derivative(num1), std::logic_error);
 
 	// Example 2: Mod(7.5, 2.5) = 0
 	double num_val2 = 7.5;
@@ -484,9 +482,7 @@ TEST(FunctionTest, TestMod) {
 	EXPECT_EQ(res2, std::fmod(num_val2, den_val2)); // Should be 0.0
 
 	// Derivative Mod(x, y) = 0
-	Function* modDerivative2 = modFunc2->derivative(num2);
-	double expected_derivative2 = 0.0;
-	EXPECT_EQ(modDerivative2->evaluate(), expected_derivative2);
+	EXPECT_THROW(modFunc2->derivative(num2), std::logic_error);
 
 	// Example 3: Mod(-5, 3) = 1
 	double num_val3 = -5.0;
@@ -498,16 +494,11 @@ TEST(FunctionTest, TestMod) {
 	EXPECT_EQ(res3, std::fmod(num_val3, den_val3)); // Should be -2.0 in C++ fmod.
 
 	// Derivative Mod(x, y) = 0
-	Function* modDerivative3 = modFunc3->derivative(num3);
-	double expected_derivative3 = 0.0;
-	EXPECT_EQ(modDerivative3->evaluate(), expected_derivative3);
+	EXPECT_THROW(modFunc3->derivative(num3), std::logic_error);
 
 	delete modFunc1;
 	delete modFunc2;
 	delete modFunc3;
-	delete modDerivative1;
-	delete modDerivative2;
-	delete modDerivative3;
 }
 
 TEST(FunctionTest, TestTan) {
@@ -776,7 +767,7 @@ TEST(FunctionTest, TestSign) {
 	double expected_derivative3 = 0.0;
 	EXPECT_DOUBLE_EQ(signDerivative3->evaluate(), expected_derivative3); // Check derivative at 0
 
-	// Example 4: Sign(2.718) ≈ 1
+	// Example 4: Sign(2.718) в‰€ 1
 	double x_val4 = 2.718;
 	Variable* x4 = new Variable(&x_val4);
 	Function* signFunc4 = new Sign(x4);

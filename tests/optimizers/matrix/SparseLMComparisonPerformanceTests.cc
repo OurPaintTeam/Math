@@ -46,7 +46,6 @@ struct GeometryChainProblem {
 };
 
 struct MotionResidualBundle {
-    std::vector<double> fixedValues;
     std::vector<Function*> residuals;
 };
 
@@ -155,16 +154,10 @@ MotionResidualBundle BuildTriangleChainErrorResiduals(const GeometryChainProblem
                                                       double movingAnchorTargetX = 0.0,
                                                       double movingAnchorTargetY = 0.0) {
     MotionResidualBundle bundle;
-    bundle.fixedValues.reserve(addMovingAnchorRequirement ? 4 : 2);
     bundle.residuals.reserve(4 * static_cast<size_t>(scenario.triangleCount) + 16);
 
-    auto appendFixedValue = [&](double value) -> double* {
-        bundle.fixedValues.push_back(value);
-        return &bundle.fixedValues.back();
-    };
-
-    auto cloneProblemVariable = [&](size_t index) -> Variable* {
-        return problem.variableRefs[index]->clone();
+    auto problemVariable = [&](size_t index) -> Variable* {
+        return problem.variableRefs[index];
     };
 
     for (int i = 0; i < scenario.triangleCount; ++i) {
@@ -177,24 +170,24 @@ MotionResidualBundle BuildTriangleChainErrorResiduals(const GeometryChainProblem
         const double hypotenuse = std::sqrt(lx * lx + ly * ly);
 
         bundle.residuals.push_back(new PointPointDistanceError(
-            {cloneProblemVariable(a.xIndex), cloneProblemVariable(a.yIndex),
-             cloneProblemVariable(c.xIndex), cloneProblemVariable(c.yIndex)},
+            {problemVariable(a.xIndex), problemVariable(a.yIndex),
+             problemVariable(c.xIndex), problemVariable(c.yIndex)},
             lx));
         bundle.residuals.push_back(new PointPointDistanceError(
-            {cloneProblemVariable(a.xIndex), cloneProblemVariable(a.yIndex),
-             cloneProblemVariable(b.xIndex), cloneProblemVariable(b.yIndex)},
+            {problemVariable(a.xIndex), problemVariable(a.yIndex),
+             problemVariable(b.xIndex), problemVariable(b.yIndex)},
             ly));
         bundle.residuals.push_back(new PointPointDistanceError(
-            {cloneProblemVariable(b.xIndex), cloneProblemVariable(b.yIndex),
-             cloneProblemVariable(c.xIndex), cloneProblemVariable(c.yIndex)},
+            {problemVariable(b.xIndex), problemVariable(b.yIndex),
+             problemVariable(c.xIndex), problemVariable(c.yIndex)},
             hypotenuse));
 
         if (scenario.addRightAngleConstraint) {
             bundle.residuals.push_back(new SectionSectionPerpendicularError(
-                {cloneProblemVariable(a.xIndex), cloneProblemVariable(a.yIndex),
-                 cloneProblemVariable(b.xIndex), cloneProblemVariable(b.yIndex),
-                 cloneProblemVariable(a.xIndex), cloneProblemVariable(a.yIndex),
-                 cloneProblemVariable(c.xIndex), cloneProblemVariable(c.yIndex)}));
+                {problemVariable(a.xIndex), problemVariable(a.yIndex),
+                 problemVariable(b.xIndex), problemVariable(b.yIndex),
+                 problemVariable(a.xIndex), problemVariable(a.yIndex),
+                 problemVariable(c.xIndex), problemVariable(c.yIndex)}));
         }
     }
 
@@ -205,28 +198,26 @@ MotionResidualBundle BuildTriangleChainErrorResiduals(const GeometryChainProblem
             const double dx = problem.targetValues[bCurrent.xIndex] - problem.targetValues[bNext.xIndex];
             const double dy = problem.targetValues[bCurrent.yIndex] - problem.targetValues[bNext.yIndex];
             bundle.residuals.push_back(new PointPointDistanceError(
-                {cloneProblemVariable(bCurrent.xIndex), cloneProblemVariable(bCurrent.yIndex),
-                 cloneProblemVariable(bNext.xIndex), cloneProblemVariable(bNext.yIndex)},
+                {problemVariable(bCurrent.xIndex), problemVariable(bCurrent.yIndex),
+                 problemVariable(bNext.xIndex), problemVariable(bNext.yIndex)},
                 std::sqrt(dx * dx + dy * dy)));
         }
     }
 
-    double* originX = appendFixedValue(0.0);
-    double* originY = appendFixedValue(0.0);
-    bundle.residuals.push_back(new PointOnPointError(
-        {cloneProblemVariable(problem.anchors.front().xIndex), cloneProblemVariable(problem.anchors.front().yIndex),
-         new Variable(originX), new Variable(originY)}));
+    auto appendFixedCoordinate = [&](size_t index, double target, double weight) {
+        FixCoordinateError requirement(std::vector<Variable*>{problemVariable(index)},target);
+        requirement.setWeight(weight);
+        bundle.residuals.push_back(requirement.weightedFunction());
+    };
+    // Independent coordinate rows keep both anchor directions in the LM Jacobian.
+    appendFixedCoordinate(problem.anchors.front().xIndex,0,1);
+    appendFixedCoordinate(problem.anchors.front().yIndex,0,1);
 
     if (addMovingAnchorRequirement) {
         const PointVar& movingAnchor = problem.anchors.back();
-        double* movingTargetX = appendFixedValue(movingAnchorTargetX);
-        double* movingTargetY = appendFixedValue(movingAnchorTargetY);
-        const int duplicateRequirements = static_cast<int>(kMovingAnchorWeight);
-        for (int i = 0; i < duplicateRequirements; ++i) {
-            bundle.residuals.push_back(new PointOnPointError(
-                {cloneProblemVariable(movingAnchor.xIndex), cloneProblemVariable(movingAnchor.yIndex),
-                 new Variable(movingTargetX), new Variable(movingTargetY)}));
-        }
+        const double weight = std::sqrt(kMovingAnchorWeight);
+        appendFixedCoordinate(movingAnchor.xIndex,movingAnchorTargetX,weight);
+        appendFixedCoordinate(movingAnchor.yIndex,movingAnchorTargetY,weight);
     }
 
     return bundle;
@@ -505,6 +496,7 @@ TEST(SparseLMComparisonPerformanceTests, CompareSparseAndEigenSparseOnIncrementa
     const double initialTargetX = problem.targetValues[movingAnchor.xIndex];
     const double initialTargetY = problem.targetValues[movingAnchor.yIndex];
     const double stepDelta = 0.001;
+    const double stepAngle = stepDelta/std::hypot(initialTargetX,initialTargetY);
     const int stepCount = 20;
     const double tolerance = 1e-2;
     const double solverAgreementTolerance = 1e-2;
@@ -517,8 +509,10 @@ TEST(SparseLMComparisonPerformanceTests, CompareSparseAndEigenSparseOnIncrementa
     double eigenIterationsTotal = 0.0;
 
     for (int step = 1; step <= stepCount; ++step) {
-        const double targetX = initialTargetX + stepDelta * static_cast<double>(step);
-        const double targetY = initialTargetY + stepDelta * static_cast<double>(step);
+        // Rotate the rigid chain around its fixed origin to keep all lengths compatible.
+        const double angle = stepAngle * static_cast<double>(step);
+        const double targetX = initialTargetX*std::cos(angle)-initialTargetY*std::sin(angle);
+        const double targetY = initialTargetX*std::sin(angle)+initialTargetY*std::cos(angle);
 
         SetGeometryProblemValues(problem, currentSparseValues);
         SetGeometryProblemValues(problem, currentEigenValues);
@@ -573,11 +567,13 @@ TEST(SparseLMComparisonPerformanceTests, CompareSparseAndEigenSparseOnIncrementa
         currentEigenValues = eigenResult;
     }
 
-    const double totalDelta = stepDelta * static_cast<double>(stepCount);
-    EXPECT_NEAR(currentSparseValues[movingAnchor.xIndex], initialTargetX + totalDelta, tolerance);
-    EXPECT_NEAR(currentSparseValues[movingAnchor.yIndex], initialTargetY + totalDelta, tolerance);
-    EXPECT_NEAR(currentEigenValues[movingAnchor.xIndex], initialTargetX + totalDelta, tolerance);
-    EXPECT_NEAR(currentEigenValues[movingAnchor.yIndex], initialTargetY + totalDelta, tolerance);
+    const double totalAngle = stepAngle * static_cast<double>(stepCount);
+    const double finalTargetX = initialTargetX*std::cos(totalAngle)-initialTargetY*std::sin(totalAngle);
+    const double finalTargetY = initialTargetX*std::sin(totalAngle)+initialTargetY*std::cos(totalAngle);
+    EXPECT_NEAR(currentSparseValues[movingAnchor.xIndex], finalTargetX, tolerance);
+    EXPECT_NEAR(currentSparseValues[movingAnchor.yIndex], finalTargetY, tolerance);
+    EXPECT_NEAR(currentEigenValues[movingAnchor.xIndex], finalTargetX, tolerance);
+    EXPECT_NEAR(currentEigenValues[movingAnchor.yIndex], finalTargetY, tolerance);
     EXPECT_GT(sparseOptimizeMsTotal, 0.0);
     EXPECT_GT(eigenOptimizeMsTotal, 0.0);
     EXPECT_GE(sparseIterationsTotal, static_cast<double>(stepCount));

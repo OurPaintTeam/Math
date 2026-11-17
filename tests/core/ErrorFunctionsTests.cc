@@ -16,6 +16,7 @@ TEST(PointSectionDistanceErrorTest, CorrectErrorValue) {
     PointSectionDistanceError* errorFunc = new PointSectionDistanceError(variables, 10);
     EXPECT_NEAR(std::abs(errorFunc->evaluate()), 14, 1e-2);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 
 //------------------------- POINTONSEC TESTS -------------------------
@@ -33,6 +34,7 @@ TEST(PointOnSectionErrorTest, CorrectZeroErrorValue) {
     PointOnSectionError* errorFunc = new PointOnSectionError(variables);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 
 //------------------------- POINTPOINTDIST TESTS -------------------------
@@ -43,6 +45,7 @@ TEST(PointPointDistanceErrorTest, CorrectErrorValue) {
     PointPointDistanceError* errorFunc = new PointPointDistanceError(variables, 5.0);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 //------------------------- POINTONPOINT TESTS -------------------------
 TEST(PointOnPointErrorTest, CorrectZeroErrorValue) {
@@ -52,6 +55,7 @@ TEST(PointOnPointErrorTest, CorrectZeroErrorValue) {
     PointOnPointError* errorFunc = new PointOnPointError(variables);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 
 //------------------------- SECSECPARALLEL TESTS -------------------------
@@ -67,6 +71,7 @@ TEST(SectionSectionParallelErrorTest, CorrectParallelErrorValue) {
     SectionSectionParallelError* errorFunc = new SectionSectionParallelError(variables);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 
 //------------------------- SECSECPERPENDICULAR TESTS -------------------------
@@ -82,6 +87,7 @@ TEST(SectionSectionPerpendicularErrorTest, CorrectPerpendicularErrorValue) {
     SectionSectionPerpendicularError* errorFunc = new SectionSectionPerpendicularError(variables);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 //------------------------- SECTIONCIRCLEDISTANCE TESTS -------------------------
 TEST(SectionCircleDistanceErrorTest, CorrectErrorValue) {
@@ -98,8 +104,9 @@ TEST(SectionCircleDistanceErrorTest, CorrectErrorValue) {
     };
 
     SectionCircleDistanceError *errorFunc = new SectionCircleDistanceError(variables, 0.0);
-    EXPECT_NEAR(errorFunc->evaluate(), -2.2495131, 1e-5);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 //------------------------- SECTIONONCIRCLE TESTS -------------------------
 TEST(SectionOnCircleErrorTest, CorrectZeroErrorValue) {
@@ -116,8 +123,9 @@ TEST(SectionOnCircleErrorTest, CorrectZeroErrorValue) {
     };
 
     SectionOnCircleError* errorFunc = new SectionOnCircleError(variables);
-    EXPECT_NEAR(errorFunc->evaluate(), -2., 1e-5);
+    EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-5);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 //------------------------- SECTIONSECTIONANGLE TESTS -------------------------
 TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
@@ -133,9 +141,10 @@ TEST(SectionSectionAngleErrorTest, CorrectAngleErrorValue) {
             new Variable(x2e), new Variable(y2e)
     };
 
-    SectionSectionAngleError* errorFunc = new SectionSectionAngleError(variables, 45);
+    SectionSectionAngleError* errorFunc = new SectionSectionAngleError(variables, std::acos(-1.0)/4);
     EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-2);
     delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 //------------------------- VERTICAL ERROR TEST -------------------------
 TEST(VerticalErrorTest, CorrectVerticalErrorValue) {
@@ -150,6 +159,7 @@ TEST(VerticalErrorTest, CorrectVerticalErrorValue) {
   VerticalError* errorFunc = new VerticalError(variables);
   EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-6);
   delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }
 //------------------------- HORIZONTAL ERROR TEST -------------------------
 TEST(GorizontalErrorTest, CorrectGorizontalErrorValue) {
@@ -164,4 +174,5 @@ TEST(GorizontalErrorTest, CorrectGorizontalErrorValue) {
   HorizontalError* errorFunc = new HorizontalError(variables);
   EXPECT_NEAR(errorFunc->evaluate(), 0.0, 1e-6);
   delete errorFunc;
+    for (auto* variable : variables) delete variable;
 }

@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.20)
 set(CMAKE_OBJECT_PATH_MAX 300 CACHE INTERNAL "")
 
 project(Math)
+enable_testing()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
@@ -174,6 +175,22 @@ target_include_directories(Math
 target_link_libraries(Math
     PUBLIC Eigen3::Eigen
 )
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(Math PUBLIC -fno-fast-math)
+elseif(MSVC)
+    target_compile_options(Math PUBLIC /fp:precise)
+endif()
+
+option(MATH_ENABLE_SANITIZERS "Enable address and undefined behavior sanitizers" OFF)
+if(MATH_ENABLE_SANITIZERS)
+    if((CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang" AND NOT WIN32) OR
+       (CMAKE_CXX_COMPILER_ID MATCHES "Clang" AND MINGW))
+        target_compile_options(Math PUBLIC -fsanitize=address,undefined -fno-omit-frame-pointer)
+        target_link_options(Math PUBLIC -fsanitize=address,undefined)
+    else()
+        message(FATAL_ERROR "MATH_ENABLE_SANITIZERS requires GCC/Clang on Unix or LLVM-MinGW with sanitizer runtimes")
+    endif()
+endif()
 
 add_subdirectory(tests)
 
@@ -189,7 +206,8 @@ endif ()
 set(TYPE_OF_OPTIMIZATION BOOL 1)
 if (TYPE_OF_OPTIMIZATION)
     if (CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
-        set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -Ofast")
+        # Finite checks require IEEE floating point semantics.
+        target_compile_options(Math PRIVATE $<$<CONFIG:Release>:-O3>)
     elseif (CMAKE_CXX_COMPILER_ID MATCHES "MSVC")
         set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /O2")
     endif ()

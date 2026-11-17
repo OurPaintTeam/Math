@@ -53,7 +53,7 @@ function(add_math_test name src)
         )
     endif()
 
-    if (ENABLE_MEMCHECK AND NOT is_perf)
+    if (ENABLE_MEMCHECK AND MEMORYCHECK_COMMAND AND NOT is_perf)
         set(memcheck_name "memcheck_${name}")
         add_test(NAME ${memcheck_name}
                 COMMAND ${MEMORYCHECK_COMMAND} ${MEMORYCHECK_COMMAND_OPTIONS} $<TARGET_FILE:${name}>)

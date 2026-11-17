@@ -4,6 +4,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <limits>
 #ifdef DEBUG
 #include <iostream>
 #endif
@@ -43,6 +44,18 @@ double computeGainDenominator(const Matrix<>& step, const Matrix<>& gradient, do
     return 0.5 * gain;
 }
 
+double evaluateCandidate(SparseLSMTask& task, const std::vector<double>& candidate) {
+    try {
+        return task.setError(candidate);
+    } catch (const FunctionDomainError&) {
+        // setError has already restored the accepted coordinates and invalidated caches.
+        return std::numeric_limits<double>::infinity();
+    } catch (const std::domain_error&) {
+        return std::numeric_limits<double>::infinity();
+    }
+    // Unexpected exceptions propagate with the task restored by setError.
+}
+
 } // namespace
 
 SparseLMSolver::SparseLMSolver(int maxIterations,
@@ -80,6 +93,55 @@ void SparseLMSolver::setTask(TaskMatrix* task) {
     performedIterations = 0;
 }
 
+bool SparseLMSolver::tryEscapeStationaryPoint() {
+    if (!std::isfinite(currentError) || m_result.empty()) return false;
+
+    // Gauss-Newton loses the residual's curvature when J is zero. At a smooth
+    // maximum, the objective Hessian supplies a scale for a small escape step.
+    // At a norm cusp (coincident points), use the residual norm instead.
+    std::vector<double> curvature(m_result.size(), 0.0);
+    std::vector<bool> zeroCoordinateGradient(m_result.size());
+    const auto& gradient = c_task->normalGradient();
+    for (size_t i = 0; i < m_result.size(); ++i) zeroCoordinateGradient[i] = gradient(i, 0) == 0;
+    try {
+        const auto hessian = c_task->objectiveHessian();
+        for (size_t i = 0; i < curvature.size(); ++i) curvature[i] = hessian(i, i);
+    } catch (const std::logic_error&) {
+        // First-order-only residuals can still use the bounded probe search.
+    }
+
+    const double residualNorm = std::sqrt(currentError);
+    const double improvementFloor = 32 * std::numeric_limits<double>::epsilon() * currentError;
+    std::vector<double> candidate = m_result;
+    for (size_t i = 0; i < m_result.size(); ++i) {
+        const bool negativeCurvature = std::isfinite(curvature[i]) && curvature[i] < 0;
+        if (!negativeCurvature && !zeroCoordinateGradient[i]) continue;
+        const double scale = negativeCurvature
+            ? residualNorm / std::sqrt(-curvature[i]) : residualNorm;
+        if (!std::isfinite(scale) || scale <= 0) continue;
+        const double spacing = std::abs(std::nextafter(m_result[i],
+            m_result[i] == 0 ? 1.0 : 0.0) - m_result[i]);
+        for (const double fraction : {0.1, 0.01, 0.001, 1e-4, 1e-5, 1e-6, 1.0}) {
+            const double step = std::max(fraction * scale, 8 * spacing);
+            for (const double sign : {1.0, -1.0}) {
+                candidate[i] = m_result[i] + sign * step;
+                if (!std::isfinite(candidate[i]) || candidate[i] == m_result[i]) continue;
+                const double candidateError = evaluateCandidate(*c_task, candidate);
+                if (std::isfinite(candidateError) && currentError - candidateError > improvementFloor) {
+                    m_result = candidate;
+                    currentError = candidateError;
+                    lambda = initialLambda;
+                    nu = 2.0;
+                    return true;
+                }
+                c_task->setError(m_result);
+            }
+        }
+        candidate[i] = m_result[i];
+    }
+    return false;
+}
+
 void SparseLMSolver::optimize() {
     if (c_task == nullptr) {
         throw std::runtime_error("Task is not set");
@@ -101,14 +163,22 @@ void SparseLMSolver::optimize() {
         c_task->linearizationView();
         const Matrix<>& gradient = c_task->normalGradient();
         const double gradientNorm = gradient.norm();
-        if (gradientNorm < epsilon1) {
-            if (currentError <= errorTolerance) {
-                converged = true;
-                stopReason = StopReason::ResidualTolerance;
-            } else {
-                stopReason = StopReason::StationaryPoint;
+        if (gradientNorm <= epsilon1) {
+            if (tryEscapeStationaryPoint()) {
+                ++iteration;
+                if (currentError <= errorTolerance) {
+                    converged = true;
+                    stopReason = StopReason::ResidualTolerance;
+                    break;
+                }
+                continue;
             }
-            break;
+            if (gradientNorm == 0) {
+                stopReason = StopReason::StationaryPoint;
+                break;
+            }
+            // A small nonzero gradient is not proof of an unsatisfied minimum:
+            // cosine angle residuals flatten near 0 and pi. Let LM finish them.
         }
 
         Matrix<> step;
@@ -140,6 +210,13 @@ void SparseLMSolver::optimize() {
 
         const double stepNorm = step.norm();
         if (stepNorm < epsilon2) {
+            // Some coordinates can be stationary at a norm cusp while other
+            // residuals still have a nonzero gradient (e.g. a prescribed radius).
+            // Before stopping, also try the bounded descent probes in that case.
+            if (currentError > errorTolerance && tryEscapeStationaryPoint()) {
+                ++iteration;
+                continue;
+            }
             if (currentError <= errorTolerance) {
                 converged = true;
                 stopReason = StopReason::ResidualTolerance;
@@ -154,7 +231,7 @@ void SparseLMSolver::optimize() {
             candidate[i] += step(i, 0);
         }
 
-        const double candidateError = c_task->setError(candidate);
+        const double candidateError = evaluateCandidate(*c_task, candidate);
         // Task error is ||r||^2 (no 1/2 factor); match numerator to denominator scaling.
         const double gainNumerator = currentError - candidateError;
         const double rho = gainNumerator

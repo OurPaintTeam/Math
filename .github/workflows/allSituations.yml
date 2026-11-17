@@ -4,7 +4,7 @@ on: [push, pull_request]
 
 jobs:
   DEBUG:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -21,7 +21,7 @@ jobs:
       - name: Run Unit Tests
         run: ctest --test-dir build/tests --output-on-failure -V -L unit -C Debug
   RELEASE:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -32,7 +32,7 @@ jobs:
       - name: Run Unit Tests
         run: ctest --test-dir build/tests --output-on-failure -V -L unit -C Release
   PERF_RELEASE:
-    runs-on: self-hosted
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
