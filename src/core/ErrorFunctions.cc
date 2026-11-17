@@ -382,6 +382,13 @@ struct ErrorFunction::State {
             x.push_back(seed);
         }
         if (!validRadii(kind,variables)) valid = false;
+        // At a shared vertex, measure between outgoing rays, independent of endpoint order.
+        if (kind == Equation::Angle &&
+            ((variables[0] == variables[6] && variables[1] == variables[7]) ||
+             (variables[2] == variables[4] && variables[3] == variables[5]))) {
+            std::swap(x[4],x[6]);
+            std::swap(x[5],x[7]);
+        }
         result = valid ? equation(kind,x,target) : Jet(undefined);
         if (!std::isfinite(checked(result.value))) { result = Jet(undefined); ++invalidEvaluations; }
         dirty = false;
