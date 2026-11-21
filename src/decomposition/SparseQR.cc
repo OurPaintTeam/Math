@@ -532,7 +532,8 @@ SparseMatrix<> SparseQR::buildSparseR(
         std::move(outer));
 }
 
-void SparseQR::buildSparseRFromCSC() {
+void SparseQR::buildSparseRFromCSC() const {
+    if (_R_sparse.rows_size() != 0) return;
     if (_min_mn == 0) {
         _R_sparse = SparseMatrix<>(0, _n);
         return;
@@ -747,7 +748,7 @@ void SparseQR::factorizeNumeric() {
     }
 
     _r_csc_outer[_n] = _r_csc_inner.size();
-    buildSparseRFromCSC();
+    _R_sparse = SparseMatrix<>();
 }
 
 void SparseQR::analyze() {
@@ -804,7 +805,7 @@ void SparseQR::setNumericPivotingEnabled(bool enabled) {
 }
 
 Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
-    if (_R_sparse.rows_size() == 0 || _R_sparse.cols_size() == 0) {
+    if (_r_diag.empty()) {
         throw std::runtime_error("Call qr() before solve().");
     }
     if (damping < 0.0) {
@@ -856,7 +857,7 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
 }
 
 Matrix<> SparseQR::pseudoInverse(double damping) const {
-    if (_R_sparse.rows_size() == 0 || _R_sparse.cols_size() == 0) {
+    if (_r_diag.empty()) {
         throw std::runtime_error("Call qr() before pseudoInverse().");
     }
     if (damping < 0.0) {
@@ -894,13 +895,14 @@ Matrix<> SparseQR::pseudoInverse(double damping) const {
 }
 
 size_t SparseQR::rank(double tol) const {
-    if (_R_sparse.rows_size() == 0 || _R_sparse.cols_size() == 0) {
+    if (_r_diag.empty()) {
         throw std::runtime_error("Call qr() before rank().");
     }
     if (tol < 0.0) {
         return _numerical_rank;
     }
 
+    buildSparseRFromCSC();
     const size_t min_dim = std::min(_R_sparse.rows_size(), _R_sparse.cols_size());
     size_t r = 0;
     for (size_t i = 0; i < min_dim; ++i) {
@@ -1045,10 +1047,10 @@ void SparseQR::backsolveCSC(
 }
 
 Matrix<> SparseQR::solveUpperTriangular(const Matrix<>& rhs, size_t effective_rank) const {
-    if (_R_sparse.rows_size() == 0 || _R_sparse.cols_size() == 0) {
+    if (_r_diag.empty()) {
         throw std::runtime_error("Call qr() before solveUpperTriangular().");
     }
-    if (effective_rank > std::min(_R_sparse.rows_size(), _R_sparse.cols_size())) {
+    if (effective_rank > _min_mn) {
         throw std::invalid_argument("solveUpperTriangular: effective rank exceeds the triangular factor size.");
     }
     if (rhs.rows_size() != effective_rank) {
@@ -1076,7 +1078,7 @@ Matrix<> SparseQR::solveUpperTriangular(const Matrix<>& rhs, size_t effective_ra
 }
 
 Matrix<> SparseQR::Q() const {
-    if (_R_sparse.rows_size() == 0 || _R_sparse.cols_size() == 0) {
+    if (_r_diag.empty()) {
         return Matrix<>();
     }
     const size_t m = _A.rows_size();
@@ -1089,5 +1091,7 @@ Matrix<> SparseQR::Q() const {
 }
 
 Matrix<> SparseQR::R() const {
+    if (_r_diag.empty()) return Matrix<>();
+    buildSparseRFromCSC();
     return _R_sparse.toDense();
 }
