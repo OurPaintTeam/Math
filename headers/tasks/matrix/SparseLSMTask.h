@@ -87,6 +87,7 @@ private:
     std::vector<double*> m_inputCoordinates;
     mutable std::vector<double> m_cachedInputs;
     mutable std::vector<std::size_t> m_cachedRevisions;
+    mutable bool m_residualsDirty = true;
     mutable bool m_linearizationDirty = true;
     mutable bool m_objectiveGradientDirty = true;
     mutable bool m_approximateHessianDirty = true;
@@ -372,6 +373,7 @@ private:
     }
 
     void invalidateNumericCaches() const {
+        m_residualsDirty = true;
         m_linearizationDirty = true;
         m_objectiveGradientDirty = true;
         m_approximateHessianDirty = true;
@@ -406,8 +408,22 @@ private:
         }
     }
 
-    void ensureLinearization() const {
+    void ensureResiduals() const {
         refreshDirtyState();
+        if (!m_residualsDirty) return;
+
+        double error = 0.0;
+        for (size_t i = 0; i < m_functions.size(); ++i) {
+            const double residual = m_functions[i]->evaluate();
+            m_residualVector(i, 0) = residual;
+            error += residual * residual;
+        }
+        m_error = error;
+        m_residualsDirty = false;
+    }
+
+    void ensureLinearization() const {
+        ensureResiduals();
         if (!m_linearizationDirty) {
             return;
         }
@@ -416,11 +432,8 @@ private:
             m_normalGradient(i, 0) = 0.0;
         }
 
-        double error = 0.0;
         for (size_t residualIndex = 0; residualIndex < m_functions.size(); ++residualIndex) {
-            const double residual = m_functions[residualIndex]->evaluate();
-            m_residualVector(residualIndex, 0) = residual;
-            error += residual * residual;
+            const double residual = m_residualVector(residualIndex, 0);
 
             const size_t begin = m_rowEntryOffsets[residualIndex];
             const size_t end = m_rowEntryOffsets[residualIndex + 1];
@@ -432,7 +445,6 @@ private:
             }
         }
 
-        m_error = error;
         m_linearizationDirty = false;
         m_objectiveGradientDirty = true;
         m_approximateHessianDirty = true;
@@ -675,12 +687,12 @@ public:
 
 
     Matrix<> residuals() const {
-        ensureLinearization();
+        ensureResiduals();
         return m_residualVector;
     }
 
     const Matrix<>& residualsRef() const {
-        ensureLinearization();
+        ensureResiduals();
         return m_residualVector;
     }
 
@@ -777,7 +789,7 @@ public:
     }
 
     double getError() const override {
-        ensureLinearization();
+        ensureResiduals();
         return m_error;
     }
 
