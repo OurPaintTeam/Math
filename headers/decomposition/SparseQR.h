@@ -8,7 +8,7 @@
 class SparseQR {
 private:
     SparseMatrix<> _A;
-    SparseMatrix<> _R_sparse;
+    mutable SparseMatrix<> _R_sparse;
     size_t _m = 0;
     size_t _n = 0;
     size_t _min_mn = 0;
@@ -75,7 +75,7 @@ private:
     SparseMatrix<> buildSparseR(
         const std::vector<std::vector<size_t>>& r_column_rows,
         const std::vector<std::vector<double>>& r_column_values) const;
-    void buildSparseRFromCSC();
+    void buildSparseRFromCSC() const;
 
     Matrix<> applyQ(const Matrix<>& B) const;
     Matrix<> applyQt(const Matrix<>& B) const;
