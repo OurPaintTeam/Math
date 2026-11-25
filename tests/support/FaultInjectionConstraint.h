@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MINIMIZEROPTIMIZER_TESTS_SUPPORT_FAULTINJECTIONCONSTRAINT_H_
+#define MINIMIZEROPTIMIZER_TESTS_SUPPORT_FAULTINJECTIONCONSTRAINT_H_
+
 #include "ErrorFunction.h"
 
 // Test-only numerical failure injection. No production geometry equation lives here.
@@ -25,3 +27,5 @@ public:
     FaultInjectionConstraint* clone() const override { return new FaultInjectionConstraint(*this); }
     ::Function* weightedFunction() const override { return clone(); }
 };
+
+#endif

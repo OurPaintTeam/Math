@@ -6,7 +6,6 @@
 #include "ErrorFunction.h"
 #include "SparseQR.h"
 #include <Eigen/Sparse>
-#include <Eigen/SparseQR>
 #include <unordered_set>
 
 #include <algorithm>
@@ -662,11 +661,10 @@ public:
         // Rank must include independent columns after dependent/zero columns.
         // A triangular factor without numerical column pivoting can miss them
         // in the wide Jacobians of under-constrained sketches.
-        Eigen::SparseQR<Eigen::SparseMatrix<double>, Eigen::COLAMDOrdering<int>> qr;
+        SparseQR qr(activeJ);
         qr.setPivotThreshold(1e-8);
-        qr.compute(toEigen(activeJ));
-        if (qr.info() != Eigen::Success) return result;
-        const auto rank = static_cast<std::size_t>(qr.rank());
+        qr.qrRankRevealing();
+        const auto rank = qr.rank();
         const auto m = activeRows.size();
         const auto n = activeColumns.size();
         result.rank = rank;
