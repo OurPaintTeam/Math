@@ -1,4 +1,6 @@
-#pragma once
+#ifndef MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTION_H_
+#define MINIMIZEROPTIMIZER_HEADERS_ERRORFUNCTION_H_
+
 #include "Function.h"
 #include <memory>
 #include <span>
@@ -459,3 +461,5 @@ public:
         : ErrorFunction(Equation::LineArcMidpointY, std::move(coordinates), target) {}
     LineArcMidpointYError* clone() const override { return new LineArcMidpointYError(*this); }
 };
+
+#endif

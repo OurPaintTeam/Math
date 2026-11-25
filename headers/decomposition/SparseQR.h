@@ -45,7 +45,7 @@ private:
     std::vector<double> _r_csr_values_scratch;
     std::vector<size_t> _r_csr_next_scratch;
     std::vector<double> _col_norms;
-    std::vector<size_t> _col_map;
+    std::vector<size_t> _col_map; // Numerical factor column -> original column.
 
     mutable std::vector<double> _qt_workspace;
     std::vector<double> _factor_accumulator;
@@ -67,7 +67,8 @@ private:
     void analyzeStructure();
     void buildPermutedWorkspace();
     void buildColumnEliminationTree();
-    void factorizeNumeric();
+    void factorizeNumeric(bool rankRevealing = false);
+    void reorderFactorColumns(const std::vector<size_t>& columns);
     void clearFactorization();
     void resetAnalysis();
     bool hasSameStructure(const SparseMatrix<>& A) const;
@@ -97,6 +98,8 @@ public:
     friend bool operator!=(const SparseQR& A, const SparseQR& B);
 
     void qr();
+    // A P ~= Q R with independent columns first; preserves the ordinary qr() path.
+    void qrRankRevealing();
     void analyze();
     void factorize();
     void qr(const SparseMatrix<>& A);

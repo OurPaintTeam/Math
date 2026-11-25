@@ -267,6 +267,7 @@ void SparseQR::clearFactorization() {
     _r_csc_val.clear();
     _r_diag.clear();
     _qt_workspace.clear();
+    _col_map.clear();
     _numerical_rank = 0;
     _leading_numerical_rank = 0;
     _factorization_threshold = 0.0;
@@ -562,7 +563,28 @@ void SparseQR::buildSparseRFromCSC() const {
         std::move(outer));
 }
 
-void SparseQR::factorizeNumeric() {
+void SparseQR::reorderFactorColumns(const std::vector<size_t>& columns) {
+    std::vector<size_t> outer(_n + 1), inner;
+    std::vector<double> values;
+    inner.reserve(_r_csc_inner.size());
+    values.reserve(_r_csc_val.size());
+    _col_map.resize(_n);
+    for (size_t column = 0; column < _n; ++column) {
+        const size_t source = columns[column];
+        _col_map[column] = _perm[source];
+        outer[column] = values.size();
+        const auto begin = static_cast<std::ptrdiff_t>(_r_csc_outer[source]);
+        const auto end = static_cast<std::ptrdiff_t>(_r_csc_outer[source + 1]);
+        inner.insert(inner.end(), _r_csc_inner.begin() + begin, _r_csc_inner.begin() + end);
+        values.insert(values.end(), _r_csc_val.begin() + begin, _r_csc_val.begin() + end);
+    }
+    outer[_n] = values.size();
+    _r_csc_outer = std::move(outer);
+    _r_csc_inner = std::move(inner);
+    _r_csc_val = std::move(values);
+}
+
+void SparseQR::factorizeNumeric(bool rankRevealing) {
     if (!_analyzed) {
         throw std::runtime_error("Call analyze() before factorize().");
     }
@@ -574,6 +596,12 @@ void SparseQR::factorizeNumeric() {
     _factorization_threshold = resolvePivotThreshold();
     _numerical_rank = 0;
     _leading_numerical_rank = 0;
+    _col_map.clear();
+    std::vector<size_t> independent, dependent;
+    if (rankRevealing) {
+        independent.reserve(_min_mn);
+        dependent.reserve(_n);
+    }
 
     // Production-safe drop policy: tie filtering to factorization scale.
     const double drop_tolerance =
@@ -607,26 +635,28 @@ void SparseQR::factorizeNumeric() {
     size_t stamp = 1;
 
     for (size_t col = 0; col < _n; ++col, ++stamp) {
+        const size_t pivot = rankRevealing ? _numerical_rank : col;
+        bool accepted = false;
         _r_csc_outer[col] = _r_csc_inner.size();
         _factor_reach.clear();
         _factor_touched_rows.clear();
-        const size_t reach_stop = (col < _min_mn) ? col : _min_mn;
+        const size_t reach_stop = std::min(pivot, _min_mn);
         if (reach_stop < _factor_marks.size()) {
             _factor_marks[reach_stop] = stamp;
         }
-        if (col < _min_mn) {
-            _factor_touched_marks[col] = stamp;
-            _factor_touched_rows.push_back(col);
-            _factor_accumulator[col] = 0.0;
+        if (pivot < _min_mn) {
+            _factor_touched_marks[pivot] = stamp;
+            _factor_touched_rows.push_back(pivot);
+            _factor_accumulator[pivot] = 0.0;
         }
 
         const size_t col_begin = _workspace_outer[col];
         const size_t col_end = _workspace_outer[col + 1];
-        bool found_diag = col >= _m;
+        bool found_diag = pivot >= _m;
 
         size_t p = col_begin;
         while (p < col_end || !found_diag) {
-            size_t row = col;
+            size_t row = pivot;
             double value = 0.0;
             if (p < col_end) {
                 row = _workspace_inner[p];
@@ -635,7 +665,7 @@ void SparseQR::factorizeNumeric() {
             } else {
                 found_diag = true;
             }
-            if (row == col) {
+            if (row == pivot) {
                 found_diag = true;
             }
             if (_factor_touched_marks[row] != stamp) {
@@ -649,6 +679,14 @@ void SparseQR::factorizeNumeric() {
             if (start < _min_mn && start < col) {
                 appendReachPath(start, col, _min_mn, _etree, _factor_marks, stamp, _factor_reach);
             }
+        }
+
+        // Once a column is deferred, symbolic column indices no longer identify
+        // reflector indices. Apply the accepted reflectors in numerical order.
+        if (rankRevealing && pivot != col) {
+            _factor_reach.clear();
+            for (size_t previous = pivot; previous > 0; --previous)
+                _factor_reach.push_back(previous - 1);
         }
 
         for (size_t ii = _factor_reach.size(); ii > 0; --ii) {
@@ -683,7 +721,7 @@ void SparseQR::factorizeNumeric() {
             }
         }
 
-        const size_t r_limit = (col < _min_mn) ? col : _min_mn;
+        const size_t r_limit = std::min(pivot, _min_mn);
         for (size_t row = 0; row < r_limit; ++row) {
             if (_factor_touched_marks[row] != stamp) continue;
             const double value = _factor_accumulator[row];
@@ -693,15 +731,15 @@ void SparseQR::factorizeNumeric() {
             }
         }
 
-        if (col < _min_mn) {
-            double leading_value = _factor_accumulator[col];
+        if (pivot < _min_mn) {
+            double leading_value = _factor_accumulator[pivot];
             double sqr_norm = 0.0;
             _factor_reflector_rows.clear();
             _factor_reflector_values.clear();
-            _factor_reflector_rows.push_back(col);
+            _factor_reflector_rows.push_back(pivot);
             _factor_reflector_values.push_back(leading_value);
             for (size_t row : _factor_touched_rows) {
-                if (row <= col) {
+                if (row <= pivot) {
                     continue;
                 }
                 const double value = _factor_accumulator[row];
@@ -713,22 +751,23 @@ void SparseQR::factorizeNumeric() {
                 sqr_norm += value * value;
             }
             const double norm = std::sqrt(leading_value * leading_value + sqr_norm);
-            if (norm > 0.0) {
+            if (norm > 0.0 && (!rankRevealing || norm >= _factorization_threshold)) {
                 const double alpha = (leading_value >= 0.0) ? -norm : norm;
                 _factor_reflector_values[0] = leading_value - alpha;
                 const double vtv = _factor_reflector_values[0] * _factor_reflector_values[0] + sqr_norm;
                 const double beta = (vtv == 0.0) ? 0.0 : 2.0 / vtv;
                 _ref_idx.insert(_ref_idx.end(), _factor_reflector_rows.begin(), _factor_reflector_rows.end());
                 _ref_val.insert(_ref_val.end(), _factor_reflector_values.begin(), _factor_reflector_values.end());
-                _ref_ptr[col + 1] = _ref_idx.size();
-                _ref_beta[col] = beta;
-                _r_diag[col] = alpha;
+                _ref_ptr[pivot + 1] = _ref_idx.size();
+                _ref_beta[pivot] = beta;
+                _r_diag[pivot] = alpha;
                 if (std::abs(alpha) > drop_tolerance) {
-                    _r_csc_inner.push_back(col);
+                    _r_csc_inner.push_back(pivot);
                     _r_csc_val.push_back(alpha);
                 }
 
                 if (norm >= _factorization_threshold) {
+                    accepted = true;
                     ++_numerical_rank;
                     if (leading_block_is_full_rank) {
                         ++_leading_numerical_rank;
@@ -737,17 +776,25 @@ void SparseQR::factorizeNumeric() {
                     leading_block_is_full_rank = false;
                 }
             } else {
-                _ref_ptr[col + 1] = _ref_ptr[col];
+                _ref_ptr[pivot + 1] = _ref_ptr[pivot];
                 leading_block_is_full_rank = false;
             }
         }
 
+        if (rankRevealing) (accepted ? independent : dependent).push_back(col);
         for (size_t row : _factor_touched_rows) {
             _factor_accumulator[row] = 0.0;
         }
     }
 
     _r_csc_outer[_n] = _r_csc_inner.size();
+    if (rankRevealing) {
+        for (size_t index = _numerical_rank + 1; index <= _min_mn; ++index)
+            _ref_ptr[index] = _ref_idx.size();
+        _leading_numerical_rank = _numerical_rank;
+        independent.insert(independent.end(), dependent.begin(), dependent.end());
+        reorderFactorColumns(independent);
+    }
     _R_sparse = SparseMatrix<>();
 }
 
@@ -767,6 +814,12 @@ void SparseQR::qr() {
     preprocessProblem();
     analyzeStructure();
     factorizeNumeric();
+}
+
+void SparseQR::qrRankRevealing() {
+    preprocessProblem();
+    analyzeStructure();
+    factorizeNumeric(true);
 }
 
 void SparseQR::analyze(const SparseMatrix<>& A) {
@@ -844,7 +897,7 @@ Matrix<> SparseQR::solve(const Matrix<>& b, double damping) const {
 
     Matrix<> x(_n, b.cols_size());
     for (size_t j = 0; j < _n; ++j) {
-        const size_t orig = _perm[j];
+        const size_t orig = colsPermutation()[j];
         for (size_t rhs = 0; rhs < b.cols_size(); ++rhs) {
             if (j < _numerical_rank) {
                 x(orig, rhs) = zbuf[j * ld + rhs];
@@ -886,7 +939,7 @@ Matrix<> SparseQR::pseudoInverse(double damping) const {
     Matrix<> pinvPerm = inv * Rt * Qt;
     Matrix<> pinv(_A.cols_size(), pinvPerm.cols_size());
     for (size_t j = 0; j < _A.cols_size(); ++j) {
-        const size_t orig = _perm[j];
+        const size_t orig = colsPermutation()[j];
         for (size_t col = 0; col < pinvPerm.cols_size(); ++col) {
             pinv(orig, col) = pinvPerm(j, col);
         }
@@ -918,7 +971,7 @@ SparseMatrix<> SparseQR::A() const {
 }
 
 const std::vector<size_t>& SparseQR::colsPermutation() const {
-    return _perm;
+    return _col_map.empty() ? _perm : _col_map;
 }
 
 Matrix<> SparseQR::applyQ(const Matrix<>& B) const {
